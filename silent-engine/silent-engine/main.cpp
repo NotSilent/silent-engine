@@ -153,8 +153,7 @@ void draw()
         throw std::runtime_error("Couldn't acquire next image");
     }
 
-    auto gray = [&]()
-    {
+    auto gray = [&]() {
         return abs(sinf(_currentFrame / 100.0f));
     }();
 
@@ -192,8 +191,11 @@ void draw()
 
     vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    //vkCmdBindPipeline()
-    //vkCmdDraw(cmd, 3, 1, 0, 0);
+    const auto pipelineLayout = VkInit::Pipeline::createDefaultPipelineLayout(_device);
+    const auto pipeline = VkInit::Pipeline::createDefaultPipeline(_device, pipelineLayout, _renderPasses[imageIndex], WIDTH, HEIGHT);
+
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdDraw(cmd, 3, 1, 0, 0);
 
     vkCmdEndRenderPass(cmd);
 
@@ -237,6 +239,9 @@ void draw()
     vkDestroyFence(_device.device, queueFence, nullptr);
     vkDestroySemaphore(_device.device, acquireSemaphore, nullptr);
     vkDestroySemaphore(_device.device, submitSemaphore, nullptr);
+
+    vkDestroyPipeline(_device.device, pipeline, nullptr);
+    vkDestroyPipelineLayout(_device.device, pipelineLayout, nullptr);
 
     _currentFrame++;
 }

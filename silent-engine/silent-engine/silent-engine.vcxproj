@@ -153,11 +153,14 @@
   <ItemGroup>
     <None Include=".clang-format" />
     <None Include="packages.config" />
+    <None Include="shaders\unlit.frag" />
+    <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third-party\vk-bootstrap\VkBootstrap.h" />
     <ClInclude Include="VkInit.h" />
     <ClInclude Include="third-party\vma\vk_mem_alloc.h" />
+    <ClInclude Include="VkInitPipeline.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

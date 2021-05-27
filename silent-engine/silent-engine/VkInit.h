@@ -2,29 +2,9 @@
 #include <vulkan/vulkan.h>
 
 #include "vk-bootstrap/VkBootstrap.h"
+#include "VkInitPipeline.h"
 
 namespace VkInit {
-//VkPipeline createPipeline(const vkb::Device& device)
-//{
-//    VkPipelineShaderStageCreateInfo shaderStageCreateInfo;
-//    shaderStageCreateInfo.
-//
-//    VkGraphicsPipelineCreateInfo createInfo;
-//    createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-//    createInfo.pNext = nullptr;
-//    createInfo.flags = {};
-//    createInfo.stageCount = 0;
-//    createInfo.pStages = nullptr;
-//    createInfo.pVertexInputState = nullptr;
-//
-//    VkPipeline pipeline;
-//    if(vkCreateGraphicsPipelines(device.device, nullptr, 1, &createInfo, nullptr, &pipeline) != VK_SUCCESS) {
-//        throw std::runtime_error("Couldn't create pipeline");
-//    }
-//
-//    return pipeline;
-//}
-
 VkSemaphore createSemaphore(const vkb::Device& device)
 {
     VkSemaphoreCreateInfo createInfo {

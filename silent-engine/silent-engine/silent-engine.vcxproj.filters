@@ -25,6 +25,8 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include=".clang-format" />
+    <None Include="shaders\unlit.frag" />
+    <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third-party\vk-bootstrap\VkBootstrap.h">
@@ -34,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VkInit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VkInitPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
