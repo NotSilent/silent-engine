@@ -120,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(ProjectDir)third-party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(ProjectDir)third-party;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -158,9 +158,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third-party\vk-bootstrap\VkBootstrap.h" />
-    <ClInclude Include="VkInit.h" />
+    <ClInclude Include="src\VkInit.h" />
     <ClInclude Include="third-party\vma\vk_mem_alloc.h" />
-    <ClInclude Include="VkInitPipeline.h" />
+    <ClInclude Include="src\VkInitPipeline.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

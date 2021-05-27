@@ -35,10 +35,10 @@
     <ClInclude Include="third-party\vma\vk_mem_alloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VkInit.h">
+    <ClInclude Include="src\VkInit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VkInitPipeline.h">
+    <ClInclude Include="src\VkInitPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
