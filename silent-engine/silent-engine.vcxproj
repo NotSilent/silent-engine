@@ -120,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(ProjectDir)third-party;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(ProjectDir)third-party;$(ProjectDir)third-party\imgui;$(ProjectDir)third-party\imgui\backends;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -148,6 +148,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="third-party\imgui\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="third-party\imgui\backends\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="third-party\imgui\imgui.cpp" />
+    <ClCompile Include="third-party\imgui\imgui_demo.cpp" />
+    <ClCompile Include="third-party\imgui\imgui_draw.cpp" />
+    <ClCompile Include="third-party\imgui\imgui_tables.cpp" />
+    <ClCompile Include="third-party\imgui\imgui_widgets.cpp" />
     <ClCompile Include="third-party\vk-bootstrap\VkBootstrap.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +164,15 @@
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ImGuiData.h" />
+    <ClInclude Include="third-party\imgui\backends\imgui_impl_glfw.h" />
+    <ClInclude Include="third-party\imgui\backends\imgui_impl_vulkan.h" />
+    <ClInclude Include="third-party\imgui\imconfig.h" />
+    <ClInclude Include="third-party\imgui\imgui.h" />
+    <ClInclude Include="third-party\imgui\imgui_internal.h" />
+    <ClInclude Include="third-party\imgui\imstb_rectpack.h" />
+    <ClInclude Include="third-party\imgui\imstb_textedit.h" />
+    <ClInclude Include="third-party\imgui\imstb_truetype.h" />
     <ClInclude Include="third-party\vk-bootstrap\VkBootstrap.h" />
     <ClInclude Include="src\VkInit.h" />
     <ClInclude Include="third-party\vma\vk_mem_alloc.h" />

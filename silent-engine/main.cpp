@@ -12,6 +12,8 @@
 
 #define VMA_IMPLEMENTATION
 #include "vma/vk_mem_alloc.h"
+#include "ImGuiData.h"
+#include "memory"
 
 const std::string ENGINE_NAME = "Silent Engine";
 const uint32_t WIDTH = 1920;
@@ -39,6 +41,8 @@ VkDescriptorSetLayout _defaultDescriptorSetLayout;
 VkPipelineLayout _defaultPipelineLayout;
 
 VmaAllocator _allocator;
+
+std::unique_ptr<ImGuiData> _imGuiData;
 
 struct Vertex {
     glm::vec3 position;
@@ -84,6 +88,15 @@ int main()
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        bool showDemoWindow{true};
+        ImGui::ShowDemoWindow(&showDemoWindow);
+
+        ImGui::Render();
 
         draw();
     }
@@ -154,10 +167,15 @@ void init(GLFWwindow* window)
     _defaultDescriptorSetLayout = VkInit::createDefaultDescriptorSetLayout(_device);
 
     _defaultPipelineLayout = VkInit::Pipeline::createDefaultPipelineLayout(_device, 1, &_defaultDescriptorSetLayout);
+
+    _imGuiData = std::make_unique<ImGuiData>(window, _instance.instance, _physicalDevice.physical_device, _device.device,
+        _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
 }
 
 void cleanup()
 {
+    _imGuiData.reset();
+
     vkDestroyPipelineLayout(_device.device, _defaultPipelineLayout, nullptr);
     vkDestroyDescriptorSetLayout(_device.device, _defaultDescriptorSetLayout, nullptr);
     vkDestroyDescriptorPool(_device.device, _descriptorPool, nullptr);
@@ -343,6 +361,8 @@ void draw()
     vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
 
     vkCmdDraw(cmd, 3, 1, 0, 0);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
     vkCmdEndRenderPass(cmd);
 
