@@ -6,6 +6,12 @@
 #include "vk-bootstrap/VkBootstrap.h"
 
 #include "VkInit.h"
+#include "VkInitPipeline.h"
+
+#include "glm/glm.hpp"
+
+#define VMA_IMPLEMENTATION
+#include "vma/vk_mem_alloc.h"
 
 const std::string ENGINE_NAME = "Silent Engine";
 const uint32_t WIDTH = 1920;
@@ -25,7 +31,24 @@ std::vector<VkImageView> _swapchainImageViews;
 std::vector<VkFramebuffer> _swapchainFramebuffers;
 
 VkCommandPool _commandPool;
-std::vector<VkRenderPass> _renderPasses;
+VkRenderPass _renderPass;
+
+VkDescriptorPool _descriptorPool;
+VkDescriptorSetLayout _defaultDescriptorSetLayout;
+
+VkPipelineLayout _defaultPipelineLayout;
+
+VmaAllocator _allocator;
+
+struct Vertex {
+    glm::vec3 position;
+};
+
+std::vector<Vertex> _vertices {
+    { { 0.0f, -0.5f, 0.0f } },
+    { { 0.5f, 0.5f, 0.0f } },
+    { { -0.5f, 0.5f, 0.0f } },
+};
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -88,7 +111,7 @@ void init(GLFWwindow* window)
 
     vkb::PhysicalDeviceSelector selector { _instance };
 
-    auto physicalDeviceResult = selector.set_surface(_surface).set_minimum_version(1, 1).select();
+    auto physicalDeviceResult = selector.set_surface(_surface).set_desired_version(1, 1).select();
     if (!physicalDeviceResult) {
         throw std::runtime_error(physicalDeviceResult.error().message());
     }
@@ -114,24 +137,38 @@ void init(GLFWwindow* window)
     _swapchain = swapchainResult.value();
     _swapchainImages = _swapchain.get_images().value();
     _swapchainImageViews = _swapchain.get_image_views().value();
-
     _swapchainFramebuffers = std::vector<VkFramebuffer>(_swapchainImageViews.size());
-    _renderPasses = std::vector<VkRenderPass>(_swapchainImageViews.size());
+
+    _renderPass = VkInit::createRenderPass(_device, _swapchain);
 
     for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
-        _renderPasses[i] = VkInit::createRenderPass(_device, _swapchain, _swapchainImageViews[i]);
-        _swapchainFramebuffers[i] = VkInit::createFramebuffer(_device, _renderPasses[i], _swapchainImageViews[i], WIDTH, HEIGHT);
+        _swapchainFramebuffers[i] = VkInit::createFramebuffer(_device, _renderPass, _swapchainImageViews[i], WIDTH, HEIGHT);
     }
 
     _commandPool = VkInit::createCommandPool(_device);
+
+    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_0, _swapchain.image_count);
+
+    _descriptorPool = VkInit::createDescriptorPool(_device);
+
+    _defaultDescriptorSetLayout = VkInit::createDefaultDescriptorSetLayout(_device);
+
+    _defaultPipelineLayout = VkInit::Pipeline::createDefaultPipelineLayout(_device, 1, &_defaultDescriptorSetLayout);
 }
 
 void cleanup()
 {
+    vkDestroyPipelineLayout(_device.device, _defaultPipelineLayout, nullptr);
+    vkDestroyDescriptorSetLayout(_device.device, _defaultDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorPool(_device.device, _descriptorPool, nullptr);
+
+    vmaDestroyAllocator(_allocator);
+
     for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
         vkDestroyFramebuffer(_device.device, _swapchainFramebuffers[i], nullptr);
-        vkDestroyRenderPass(_device.device, _renderPasses[i], nullptr);
     }
+
+    vkDestroyRenderPass(_device.device, _renderPass, nullptr);
 
     vkDestroyCommandPool(_device.device, _commandPool, nullptr);
 
@@ -162,7 +199,7 @@ void draw()
     VkRenderPassBeginInfo beginInfo {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .pNext = nullptr,
-        .renderPass = _renderPasses[imageIndex],
+        .renderPass = _renderPass,
         .framebuffer = _swapchainFramebuffers[imageIndex],
         .renderArea = VkRect2D { 0, 0, WIDTH, HEIGHT },
         .clearValueCount = 1,
@@ -191,10 +228,120 @@ void draw()
 
     vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    const auto pipelineLayout = VkInit::Pipeline::createDefaultPipelineLayout(_device);
-    const auto pipeline = VkInit::Pipeline::createDefaultPipeline(_device, pipelineLayout, _renderPasses[imageIndex], WIDTH, HEIGHT);
+    const auto pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _defaultPipelineLayout, _renderPass, WIDTH, HEIGHT);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+    /// <summary>
+    ///
+    /// </summary>
+    size_t vertexBufferSize = sizeof(Vertex) * _vertices.size();
+
+    VkBufferCreateInfo bufferCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = {},
+        .size = vertexBufferSize,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+    };
+
+    VmaAllocationCreateInfo allocationCreateInfo {
+        .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
+        .usage = VMA_MEMORY_USAGE_CPU_ONLY,
+        .requiredFlags = {},
+        .preferredFlags = {},
+        .memoryTypeBits = {},
+        .pool = nullptr,
+        .pUserData = nullptr,
+    };
+
+    VkBuffer stagingVertexBuffer;
+    VmaAllocation stagingVertexBufferAlloc;
+    VmaAllocationInfo stagingVertexBufferAllocInfo;
+    if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingVertexBuffer, &stagingVertexBufferAlloc, &stagingVertexBufferAllocInfo) != VK_SUCCESS) {
+        throw std::runtime_error("Couldn't create buffer");
+    }
+
+    memcpy(stagingVertexBufferAllocInfo.pMappedData, _vertices.data(), vertexBufferSize);
+
+    // No need to flush stagingVertexBuffer memory because CPU_ONLY memory is always HOST_COHERENT.
+
+    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    allocationCreateInfo.flags = 0;
+
+    VkBuffer vertexBuffer;
+    VmaAllocation vertexBufferAlloc;
+    VmaAllocationInfo vertexBufferAllocInfo;
+    if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &vertexBuffer, &vertexBufferAlloc, nullptr) != VK_SUCCESS) {
+        throw std::runtime_error("Couldn't create buffer");
+    }
+
+    VkCommandBufferAllocateInfo commandBufferInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .commandPool = _commandPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1,
+    };
+
+    VkCommandBuffer transferCommandBuffer;
+    if (vkAllocateCommandBuffers(_device.device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Error: vkAllocateCommandBuffers");
+    }
+
+    VkCommandBufferBeginInfo transferCmdBeginInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = nullptr,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        .pInheritanceInfo = nullptr,
+    };
+
+    if (vkBeginCommandBuffer(transferCommandBuffer, &transferCmdBeginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("Couldn't begin command buffer");
+    }
+
+    VkBufferCopy bufferCopy {
+        .srcOffset = 0,
+        .dstOffset = 0,
+        .size = vertexBufferSize,
+    };
+    vkCmdCopyBuffer(transferCommandBuffer, stagingVertexBuffer, vertexBuffer, 1, &bufferCopy);
+
+    if (vkEndCommandBuffer(transferCommandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Couldn't end command buffer");
+    }
+
+    VkSubmitInfo submitTransferInfo {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 0,
+        .pWaitSemaphores = nullptr,
+        .pWaitDstStageMask = nullptr,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &transferCommandBuffer,
+        .signalSemaphoreCount = 0,
+        .pSignalSemaphores = nullptr,
+    };
+
+    if (vkQueueSubmit(_device.get_queue(vkb::QueueType::graphics).value(), 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
+        throw std::runtime_error("Error: vkQueueSubmit");
+    }
+    if (vkQueueWaitIdle(_device.get_queue(vkb::QueueType::graphics).value()) != VK_SUCCESS) {
+        throw std::runtime_error("Error: vkQueueWaitIdle");
+    }
+
+    vmaDestroyBuffer(_allocator, stagingVertexBuffer, stagingVertexBufferAlloc);
+    /// <summary>
+    ///
+    /// </summary>
+
+    VkDeviceSize offset { 0 };
+    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
+
     vkCmdDraw(cmd, 3, 1, 0, 0);
 
     vkCmdEndRenderPass(cmd);
@@ -241,7 +388,8 @@ void draw()
     vkDestroySemaphore(_device.device, submitSemaphore, nullptr);
 
     vkDestroyPipeline(_device.device, pipeline, nullptr);
-    vkDestroyPipelineLayout(_device.device, pipelineLayout, nullptr);
+
+    vmaDestroyBuffer(_allocator, vertexBuffer, vertexBufferAlloc);
 
     _currentFrame++;
 }

@@ -2,9 +2,84 @@
 #include <vulkan/vulkan.h>
 
 #include "vk-bootstrap/VkBootstrap.h"
-#include "VkInitPipeline.h"
+#include "vma/vk_mem_alloc.h"
 
 namespace VkInit {
+VmaAllocator createAllocator(const vkb::Instance& instance, const vkb::PhysicalDevice& physicalDevice, const vkb::Device& device, uint32_t vulkanApiVersion, const uint32_t frameInUseCount)
+{
+    VmaAllocatorCreateInfo createInfo {
+        .flags = {},
+        .physicalDevice = physicalDevice.physical_device,
+        .device = device.device,
+        .preferredLargeHeapBlockSize = 0,
+        .pAllocationCallbacks = nullptr,
+        .pDeviceMemoryCallbacks = nullptr,
+        .frameInUseCount = frameInUseCount,
+        .pHeapSizeLimit = nullptr,
+        .pVulkanFunctions = nullptr,
+        .pRecordSettings = nullptr,
+        .instance = instance.instance,
+        .vulkanApiVersion = vulkanApiVersion,
+    };
+
+    VmaAllocator allocator;
+    if (vmaCreateAllocator(&createInfo, &allocator) != VK_SUCCESS) {
+        throw std::runtime_error("Couldn't create semaphore");
+    }
+
+    return allocator;
+}
+
+VkDescriptorPool createDescriptorPool(const vkb::Device& device)
+{
+    VkDescriptorPoolSize descriptorPoolSize {
+        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = 1,
+    };
+
+    VkDescriptorPoolCreateInfo createInfo {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = {},
+        .maxSets = 1,
+        .poolSizeCount = 1,
+        .pPoolSizes = &descriptorPoolSize,
+    };
+
+    VkDescriptorPool descriptorPool;
+    if (vkCreateDescriptorPool(device.device, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("Error: vkCreateDescriptorPool");
+    }
+
+    return descriptorPool;
+}
+
+VkDescriptorSetLayout createDefaultDescriptorSetLayout(const vkb::Device& device)
+{
+    VkDescriptorSetLayoutBinding layoutBinding {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .pImmutableSamplers = nullptr,
+    };
+
+    VkDescriptorSetLayoutCreateInfo createInfo {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = {},
+        .bindingCount = 1,
+        .pBindings = &layoutBinding,
+    };
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    if (vkCreateDescriptorSetLayout(device.device, &createInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("Error: vkCreateDescriptorSetLayout");
+    }
+
+    return descriptorSetLayout;
+}
+
 VkSemaphore createSemaphore(const vkb::Device& device)
 {
     VkSemaphoreCreateInfo createInfo {
@@ -76,7 +151,7 @@ VkCommandPool createCommandPool(const vkb::Device& device)
     return commandPool;
 }
 
-VkRenderPass createRenderPass(const vkb::Device& device, const vkb::Swapchain& swapchain, VkImageView imageView)
+VkRenderPass createRenderPass(const vkb::Device& device, const vkb::Swapchain& swapchain)
 {
     VkAttachmentReference attachmentReference {
         .attachment = 0,

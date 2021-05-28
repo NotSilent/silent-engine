@@ -2,6 +2,8 @@
 #include <fstream>
 #include <string>
 
+#include "glm/glm.hpp"
+
 namespace VkInit::Pipeline {
 std::tuple<size_t, std::vector<char>> getShaderDataFromFile(const std::string& shaderPath)
 {
@@ -52,14 +54,14 @@ VkPipelineShaderStageCreateInfo createPipelineShaderStageCreateinfo(const VkShad
     };
 }
 
-VkPipelineLayout createDefaultPipelineLayout(const vkb::Device& device)
+VkPipelineLayout createDefaultPipelineLayout(const vkb::Device& device, const uint32_t setLayoutCount, const VkDescriptorSetLayout* setLayouts)
 {
     const VkPipelineLayoutCreateInfo pipelineLayoutInfo {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
-        .setLayoutCount = 0,
-        .pSetLayouts = nullptr,
+        .setLayoutCount = setLayoutCount,
+        .pSetLayouts = setLayouts,
         .pushConstantRangeCount = 0,
         .pPushConstantRanges = nullptr,
     };
@@ -84,14 +86,27 @@ VkPipeline createDefaultPipeline(const vkb::Device& device, const VkPipelineLayo
         createPipelineShaderStageCreateinfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule),
     };
 
+    VkVertexInputBindingDescription vertexInputBindingDescription {
+        .binding = 0,
+        .stride = sizeof(glm::vec3),
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+    };
+
+    VkVertexInputAttributeDescription vertexInputAttributeDescription {
+        .location = 0,
+        .binding = 0,
+        .format = VK_FORMAT_R32G32B32_SFLOAT,
+        .offset = 0,
+    };
+
     const VkPipelineVertexInputStateCreateInfo vertexInputState {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
-        .vertexBindingDescriptionCount = 0,
-        .pVertexBindingDescriptions = nullptr,
-        .vertexAttributeDescriptionCount = 0,
-        .pVertexAttributeDescriptions = nullptr,
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &vertexInputBindingDescription,
+        .vertexAttributeDescriptionCount = 1,
+        .pVertexAttributeDescriptions = &vertexInputAttributeDescription,
     };
 
     const VkPipelineInputAssemblyStateCreateInfo inputAssemblyState {
