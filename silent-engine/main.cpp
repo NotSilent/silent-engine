@@ -11,15 +11,16 @@
 #include "glm/glm.hpp"
 
 #define VMA_IMPLEMENTATION
-#include "vma/vk_mem_alloc.h"
 #include "ImGuiData.h"
 #include "memory"
+#include "vma/vk_mem_alloc.h"
 
 const std::string ENGINE_NAME = "Silent Engine";
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
 uint64_t _currentFrame = 0;
+double _currentTime { 0.0 };
 
 vkb::Instance _instance;
 vkb::PhysicalDevice _physicalDevice;
@@ -86,19 +87,34 @@ int main()
 
     init(window);
 
+    _currentTime = glfwGetTime();
+
     while (!glfwWindowShouldClose(window)) {
+        const double currentTime = glfwGetTime();
+        const double frameTime = (currentTime - _currentTime) * 1000.0;
+        const double fps = 1000.0 / frameTime;
+        _currentTime = currentTime;
+
         glfwPollEvents();
 
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        bool showDemoWindow{true};
-        ImGui::ShowDemoWindow(&showDemoWindow);
+        bool frameData { true };
+        ImGui::Begin("Frame Data", &frameData, 1 << 6);
+        ImGui::Text("Current Frame: %.i", _currentFrame);
+        ImGui::Text("Current Time:  %.2fs", _currentTime);
+        ImGui::Text("Frame Time:    %.4fms", frameTime);
+        ImGui::Text("FPS:           %.2f", fps);
+        ImGui::End();
 
         ImGui::Render();
 
         draw();
+
+        _currentFrame++;
+
     }
 
     cleanup();
@@ -410,6 +426,4 @@ void draw()
     vkDestroyPipeline(_device.device, pipeline, nullptr);
 
     vmaDestroyBuffer(_allocator, vertexBuffer, vertexBufferAlloc);
-
-    _currentFrame++;
 }

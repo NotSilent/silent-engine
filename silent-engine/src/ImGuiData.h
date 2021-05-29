@@ -13,9 +13,6 @@ public:
     {
         _descriptorPool = createDescriptorPool(device);
 
-        ImGui::CreateContext();
-        ImGui_ImplGlfw_InitForVulkan(window, true);
-
         ImGui_ImplVulkan_InitInfo initInfo {
             .Instance = instance,
             .PhysicalDevice = physicalDevice,
@@ -32,7 +29,10 @@ public:
             .CheckVkResultFn = nullptr,
         };
 
+        ImGui::CreateContext();
+        ImGui_ImplGlfw_InitForVulkan(window, true);
         ImGui_ImplVulkan_Init(&initInfo, renderPass);
+        ImGui::StyleColorsDark();
 
         auto cmd = beginSingleTimeCommands(commandPool);
 
@@ -90,37 +90,62 @@ private:
         return descriptorPool;
     }
 
-    VkCommandBuffer beginSingleTimeCommands(VkCommandPool commandPool)
+    // Based on vulkan-tutorial
+    VkCommandBuffer beginSingleTimeCommands(const VkCommandPool commandPool)
     {
-        VkCommandBufferAllocateInfo allocInfo {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = commandPool;
-        allocInfo.commandBufferCount = 1;
+        VkCommandBufferAllocateInfo allocateInfo {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .pNext = nullptr,
+            .commandPool = commandPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1,
+        };
 
         VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(_device, &allocInfo, &commandBuffer);
+        if (vkAllocateCommandBuffers(_device, &allocateInfo, &commandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("Error: vkAllocateCommandBuffers");
+        }
 
-        VkCommandBufferBeginInfo beginInfo {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        VkCommandBufferBeginInfo beginInfo {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .pNext = nullptr,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            .pInheritanceInfo = nullptr,
+        };
 
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("Error: vkBeginCommandBuffer");
+        }
 
         return commandBuffer;
     }
 
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer, VkQueue graphicsQueue, VkCommandPool commandPool)
+    // Based on vulkan-tutorial
+    void endSingleTimeCommands(const VkCommandBuffer commandBuffer, const VkQueue graphicsQueue, const VkCommandPool commandPool)
     {
-        vkEndCommandBuffer(commandBuffer);
+        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("Error: vkEndCommandBuffer");
+        }
 
-        VkSubmitInfo submitInfo {};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        VkSubmitInfo submitInfo {
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 0,
+            .pWaitSemaphores = nullptr,
+            .pWaitDstStageMask = {},
+            .commandBufferCount = 1,
+            .pCommandBuffers = &commandBuffer,
+            .signalSemaphoreCount = 0,
+            .pSignalSemaphores = nullptr,
+        };
 
-        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(graphicsQueue);
+        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+            throw std::runtime_error("Error: vkQueueSubmit");
+        }
+
+        if (vkQueueWaitIdle(graphicsQueue) != VK_SUCCESS) {
+            throw std::runtime_error("Error: vkQueueWaitIdle");
+        }
 
         vkFreeCommandBuffers(_device, commandPool, 1, &commandBuffer);
     }
