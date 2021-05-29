@@ -97,24 +97,12 @@ int main()
 
         glfwPollEvents();
 
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        bool frameData { true };
-        ImGui::Begin("Frame Data", &frameData, 1 << 6);
-        ImGui::Text("Current Frame: %.i", _currentFrame);
-        ImGui::Text("Current Time:  %.2fs", _currentTime);
-        ImGui::Text("Frame Time:    %.4fms", frameTime);
-        ImGui::Text("FPS:           %.2f", fps);
-        ImGui::End();
-
-        ImGui::Render();
+        _imGuiData->setFrameData(_currentFrame, currentTime, frameTime, fps);
+        _imGuiData->render();
 
         draw();
 
         _currentFrame++;
-
     }
 
     cleanup();
@@ -378,7 +366,7 @@ void draw()
 
     vkCmdDraw(cmd, 3, 1, 0, 0);
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    _imGuiData->appendDrawToCommandBuffer(cmd);
 
     vkCmdEndRenderPass(cmd);
 

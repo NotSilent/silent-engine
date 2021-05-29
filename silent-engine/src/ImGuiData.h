@@ -5,6 +5,13 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
+struct ImGuiFrameData {
+    uint64_t currentFrame;
+    double currentTime;
+    double frameTime;
+    double fps;
+};
+
 class ImGuiData {
 public:
     ImGuiData(GLFWwindow* window, const VkInstance instance, const VkPhysicalDevice physicalDevice, const VkDevice device,
@@ -47,9 +54,38 @@ public:
         ImGui_ImplVulkan_Shutdown();
     }
 
+    void render()
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        bool frameData { true };
+        ImGui::Begin("Frame Data", &frameData, 1 << 6);
+        ImGui::Text("Current Frame: %.i", _frameData.currentFrame);
+        ImGui::Text("Current Time:  %.2f s", _frameData.currentTime);
+        ImGui::Text("Frame Time:    %.4f ms", _frameData.frameTime);
+        ImGui::Text("FPS:           %.2f", _frameData.fps);
+        ImGui::End();
+
+        ImGui::Render();
+    }
+
+    void appendDrawToCommandBuffer(VkCommandBuffer& cmd)
+    {
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    }
+
+    void setFrameData(uint64_t currentFrame, double currentTime, double frameTime, double fps)
+    {
+        _frameData = { currentFrame, currentTime, frameTime, fps };
+    }
+
 private:
     VkDevice _device;
     VkDescriptorPool _descriptorPool;
+
+    ImGuiFrameData _frameData;
 
     VkDescriptorPool createDescriptorPool(const VkDevice device)
     {
