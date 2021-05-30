@@ -101,7 +101,7 @@ VkFence createFence(const vkb::Device& device)
     VkFenceCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .pNext = nullptr,
-        .flags = /*VK_FENCE_CREATE_SIGNALED_BIT*/ {},
+        .flags = {},
     };
 
     VkFence fence;

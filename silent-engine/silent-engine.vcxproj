@@ -165,6 +165,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ImGuiData.h" />
+    <ClInclude Include="src\Mesh.h" />
+    <ClInclude Include="src\VkDraw.h" />
     <ClInclude Include="third-party\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="third-party\imgui\backends\imgui_impl_vulkan.h" />
     <ClInclude Include="third-party\imgui\imconfig.h" />

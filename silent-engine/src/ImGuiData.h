@@ -71,7 +71,7 @@ public:
         ImGui::Render();
     }
 
-    void appendDrawToCommandBuffer(VkCommandBuffer& cmd)
+    void appendDrawToCommandBuffer(VkCommandBuffer& cmd) const
     {
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
     }

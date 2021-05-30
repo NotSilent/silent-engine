@@ -5,15 +5,18 @@
 
 #include "vk-bootstrap/VkBootstrap.h"
 
+#include "VkDraw.h"
 #include "VkInit.h"
-#include "VkInitPipeline.h"
 
 #include "glm/glm.hpp"
 
 #define VMA_IMPLEMENTATION
 #include "ImGuiData.h"
+#include "Mesh.h"
 #include "memory"
 #include "vma/vk_mem_alloc.h"
+
+// TODO: VkCommandPool and VkCommands creation manager;
 
 const std::string ENGINE_NAME = "Silent Engine";
 const uint32_t WIDTH = 1920;
@@ -45,9 +48,7 @@ VmaAllocator _allocator;
 
 std::unique_ptr<ImGuiData> _imGuiData;
 
-struct Vertex {
-    glm::vec3 position;
-};
+std::unique_ptr<Mesh> _mesh;
 
 std::vector<Vertex> _vertices {
     { { 0.0f, -0.5f, 0.0f } },
@@ -63,29 +64,30 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void init(GLFWwindow* window);
+void initMesh();
 void cleanup();
 void draw();
 
 int main()
 {
     if (!glfwInit()) {
-        throw std::runtime_error("Couldn't init GLFW");
+        throw std::runtime_error("Error: glfwInit");
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Silent Engine", NULL, NULL);
-
     if (!window) {
         glfwTerminate();
 
-        throw std::runtime_error("GLFWwindow creation failed");
+        throw std::runtime_error("Error: glfwCreateWindow");
     }
 
     glfwSetKeyCallback(window, key_callback);
 
     init(window);
+    initMesh();
 
     _currentTime = glfwGetTime();
 
@@ -176,8 +178,14 @@ void init(GLFWwindow* window)
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
 }
 
+void initMesh()
+{
+    _mesh = std::make_unique<Mesh>(_device, _allocator, _defaultPipelineLayout, _renderPass, WIDTH, HEIGHT, _commandPool, _vertices);
+}
+
 void cleanup()
 {
+    _mesh.reset();
     _imGuiData.reset();
 
     vkDestroyPipelineLayout(_device.device, _defaultPipelineLayout, nullptr);
@@ -209,7 +217,7 @@ void draw()
     uint32_t imageIndex;
 
     if (vkAcquireNextImageKHR(_device.device, _swapchain.swapchain, std::numeric_limits<uint32_t>::max(), acquireSemaphore, nullptr, &imageIndex) != VK_SUCCESS) {
-        throw std::runtime_error("Couldn't acquire next image");
+        throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
 
     auto gray = [&]() {
@@ -218,159 +226,8 @@ void draw()
 
     VkClearValue clearValue { gray, gray, gray };
 
-    VkRenderPassBeginInfo beginInfo {
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-        .pNext = nullptr,
-        .renderPass = _renderPass,
-        .framebuffer = _swapchainFramebuffers[imageIndex],
-        .renderArea = VkRect2D { 0, 0, WIDTH, HEIGHT },
-        .clearValueCount = 1,
-        .pClearValues = &clearValue,
-    };
-
-    VkCommandBufferBeginInfo cmdBeginInfo {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .pNext = nullptr,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-        .pInheritanceInfo = nullptr,
-    };
-
-    VkCommandBufferAllocateInfo allocateInfo {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .commandPool = _commandPool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1,
-    };
-
-    VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(_device.device, &allocateInfo, &cmd);
-
-    vkBeginCommandBuffer(cmd, &cmdBeginInfo);
-
-    vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    const auto pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _defaultPipelineLayout, _renderPass, WIDTH, HEIGHT);
-
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-
-    /// <summary>
-    ///
-    /// </summary>
-    size_t vertexBufferSize = sizeof(Vertex) * _vertices.size();
-
-    VkBufferCreateInfo bufferCreateInfo {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = {},
-        .size = vertexBufferSize,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
-    };
-
-    VmaAllocationCreateInfo allocationCreateInfo {
-        .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
-        .usage = VMA_MEMORY_USAGE_CPU_ONLY,
-        .requiredFlags = {},
-        .preferredFlags = {},
-        .memoryTypeBits = {},
-        .pool = nullptr,
-        .pUserData = nullptr,
-    };
-
-    VkBuffer stagingVertexBuffer;
-    VmaAllocation stagingVertexBufferAlloc;
-    VmaAllocationInfo stagingVertexBufferAllocInfo;
-    if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingVertexBuffer, &stagingVertexBufferAlloc, &stagingVertexBufferAllocInfo) != VK_SUCCESS) {
-        throw std::runtime_error("Couldn't create buffer");
-    }
-
-    memcpy(stagingVertexBufferAllocInfo.pMappedData, _vertices.data(), vertexBufferSize);
-
-    // No need to flush stagingVertexBuffer memory because CPU_ONLY memory is always HOST_COHERENT.
-
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    allocationCreateInfo.flags = 0;
-
-    VkBuffer vertexBuffer;
-    VmaAllocation vertexBufferAlloc;
-    VmaAllocationInfo vertexBufferAllocInfo;
-    if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &vertexBuffer, &vertexBufferAlloc, nullptr) != VK_SUCCESS) {
-        throw std::runtime_error("Couldn't create buffer");
-    }
-
-    VkCommandBufferAllocateInfo commandBufferInfo {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .commandPool = _commandPool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1,
-    };
-
-    VkCommandBuffer transferCommandBuffer;
-    if (vkAllocateCommandBuffers(_device.device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkAllocateCommandBuffers");
-    }
-
-    VkCommandBufferBeginInfo transferCmdBeginInfo {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .pNext = nullptr,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-        .pInheritanceInfo = nullptr,
-    };
-
-    if (vkBeginCommandBuffer(transferCommandBuffer, &transferCmdBeginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("Couldn't begin command buffer");
-    }
-
-    VkBufferCopy bufferCopy {
-        .srcOffset = 0,
-        .dstOffset = 0,
-        .size = vertexBufferSize,
-    };
-    vkCmdCopyBuffer(transferCommandBuffer, stagingVertexBuffer, vertexBuffer, 1, &bufferCopy);
-
-    if (vkEndCommandBuffer(transferCommandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Couldn't end command buffer");
-    }
-
-    VkSubmitInfo submitTransferInfo {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .pNext = nullptr,
-        .waitSemaphoreCount = 0,
-        .pWaitSemaphores = nullptr,
-        .pWaitDstStageMask = nullptr,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &transferCommandBuffer,
-        .signalSemaphoreCount = 0,
-        .pSignalSemaphores = nullptr,
-    };
-
-    if (vkQueueSubmit(_device.get_queue(vkb::QueueType::graphics).value(), 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkQueueSubmit");
-    }
-    if (vkQueueWaitIdle(_device.get_queue(vkb::QueueType::graphics).value()) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkQueueWaitIdle");
-    }
-
-    vmaDestroyBuffer(_allocator, stagingVertexBuffer, stagingVertexBufferAlloc);
-    /// <summary>
-    ///
-    /// </summary>
-
-    VkDeviceSize offset { 0 };
-    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
-
-    vkCmdDraw(cmd, 3, 1, 0, 0);
-
-    _imGuiData->appendDrawToCommandBuffer(cmd);
-
-    vkCmdEndRenderPass(cmd);
-
-    vkEndCommandBuffer(cmd);
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, _mesh.get(), _renderPass, _swapchainFramebuffers[imageIndex],
+        VkRect2D { 0, 0, WIDTH, HEIGHT }, 1, &clearValue, _imGuiData.get());    
 
     auto queueFence = VkInit::createFence(_device);
 
@@ -407,11 +264,8 @@ void draw()
 
     vkWaitForFences(_device.device, 1, &queueFence, true, std::numeric_limits<uint64_t>::max());
 
+    vkFreeCommandBuffers(_device.device, _commandPool, 1, &cmd);
     vkDestroyFence(_device.device, queueFence, nullptr);
     vkDestroySemaphore(_device.device, acquireSemaphore, nullptr);
     vkDestroySemaphore(_device.device, submitSemaphore, nullptr);
-
-    vkDestroyPipeline(_device.device, pipeline, nullptr);
-
-    vmaDestroyBuffer(_allocator, vertexBuffer, vertexBufferAlloc);
 }
