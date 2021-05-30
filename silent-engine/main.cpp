@@ -17,6 +17,11 @@
 #include "memory"
 #include "vma/vk_mem_alloc.h"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <iostream>
+
 // TODO: VkCommandPool and VkCommands creation manager;
 
 const std::string ENGINE_NAME = "Silent Engine";
@@ -51,16 +56,10 @@ std::unique_ptr<ImGuiData> _imGuiData;
 
 std::unique_ptr<Mesh> _mesh;
 
-std::vector<Vertex> _vertices {
-    { { 0.0f, 0.5f, 0.0f } },
-    { { 0.5f, -0.5f, 0.0f } },
-    { { -0.5f, -0.5f, 0.0f } },
-};
-
 PushData _pushData{
     .model = glm::mat4(1.0f),
-    .view = glm::lookAt({0.0f, 10.0f, -10.0f}, glm::vec3(0.0f, 0.0f, 0.0f), {0.0f, 1.0f, 0.0f}),
-    .projection = glm::perspective(glm::radians(90.0f), WIDTH / static_cast<float>(HEIGHT), 0.0001f, 200.0f),
+    .view = glm::lookAt({0.0f, 0.5f, -0.5f}, glm::vec3(0.0f, 0.0f, 0.0f), {0.0f, 1.0f, 0.0f}),
+    .projection = glm::perspective(glm::radians(45.0f), WIDTH / static_cast<float>(HEIGHT), 0.0001f, 200.0f),
 };
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -192,7 +191,27 @@ void init(GLFWwindow* window)
 
 void initMesh()
 {
-    _mesh = std::make_unique<Mesh>(_device, _allocator, _defaultPipelineLayout, _renderPass, WIDTH, HEIGHT, _commandPool, _vertices);
+    Assimp::Importer importer{};
+
+    const aiScene* scene = importer.ReadFile("assets/stanford-bunny.obj", aiProcess_Triangulate);
+
+    std::cout << importer.GetErrorString();
+
+    if(!scene || !scene->HasMeshes()) {
+        throw std::runtime_error(importer.GetErrorString());
+    }
+
+    auto assimpMesh = scene->mMeshes[0];
+
+    std::vector<Vertex> meshData{assimpMesh->mNumVertices};
+
+    for(uint32_t i = 0; i < assimpMesh->mNumVertices; ++i) {
+        meshData[i].position.x = assimpMesh->mVertices[i].x;
+        meshData[i].position.y = assimpMesh->mVertices[i].y;
+        meshData[i].position.z = assimpMesh->mVertices[i].z;
+    }
+
+    _mesh = std::make_unique<Mesh>(_device, _allocator, _defaultPipelineLayout, _renderPass, WIDTH, HEIGHT, _commandPool, meshData);
 }
 
 void cleanup()
@@ -232,11 +251,7 @@ void draw()
         throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
 
-    auto gray = [&]() {
-        return abs(sinf(_currentFrame / 100.0f));
-    }();
-
-    VkClearValue clearValue { gray, gray, gray };
+    VkClearValue clearValue { 0.75f, 0.75f, 0.75f };
 
     VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, _mesh.get(), _renderPass, _swapchainFramebuffers[imageIndex],
         VkRect2D { 0, 0, WIDTH, HEIGHT }, 1, &clearValue, _imGuiData.get(), _pushData);    

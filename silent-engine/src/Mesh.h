@@ -28,7 +28,9 @@ public:
 
         _allocator = allocator;
 
-        size_t vertexBufferSize = sizeof(Vertex) * vertices.size();
+        _vertexCount = vertices.size();
+
+        size_t vertexBufferSize = sizeof(Vertex) * _vertexCount;
 
         VkBufferCreateInfo bufferCreateInfo {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -141,6 +143,11 @@ public:
         vmaDestroyBuffer(_allocator, _vertexBuffer, _vertexBufferAllocation);
     }
 
+    uint32_t getVertexCount() const
+    {
+        return _vertexCount;
+    }
+
     VkBuffer getVertexBuffer() const
     {
         return _vertexBuffer;
@@ -164,6 +171,7 @@ private:
 
     VmaAllocator _allocator;
 
+    uint32_t _vertexCount;
     VkBuffer _vertexBuffer;
     VmaAllocation _vertexBufferAllocation;
 };

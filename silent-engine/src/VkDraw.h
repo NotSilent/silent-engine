@@ -52,7 +52,7 @@ VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool com
     vkCmdBindVertexBuffers(cmd, 0, 1, &buffer, &offset);
     vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT , 0, sizeof(PushData), &pushData);
 
-    vkCmdDraw(cmd, 3, 1, 0, 0);
+    vkCmdDraw(cmd, mesh->getVertexCount(), 1, 0, 0);
 
     imGuiData->appendDrawToCommandBuffer(cmd);
 
