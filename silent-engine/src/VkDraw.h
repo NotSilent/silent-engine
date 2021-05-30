@@ -10,9 +10,8 @@
 
 namespace VkDraw {
 VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool commandPool, const Mesh* mesh, const VkRenderPass renderPass,
-    const VkFramebuffer framebuffer, const VkRect2D& renderArea, uint32_t clearValueCount, VkClearValue* clearValues, const ImGuiData* imGuiData)
+    const VkFramebuffer framebuffer, const VkRect2D& renderArea, uint32_t clearValueCount, VkClearValue* clearValues, const ImGuiData* imGuiData, const PushData& pushData)
 {
-
     VkRenderPassBeginInfo beginInfo {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .pNext = nullptr,
@@ -47,9 +46,11 @@ VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool com
 
     VkDeviceSize offset { 0 };
     VkBuffer buffer = mesh->getVertexBuffer();
+    VkPipelineLayout pipelineLayout = mesh->getPipelineLayout();
     VkPipeline pipeline = mesh->getPipeline();
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindVertexBuffers(cmd, 0, 1, &buffer, &offset);
+    vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT , 0, sizeof(PushData), &pushData);
 
     vkCmdDraw(cmd, 3, 1, 0, 0);
 

@@ -54,16 +54,22 @@ VkPipelineShaderStageCreateInfo createPipelineShaderStageCreateinfo(const VkShad
     };
 }
 
-VkPipelineLayout createDefaultPipelineLayout(const vkb::Device& device, const uint32_t setLayoutCount, const VkDescriptorSetLayout* setLayouts)
+VkPipelineLayout createPipelineLayout(const vkb::Device& device, const uint32_t setLayoutCount, const VkDescriptorSetLayout* setLayouts, uint32_t pushSize)
 {
+    VkPushConstantRange pushConstantRange {
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT ,
+        .offset = 0,
+        .size = pushSize,
+    };
+
     const VkPipelineLayoutCreateInfo pipelineLayoutInfo {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
         .setLayoutCount = setLayoutCount,
         .pSetLayouts = setLayouts,
-        .pushConstantRangeCount = 0,
-        .pPushConstantRanges = nullptr,
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges = &pushConstantRange,
     };
 
     VkPipelineLayout pipelineLayout;

@@ -12,13 +12,22 @@ struct Vertex {
     glm::vec3 position;
 };
 
+struct PushData {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 projection;
+};
+
 class Mesh {
 public:
     Mesh(const vkb::Device& device, const VmaAllocator allocator, const VkPipelineLayout pipelineLayout, const VkRenderPass renderPass,
         const uint32_t width, const uint32_t height, const VkCommandPool commandPool, const std::vector<Vertex>& vertices)
     {
         _device = device;
+        _pipelineLayout = pipelineLayout;
+
         _allocator = allocator;
+
         size_t vertexBufferSize = sizeof(Vertex) * vertices.size();
 
         VkBufferCreateInfo bufferCreateInfo {
@@ -137,6 +146,11 @@ public:
         return _vertexBuffer;
     }
 
+    VkPipelineLayout getPipelineLayout() const
+    {
+        return _pipelineLayout;
+    }
+
     VkPipeline getPipeline() const
     {
         return _pipeline;
@@ -144,9 +158,11 @@ public:
 
 private:
     vkb::Device _device;
-    VmaAllocator _allocator;
 
+    VkPipelineLayout _pipelineLayout;
     VkPipeline _pipeline;
+
+    VmaAllocator _allocator;
 
     VkBuffer _vertexBuffer;
     VmaAllocation _vertexBufferAllocation;

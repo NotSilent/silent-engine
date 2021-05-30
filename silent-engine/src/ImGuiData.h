@@ -54,19 +54,25 @@ public:
         ImGui_ImplVulkan_Shutdown();
     }
 
+    void toggleShow()
+    {
+        _showWindow = !_showWindow;
+    }
+
     void render()
     {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        bool frameData { true };
-        ImGui::Begin("Frame Data", &frameData, 1 << 6);
-        ImGui::Text("Current Frame: %.i", _frameData.currentFrame);
-        ImGui::Text("Current Time:  %.2f s", _frameData.currentTime);
-        ImGui::Text("Frame Time:    %.4f ms", _frameData.frameTime);
-        ImGui::Text("FPS:           %.2f", _frameData.fps);
-        ImGui::End();
+        if (_showWindow) {
+            ImGui::Begin("Frame Data", &_showWindow, 1 << 6);
+            ImGui::Text("Current Frame: %.i", _frameData.currentFrame);
+            ImGui::Text("Current Time:  %.2f s", _frameData.currentTime);
+            ImGui::Text("Frame Time:    %.4f ms", _frameData.frameTime);
+            ImGui::Text("FPS:           %.2f", _frameData.fps);
+            ImGui::End();
+        }
 
         ImGui::Render();
     }
@@ -82,6 +88,8 @@ public:
     }
 
 private:
+    bool _showWindow { true };
+
     VkDevice _device;
     VkDescriptorPool _descriptorPool;
 

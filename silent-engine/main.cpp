@@ -9,6 +9,7 @@
 #include "VkInit.h"
 
 #include "glm/glm.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 #define VMA_IMPLEMENTATION
 #include "ImGuiData.h"
@@ -51,15 +52,25 @@ std::unique_ptr<ImGuiData> _imGuiData;
 std::unique_ptr<Mesh> _mesh;
 
 std::vector<Vertex> _vertices {
-    { { 0.0f, -0.5f, 0.0f } },
-    { { 0.5f, 0.5f, 0.0f } },
-    { { -0.5f, 0.5f, 0.0f } },
+    { { 0.0f, 0.5f, 0.0f } },
+    { { 0.5f, -0.5f, 0.0f } },
+    { { -0.5f, -0.5f, 0.0f } },
+};
+
+PushData _pushData{
+    .model = glm::mat4(1.0f),
+    .view = glm::lookAt({0.0f, 10.0f, -10.0f}, glm::vec3(0.0f, 0.0f, 0.0f), {0.0f, 1.0f, 0.0f}),
+    .projection = glm::perspective(glm::radians(90.0f), WIDTH / static_cast<float>(HEIGHT), 0.0001f, 200.0f),
 };
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+    
+    if (key == GLFW_KEY_F && action == GLFW_PRESS) {
+        _imGuiData->toggleShow();
     }
 }
 
@@ -70,6 +81,7 @@ void draw();
 
 int main()
 {
+    _pushData.projection[1][1] *= -1;
     if (!glfwInit()) {
         throw std::runtime_error("Error: glfwInit");
     }
@@ -172,7 +184,7 @@ void init(GLFWwindow* window)
 
     _defaultDescriptorSetLayout = VkInit::createDefaultDescriptorSetLayout(_device);
 
-    _defaultPipelineLayout = VkInit::Pipeline::createDefaultPipelineLayout(_device, 1, &_defaultDescriptorSetLayout);
+    _defaultPipelineLayout = VkInit::Pipeline::createPipelineLayout(_device, 1, &_defaultDescriptorSetLayout, sizeof(PushData));
 
     _imGuiData = std::make_unique<ImGuiData>(window, _instance.instance, _physicalDevice.physical_device, _device.device,
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
@@ -227,7 +239,7 @@ void draw()
     VkClearValue clearValue { gray, gray, gray };
 
     VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, _mesh.get(), _renderPass, _swapchainFramebuffers[imageIndex],
-        VkRect2D { 0, 0, WIDTH, HEIGHT }, 1, &clearValue, _imGuiData.get());    
+        VkRect2D { 0, 0, WIDTH, HEIGHT }, 1, &clearValue, _imGuiData.get(), _pushData);    
 
     auto queueFence = VkInit::createFence(_device);
 
