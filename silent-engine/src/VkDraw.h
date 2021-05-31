@@ -1,7 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
-
 #include "ImGuiData.h"
 #include "Mesh.h"
 #include "vk-bootstrap/VkBootstrap.h"
@@ -45,22 +44,22 @@ VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool com
     vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     VkDeviceSize offset { 0 };
-    VkBuffer buffer = mesh->getVertexBuffer();
+    VkBuffer vertexBuffer = mesh->getVertexBuffer();
+    VkBuffer indexBuffer = mesh->getIndexBuffer();
     VkPipelineLayout pipelineLayout = mesh->getPipelineLayout();
     VkPipeline pipeline = mesh->getPipeline();
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdBindVertexBuffers(cmd, 0, 1, &buffer, &offset);
-    vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT , 0, sizeof(PushData), &pushData);
+    vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData), &pushData);
+    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
+    vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdDraw(cmd, mesh->getVertexCount(), 1, 0, 0);
+    vkCmdDrawIndexed(cmd, mesh->getIndexCount(), 1, 0, 0, 0);
 
     imGuiData->appendDrawToCommandBuffer(cmd);
 
     vkCmdEndRenderPass(cmd);
 
     vkEndCommandBuffer(cmd);
-
-    
 
     return cmd;
 }

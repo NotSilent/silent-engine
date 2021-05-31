@@ -18,25 +18,22 @@ struct PushData {
     glm::mat4 projection;
 };
 
-class Mesh {
+// TODO: MeshFactory to hold data about device, allocator, pipeline data, renderpass, sizes and command pool, and also destroying resources
+
+template<typename T>
+class Buffer {
 public:
-    Mesh(const vkb::Device& device, const VmaAllocator allocator, const VkPipelineLayout pipelineLayout, const VkRenderPass renderPass,
-        const uint32_t width, const uint32_t height, const VkCommandPool commandPool, const std::vector<Vertex>& vertices)
+    Buffer<T>() = default;
+
+    Buffer<T>(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool, VkBufferUsageFlagBits usage, const uint32_t size, const T* data) : _buffer{}, _allocation{}
     {
-        _device = device;
-        _pipelineLayout = pipelineLayout;
-
         _allocator = allocator;
-
-        _vertexCount = vertices.size();
-
-        size_t vertexBufferSize = sizeof(Vertex) * _vertexCount;
 
         VkBufferCreateInfo bufferCreateInfo {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
-            .size = vertexBufferSize,
+            .size = size,
             .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .queueFamilyIndexCount = 0,
@@ -53,30 +50,24 @@ public:
             .pUserData = nullptr,
         };
 
-        VkBuffer stagingVertexBuffer;
-        VmaAllocation stagingVertexBufferAlloc;
-        VmaAllocationInfo stagingVertexBufferAllocInfo;
-        if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingVertexBuffer, &stagingVertexBufferAlloc, &stagingVertexBufferAllocInfo) != VK_SUCCESS) {
+        VkBuffer stagingBuffer;
+        VmaAllocation stagingBufferAlloc;
+        VmaAllocationInfo stagingBufferAllocInfo;
+        if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo) != VK_SUCCESS) {
             throw std::runtime_error("Error: vmaCreateBuffer");
         }
 
-        memcpy(stagingVertexBufferAllocInfo.pMappedData, vertices.data(), vertexBufferSize);
+        memcpy(stagingBufferAllocInfo.pMappedData, data, size);
 
         // No need to flush stagingVertexBuffer memory because CPU_ONLY memory is always HOST_COHERENT.
 
-        bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage;
         allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         allocationCreateInfo.flags = 0;
 
-        VkBuffer vertexBuffer;
-        VmaAllocation vertexBufferAlloc;
-        VmaAllocationInfo vertexBufferAllocInfo;
-        if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &vertexBuffer, &vertexBufferAlloc, nullptr) != VK_SUCCESS) {
+        if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &_buffer, &_allocation, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Error: vmaCreateBuffer");
         }
-
-        _vertexBuffer = vertexBuffer;
-        _vertexBufferAllocation = vertexBufferAlloc;
 
         VkCommandBufferAllocateInfo commandBufferInfo {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -87,7 +78,7 @@ public:
         };
 
         VkCommandBuffer transferCommandBuffer;
-        if (vkAllocateCommandBuffers(_device.device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(device.device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkAllocateCommandBuffers");
         }
 
@@ -105,9 +96,9 @@ public:
         VkBufferCopy bufferCopy {
             .srcOffset = 0,
             .dstOffset = 0,
-            .size = vertexBufferSize,
+            .size = size,
         };
-        vkCmdCopyBuffer(transferCommandBuffer, stagingVertexBuffer, vertexBuffer, 1, &bufferCopy);
+        vkCmdCopyBuffer(transferCommandBuffer, stagingBuffer, _buffer, 1, &bufferCopy);
 
         if (vkEndCommandBuffer(transferCommandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkEndCommandBuffer");
@@ -125,22 +116,60 @@ public:
             .pSignalSemaphores = nullptr,
         };
 
-        if (vkQueueSubmit(_device.get_queue(vkb::QueueType::graphics).value(), 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
+        if (vkQueueSubmit(device.get_queue(vkb::QueueType::graphics).value(), 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkQueueSubmit");
         }
-        if (vkQueueWaitIdle(_device.get_queue(vkb::QueueType::graphics).value()) != VK_SUCCESS) {
+        if (vkQueueWaitIdle(device.get_queue(vkb::QueueType::graphics).value()) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkQueueWaitIdle");
         }
 
-        vmaDestroyBuffer(allocator, stagingVertexBuffer, stagingVertexBufferAlloc);
+        vmaDestroyBuffer(_allocator, stagingBuffer, stagingBufferAlloc);
+    }
+
+    void destroy()
+    {
+        vmaDestroyBuffer(_allocator, _buffer, _allocation);
+    }
+
+    VkBuffer getBuffer() const
+    {
+        return _buffer;
+    }
+
+private:
+    VmaAllocator _allocator;
+
+    VkBuffer _buffer;
+    VmaAllocation _allocation;
+};
+
+class Mesh {
+public:
+    Mesh(const vkb::Device& device, const VmaAllocator allocator, const VkPipelineLayout pipelineLayout, const VkRenderPass renderPass,
+        const uint32_t width, const uint32_t height, const VkCommandPool commandPool, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
+    {
+        _device = device;
+        _pipelineLayout = pipelineLayout;
+
+        _allocator = allocator;
+
+        _vertexCount = vertices.size();
+        _indexCount = indices.size();
+        
+        uint32_t vertexBufferSize = sizeof(Vertex) * _vertexCount;
+        uint32_t indexBufferSize = sizeof(uint32_t) * _indexCount;
+        
+        _vertexBuffer = Buffer<Vertex>(device, allocator, commandPool, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, vertices.data());
+        _indexBuffer = Buffer<uint32_t>(device, allocator, commandPool, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, indices.data());
 
         _pipeline = VkInit::Pipeline::createDefaultPipeline(device, pipelineLayout, renderPass, width, height);
     }
 
     ~Mesh()
     {
+        _vertexBuffer.destroy();
+        _indexBuffer.destroy();
         vkDestroyPipeline(_device.device, _pipeline, nullptr);
-        vmaDestroyBuffer(_allocator, _vertexBuffer, _vertexBufferAllocation);
     }
 
     uint32_t getVertexCount() const
@@ -150,7 +179,17 @@ public:
 
     VkBuffer getVertexBuffer() const
     {
-        return _vertexBuffer;
+        return _vertexBuffer.getBuffer();
+    }
+
+    uint32_t getIndexCount() const
+    {
+        return _indexCount;
+    }
+
+    VkBuffer getIndexBuffer() const
+    {
+        return _indexBuffer.getBuffer();
     }
 
     VkPipelineLayout getPipelineLayout() const
@@ -172,6 +211,8 @@ private:
     VmaAllocator _allocator;
 
     uint32_t _vertexCount;
-    VkBuffer _vertexBuffer;
-    VmaAllocation _vertexBufferAllocation;
+    Buffer<Vertex> _vertexBuffer;
+    
+    uint32_t _indexCount;
+    Buffer<uint32_t> _indexBuffer;
 };

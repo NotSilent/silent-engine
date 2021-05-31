@@ -8,6 +8,9 @@
 #include "VkDraw.h"
 #include "VkInit.h"
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_LEFT_HANDED
 #include "glm/glm.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -18,8 +21,8 @@
 #include "vma/vk_mem_alloc.h"
 
 #include <assimp/Importer.hpp>
-#include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
 #include <iostream>
 
 // TODO: VkCommandPool and VkCommands creation manager;
@@ -56,18 +59,46 @@ std::unique_ptr<ImGuiData> _imGuiData;
 
 std::unique_ptr<Mesh> _mesh;
 
-PushData _pushData{
-    .model = glm::mat4(1.0f),
-    .view = glm::lookAt({0.0f, 0.5f, -0.5f}, glm::vec3(0.0f, 0.0f, 0.0f), {0.0f, 1.0f, 0.0f}),
-    .projection = glm::perspective(glm::radians(45.0f), WIDTH / static_cast<float>(HEIGHT), 0.0001f, 200.0f),
+class Camera {
+public:
+private:
+    glm::vec3 _position { 0.0f, 0.5f, -0.5f };
+    glm::mat4 _projection { glm::perspective(glm::radians(45.0f), WIDTH / static_cast<float>(HEIGHT), 0.0001f, 200.0f) };
+
+public:
+    void translate(const glm::vec3& translation)
+    {
+        _position += translation;
+    }
+
+    glm::vec3 getPosition() const
+    {
+        return _position;
+    }
+
+    glm::mat4 getViewMatrix() const
+    {
+        // TODO: up vector has negative y? NDC having y pointing down? Research to be sure
+        return glm::lookAt(_position, glm::vec3(0.0f, 0.0f, 0.0f), { 0.0f, -1.0f, 0.0f });
+    }
+
+    glm::mat4 getProjectionMatrix() const
+    {
+        return _projection;
+    }
+
+private:
 };
 
+Camera _camera;
+
+// TODO: Input manager
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
-    
+
     if (key == GLFW_KEY_F && action == GLFW_PRESS) {
         _imGuiData->toggleShow();
     }
@@ -80,7 +111,6 @@ void draw();
 
 int main()
 {
-    _pushData.projection[1][1] *= -1;
     if (!glfwInit()) {
         throw std::runtime_error("Error: glfwInit");
     }
@@ -95,6 +125,7 @@ int main()
         throw std::runtime_error("Error: glfwCreateWindow");
     }
 
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
     glfwSetKeyCallback(window, key_callback);
 
     init(window);
@@ -110,7 +141,30 @@ int main()
 
         glfwPollEvents();
 
+        glm::vec3 input { 0.0f };
+
+        // TODO: Input manager
+        // TODO: Add deltaTime
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            input += glm::vec3 { 0.0f, 0.0f, 0.1f };
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            input += glm::vec3 { 0.0f, 0.0f, -0.1f };
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            input += glm::vec3 { -0.1f, 0.0f, 0.0f };
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            input += glm::vec3 { 0.1f, 0.0f, 0.0f };
+        }
+
+        _camera.translate(input);
+
         _imGuiData->setFrameData(_currentFrame, currentTime, frameTime, fps);
+        _imGuiData->setCameraPosition(_camera.getPosition());
         _imGuiData->render();
 
         draw();
@@ -189,29 +243,36 @@ void init(GLFWwindow* window)
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
 }
 
+// TODO: move to mesh factory
 void initMesh()
 {
-    Assimp::Importer importer{};
+    Assimp::Importer importer {};
 
-    const aiScene* scene = importer.ReadFile("assets/stanford-bunny.obj", aiProcess_Triangulate);
+    const aiScene* scene = importer.ReadFile("assets/stanford-bunny.obj", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices /* | aiProcess_GenSmoothNormals*/);
 
     std::cout << importer.GetErrorString();
 
-    if(!scene || !scene->HasMeshes()) {
+    if (!scene || !scene->HasMeshes()) {
         throw std::runtime_error(importer.GetErrorString());
     }
 
-    auto assimpMesh = scene->mMeshes[0];
+    const auto assimpMesh = scene->mMeshes[0];
 
-    std::vector<Vertex> meshData{assimpMesh->mNumVertices};
-
-    for(uint32_t i = 0; i < assimpMesh->mNumVertices; ++i) {
+    std::vector<Vertex> meshData { assimpMesh->mNumVertices };
+    for (uint32_t i = 0; i < assimpMesh->mNumVertices; ++i) {
         meshData[i].position.x = assimpMesh->mVertices[i].x;
         meshData[i].position.y = assimpMesh->mVertices[i].y;
         meshData[i].position.z = assimpMesh->mVertices[i].z;
     }
 
-    _mesh = std::make_unique<Mesh>(_device, _allocator, _defaultPipelineLayout, _renderPass, WIDTH, HEIGHT, _commandPool, meshData);
+    std::vector<uint32_t> indices(assimpMesh->mNumFaces * 3);
+    for (uint32_t i = 0; i < assimpMesh->mNumFaces; ++i) {
+        indices[i * 3] = assimpMesh->mFaces[i].mIndices[0];
+        indices[i * 3 + 1] = assimpMesh->mFaces[i].mIndices[1];
+        indices[i * 3 + 2] = assimpMesh->mFaces[i].mIndices[2];
+    }
+
+    _mesh = std::make_unique<Mesh>(_device, _allocator, _defaultPipelineLayout, _renderPass, WIDTH, HEIGHT, _commandPool, meshData, indices);
 }
 
 void cleanup()
@@ -253,8 +314,14 @@ void draw()
 
     VkClearValue clearValue { 0.75f, 0.75f, 0.75f };
 
+    PushData pushData {
+        .model = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f)),
+        .view = _camera.getViewMatrix(),
+        .projection = _camera.getProjectionMatrix(),
+    };
+
     VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, _mesh.get(), _renderPass, _swapchainFramebuffers[imageIndex],
-        VkRect2D { 0, 0, WIDTH, HEIGHT }, 1, &clearValue, _imGuiData.get(), _pushData);    
+        VkRect2D { 0, 0, WIDTH, HEIGHT }, 1, &clearValue, _imGuiData.get(), pushData);
 
     auto queueFence = VkInit::createFence(_device);
 

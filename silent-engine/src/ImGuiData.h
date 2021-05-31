@@ -3,6 +3,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 #include <GLFW/glfw3.h>
+#include <glm/vec3.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <vulkan/vulkan.h>
 
 struct ImGuiFrameData {
@@ -71,6 +73,8 @@ public:
             ImGui::Text("Current Time:  %.2f s", _frameData.currentTime);
             ImGui::Text("Frame Time:    %.4f ms", _frameData.frameTime);
             ImGui::Text("FPS:           %.2f", _frameData.fps);
+            ImGui::Text("", _frameData.fps);
+            ImGui::Text("Camera position: %s", glm::to_string(_cameraPosition).c_str());
             ImGui::End();
         }
 
@@ -80,6 +84,11 @@ public:
     void appendDrawToCommandBuffer(VkCommandBuffer& cmd) const
     {
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    }
+
+    void setCameraPosition(const glm::vec3& position)
+    {
+        _cameraPosition = position;
     }
 
     void setFrameData(uint64_t currentFrame, double currentTime, double frameTime, double fps)
@@ -94,6 +103,7 @@ private:
     VkDescriptorPool _descriptorPool;
 
     ImGuiFrameData _frameData;
+    glm::vec3 _cameraPosition;
 
     VkDescriptorPool createDescriptorPool(const VkDevice device)
     {
