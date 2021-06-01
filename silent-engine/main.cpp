@@ -11,8 +11,9 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_LEFT_HANDED
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 #define VMA_IMPLEMENTATION
 #include "ImGuiData.h"
@@ -67,10 +68,41 @@ std::unique_ptr<Mesh> _mesh;
 class Camera {
 public:
 private:
-    glm::vec3 _position { 0.0f, 0.5f, -0.5f };
+    const glm::vec3 FORWARD { 0.0f, 0.0f, 1.0f };
+
+    glm::vec3 _position { 0.0f, 0.0f, -1.0f };
     glm::mat4 _projection { glm::perspective(glm::radians(45.0f), WIDTH / static_cast<float>(HEIGHT), 0.0001f, 200.0f) };
 
+    float _unitsPerSecond { 1.0f };
+    float _angle{0.15};
+    float _horizontalAngle { 0.0f };
+    float _verticalAngle { 0.0f };
+
+    glm::vec3 _currentDirection { 0.0f, 0.0f, 1.0f };
+
 public:
+    void update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotationInput)
+    {
+        directionInput *= deltaTime * _unitsPerSecond;
+        rotationInput *= deltaTime * _angle;
+
+        _horizontalAngle += rotationInput.x;
+        _verticalAngle = std::clamp(_verticalAngle + rotationInput.y, -90.0f + std::numeric_limits<float>::epsilon(), 90.0f + std::numeric_limits<float>::epsilon());
+
+        _currentDirection = glm::rotateX(FORWARD, _verticalAngle);
+        _currentDirection = glm::rotateY(_currentDirection, _horizontalAngle);
+
+        glm::vec3 movementDelta = _currentDirection * directionInput.y;
+        const glm::vec3 cross = glm::cross(_currentDirection, { 0.0f, 1.0f, 0.0f });
+        movementDelta -= cross * directionInput.x;
+        _position += movementDelta;
+    }
+
+    void setUnitsPerSecond(float value)
+    {
+        _unitsPerSecond = value;
+    }
+
     void translate(const glm::vec3& translation)
     {
         _position += translation;
@@ -84,7 +116,7 @@ public:
     glm::mat4 getViewMatrix() const
     {
         // TODO: up vector has negative y? NDC having y pointing down? Research to be sure
-        return glm::lookAt(_position, glm::vec3(0.0f, 0.0f, 0.0f), { 0.0f, -1.0f, 0.0f });
+        return glm::lookAt(_position, _position + _currentDirection, { 0.0f, -1.0f, 0.0f });
     }
 
     glm::mat4 getProjectionMatrix() const
@@ -129,8 +161,11 @@ int main()
 
         throw std::runtime_error("Error: glfwCreateWindow");
     }
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
+    glfwSetCursorPos(window, 0.0, 0.0);
+
     glfwSetKeyCallback(window, key_callback);
 
     init(window);
@@ -140,41 +175,42 @@ int main()
 
     while (!glfwWindowShouldClose(window)) {
         const double currentTime = glfwGetTime();
-        const double frameTime = (currentTime - _currentTime) * 1000.0;
+        // deltaTime in seconds
+        const double deltaTime = currentTime - _currentTime;
+        // frameTIme in milliseconds
+        const double frameTime = deltaTime * 1000.0;
         const double fps = 1000.0 / frameTime;
         _currentTime = currentTime;
 
         glfwPollEvents();
 
-        glm::vec3 input { 0.0f };
+        glm::vec2 input { 0.0f };
 
         // TODO: Input manager
         // TODO: Add deltaTime
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            input += glm::vec3 { 0.0f, 0.0f, 0.1f };
+            input.y += 1.0f;
         }
 
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            input += glm::vec3 { 0.0f, 0.0f, -0.1f };
+            input.y += -1.0f;
         }
 
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            input += glm::vec3 { -0.1f, 0.0f, 0.0f };
+            input.x += -1.0f;
         }
 
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            input += glm::vec3 { 0.1f, 0.0f, 0.0f };
+            input.x += 1.0f;
         }
 
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            input += glm::vec3 { 0.0f, -0.1f, 0.0f };
-        }
+        double xPos, yPos;
+        glfwGetCursorPos(window, &xPos, &yPos);
+        glfwSetCursorPos(window, 0.0, 0.0);
 
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            input += glm::vec3 { 0.0f, 0.1f, 0.0f };
-        }
+        std::cout << xPos << " " << yPos << "\n";
 
-        _camera.translate(input);
+        _camera.update(deltaTime, input, glm::vec2(xPos, yPos));
 
         _imGuiData->setFrameData(_currentFrame, currentTime, frameTime, fps);
         _imGuiData->setCameraPosition(_camera.getPosition());
@@ -341,7 +377,7 @@ void draw()
     };
 
     PushData pushData {
-        .model = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f)),
+        .model = glm::mat4(1.0f),
         .view = _camera.getViewMatrix(),
         .projection = _camera.getProjectionMatrix(),
         .viewPosition = _camera.getPosition(),
