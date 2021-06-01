@@ -25,6 +25,8 @@
 #include <assimp/scene.h>
 #include <iostream>
 
+#include "Image.h"
+
 // TODO: VkCommandPool and VkCommands creation manager;
 
 const std::string ENGINE_NAME = "Silent Engine";
@@ -43,7 +45,10 @@ VkSurfaceKHR _surface;
 
 std::vector<VkImage> _swapchainImages;
 std::vector<VkImageView> _swapchainImageViews;
-std::vector<VkFramebuffer> _swapchainFramebuffers;
+
+std::vector<std::unique_ptr<Image>> _depthStencilImages;
+
+std::vector<VkFramebuffer> _framebuffers;
 
 VkCommandPool _commandPool;
 VkRenderPass _renderPass;
@@ -161,6 +166,14 @@ int main()
             input += glm::vec3 { 0.1f, 0.0f, 0.0f };
         }
 
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+            input += glm::vec3 { 0.0f, -0.1f, 0.0f };
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+            input += glm::vec3 { 0.0f, 0.1f, 0.0f };
+        }
+
         _camera.translate(input);
 
         _imGuiData->setFrameData(_currentFrame, currentTime, frameTime, fps);
@@ -218,20 +231,24 @@ void init(GLFWwindow* window)
         throw std::runtime_error(swapchainResult.error().message());
     }
 
+    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_0, _swapchain.image_count);
+
     _swapchain = swapchainResult.value();
     _swapchainImages = _swapchain.get_images().value();
     _swapchainImageViews = _swapchain.get_image_views().value();
-    _swapchainFramebuffers = std::vector<VkFramebuffer>(_swapchainImageViews.size());
+
+    //
 
     _renderPass = VkInit::createRenderPass(_device, _swapchain);
 
+    _depthStencilImages = std::vector<std::unique_ptr<Image>>(_swapchain.image_count);
+    _framebuffers = std::vector<VkFramebuffer>(_swapchain.image_count);
     for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
-        _swapchainFramebuffers[i] = VkInit::createFramebuffer(_device, _renderPass, _swapchainImageViews[i], WIDTH, HEIGHT);
+        _depthStencilImages[i] = std::make_unique<Image>(_device, _allocator, WIDTH, HEIGHT);
+        _framebuffers[i] = VkInit::createFramebuffer(_device, _renderPass, _swapchainImageViews[i], _depthStencilImages[i]->getImageView(), WIDTH, HEIGHT);
     }
 
     _commandPool = VkInit::createCommandPool(_device);
-
-    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_0, _swapchain.image_count);
 
     _descriptorPool = VkInit::createDescriptorPool(_device);
 
@@ -248,7 +265,7 @@ void initMesh()
 {
     Assimp::Importer importer {};
 
-    const aiScene* scene = importer.ReadFile("assets/stanford-bunny.obj", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices /* | aiProcess_GenSmoothNormals*/);
+    const aiScene* scene = importer.ReadFile("assets/stanford-bunny.obj", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_FixInfacingNormals);
 
     std::cout << importer.GetErrorString();
 
@@ -263,6 +280,9 @@ void initMesh()
         meshData[i].position.x = assimpMesh->mVertices[i].x;
         meshData[i].position.y = assimpMesh->mVertices[i].y;
         meshData[i].position.z = assimpMesh->mVertices[i].z;
+        meshData[i].normal.x = assimpMesh->mNormals[i].x;
+        meshData[i].normal.y = assimpMesh->mNormals[i].y;
+        meshData[i].normal.z = assimpMesh->mNormals[i].z;
     }
 
     std::vector<uint32_t> indices(assimpMesh->mNumFaces * 3);
@@ -277,6 +297,9 @@ void initMesh()
 
 void cleanup()
 {
+    for (auto& image : _depthStencilImages) {
+        image.reset();
+    }
     _mesh.reset();
     _imGuiData.reset();
 
@@ -287,7 +310,7 @@ void cleanup()
     vmaDestroyAllocator(_allocator);
 
     for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
-        vkDestroyFramebuffer(_device.device, _swapchainFramebuffers[i], nullptr);
+        vkDestroyFramebuffer(_device.device, _framebuffers[i], nullptr);
     }
 
     vkDestroyRenderPass(_device.device, _renderPass, nullptr);
@@ -312,16 +335,20 @@ void draw()
         throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
 
-    VkClearValue clearValue { 0.75f, 0.75f, 0.75f };
+    VkClearValue clearValues[] {
+        { 0.75f, 0.75f, 0.75f },
+        { 1.0f, 0 },
+    };
 
     PushData pushData {
         .model = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f)),
         .view = _camera.getViewMatrix(),
         .projection = _camera.getProjectionMatrix(),
+        .viewPosition = _camera.getPosition(),
     };
 
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, _mesh.get(), _renderPass, _swapchainFramebuffers[imageIndex],
-        VkRect2D { 0, 0, WIDTH, HEIGHT }, 1, &clearValue, _imGuiData.get(), pushData);
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, _mesh.get(), _renderPass, _framebuffers[imageIndex],
+        VkRect2D { 0, 0, WIDTH, HEIGHT }, std::size(clearValues), clearValues, _imGuiData.get(), pushData);
 
     auto queueFence = VkInit::createFence(_device);
 

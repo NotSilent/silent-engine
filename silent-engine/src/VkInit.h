@@ -5,6 +5,63 @@
 #include "vma/vk_mem_alloc.h"
 
 namespace VkInit {
+//TODO: Format and usage as parameters
+//VkImage createDepthStencilImage(const vkb::Device& device, uint32_t width, uint32_t height)
+//{
+//    VkImageCreateInfo createInfo {
+//        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+//        .pNext = nullptr,
+//        .flags = {},
+//        .imageType = VK_IMAGE_TYPE_2D,
+//        .format = VK_FORMAT_D24_UNORM_S8_UINT,
+//        .extent = { width, height, 1 },
+//        .mipLevels = 1,
+//        .arrayLayers = 1,
+//        .samples = VK_SAMPLE_COUNT_1_BIT,
+//        .tiling = VK_IMAGE_TILING_OPTIMAL,
+//        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+//        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+//        .queueFamilyIndexCount = 0,
+//        .pQueueFamilyIndices = nullptr,
+//        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+//    };
+//
+//    VkImage image;
+//    if (vkCreateImage(device.device, &createInfo, nullptr, &image) != VK_SUCCESS) {
+//        throw std::runtime_error("Error: vkCreateImage");
+//    }
+//
+//    return image;
+//}
+//
+////TODO: Format and usage as parameters
+//VkImageView createDepthStencilImageView(const vkb::Device& device, const VkImage image)
+//{
+//    VkImageViewCreateInfo createInfo {
+//        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+//        .pNext = nullptr,
+//        .flags = {},
+//        .image = image,
+//        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+//        .format = VK_FORMAT_D24_UNORM_S8_UINT,
+//        .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
+//        .subresourceRange = {
+//            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+//            .baseMipLevel = 0,
+//            .levelCount = 1,
+//            .baseArrayLayer = 0,
+//            .layerCount = 1,
+//        },
+//    };
+//
+//    VkImageView imageView;
+//    if (vkCreateImageView(device.device, &createInfo, nullptr, &imageView) != VK_SUCCESS) {
+//        throw std::runtime_error("Error: vkCreateImageView");
+//    }
+//
+//    return imageView;
+//}
+
 VmaAllocator createAllocator(const vkb::Instance& instance, const vkb::PhysicalDevice& physicalDevice, const vkb::Device& device, uint32_t vulkanApiVersion, const uint32_t frameInUseCount)
 {
     VmaAllocatorCreateInfo createInfo {
@@ -112,15 +169,17 @@ VkFence createFence(const vkb::Device& device)
     return fence;
 }
 
-VkFramebuffer createFramebuffer(const vkb::Device& device, const VkRenderPass renderPass, const VkImageView imageView, const uint32_t width, const uint32_t height)
+VkFramebuffer createFramebuffer(const vkb::Device& device, const VkRenderPass renderPass, const VkImageView color, VkImageView depthStencil, const uint32_t width, const uint32_t height)
 {
+    VkImageView attachments[] { color, depthStencil };
+
     VkFramebufferCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
         .renderPass = renderPass,
-        .attachmentCount = 1,
-        .pAttachments = &imageView,
+        .attachmentCount = 2,
+        .pAttachments = attachments,
         .width = width,
         .height = height,
         .layers = 1,
@@ -153,9 +212,14 @@ VkCommandPool createCommandPool(const vkb::Device& device)
 
 VkRenderPass createRenderPass(const vkb::Device& device, const vkb::Swapchain& swapchain)
 {
-    VkAttachmentReference attachmentReference {
+    VkAttachmentReference colorAttachment {
         .attachment = 0,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentReference depthStencilAttachment {
+        .attachment = 1,
+        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     };
 
     VkSubpassDescription subpassDescription {
@@ -164,31 +228,44 @@ VkRenderPass createRenderPass(const vkb::Device& device, const vkb::Swapchain& s
         .inputAttachmentCount = 0,
         .pInputAttachments = nullptr,
         .colorAttachmentCount = 1,
-        .pColorAttachments = &attachmentReference,
+        .pColorAttachments = &colorAttachment,
         .pResolveAttachments = nullptr,
-        .pDepthStencilAttachment = nullptr,
+        .pDepthStencilAttachment = &depthStencilAttachment,
         .preserveAttachmentCount = 0,
         .pPreserveAttachments = nullptr,
     };
 
-    VkAttachmentDescription attachmentDescription {
-        .flags = {},
-        .format = swapchain.image_format,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    VkAttachmentDescription attachmentDescriptions[] {
+        {
+            .flags = {},
+            .format = swapchain.image_format,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        },
+        {
+            .flags = {},
+            .format = VK_FORMAT_D24_UNORM_S8_UINT,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ,
+        },
     };
 
     VkRenderPassCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
-        .attachmentCount = 1,
-        .pAttachments = &attachmentDescription,
+        .attachmentCount = 2,
+        .pAttachments = attachmentDescriptions,
         .subpassCount = 1,
         .pSubpasses = &subpassDescription,
         .dependencyCount = 0,

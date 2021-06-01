@@ -164,6 +164,7 @@
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Image.h" />
     <ClInclude Include="src\ImGuiData.h" />
     <ClInclude Include="src\Mesh.h" />
     <ClInclude Include="src\VkDraw.h" />
@@ -179,6 +180,7 @@
     <ClInclude Include="src\VkInit.h" />
     <ClInclude Include="third-party\vma\vk_mem_alloc.h" />
     <ClInclude Include="src\VkInitPipeline.h" />
+    <ClInclude Include="src\Vertex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

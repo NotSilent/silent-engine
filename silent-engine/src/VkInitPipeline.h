@@ -1,8 +1,7 @@
 #pragma once
+#include "Vertex.h"
 #include <fstream>
 #include <string>
-
-#include "glm/glm.hpp"
 
 namespace VkInit::Pipeline {
 std::tuple<size_t, std::vector<char>> getShaderDataFromFile(const std::string& shaderPath)
@@ -57,7 +56,7 @@ VkPipelineShaderStageCreateInfo createPipelineShaderStageCreateinfo(const VkShad
 VkPipelineLayout createPipelineLayout(const vkb::Device& device, const uint32_t setLayoutCount, const VkDescriptorSetLayout* setLayouts, uint32_t pushSize)
 {
     VkPushConstantRange pushConstantRange {
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT ,
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
         .size = pushSize,
     };
@@ -94,15 +93,23 @@ VkPipeline createDefaultPipeline(const vkb::Device& device, const VkPipelineLayo
 
     VkVertexInputBindingDescription vertexInputBindingDescription {
         .binding = 0,
-        .stride = sizeof(glm::vec3),
+        .stride = sizeof(Vertex),
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
     };
 
-    VkVertexInputAttributeDescription vertexInputAttributeDescription {
-        .location = 0,
-        .binding = 0,
-        .format = VK_FORMAT_R32G32B32_SFLOAT,
-        .offset = 0,
+    VkVertexInputAttributeDescription vertexInputAttributeDescriptions[] {
+        {
+            .location = 0,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32_SFLOAT,
+            .offset = 0,
+        },
+        {
+            .location = 1,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32_SFLOAT,
+            .offset = offsetof(Vertex, normal),
+        },
     };
 
     const VkPipelineVertexInputStateCreateInfo vertexInputState {
@@ -111,8 +118,8 @@ VkPipeline createDefaultPipeline(const vkb::Device& device, const VkPipelineLayo
         .flags = {},
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &vertexInputBindingDescription,
-        .vertexAttributeDescriptionCount = 1,
-        .pVertexAttributeDescriptions = &vertexInputAttributeDescription,
+        .vertexAttributeDescriptionCount = 2,
+        .pVertexAttributeDescriptions = vertexInputAttributeDescriptions,
     };
 
     const VkPipelineInputAssemblyStateCreateInfo inputAssemblyState {
@@ -183,9 +190,9 @@ VkPipeline createDefaultPipeline(const vkb::Device& device, const VkPipelineLayo
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
-        .depthTestEnable = VK_FALSE,
-        .depthWriteEnable = VK_FALSE,
-        .depthCompareOp = VK_COMPARE_OP_NEVER,
+        .depthTestEnable = VK_TRUE,
+        .depthWriteEnable = VK_TRUE,
+        .depthCompareOp = VK_COMPARE_OP_LESS,
         .depthBoundsTestEnable = VK_FALSE,
         .stencilTestEnable = VK_FALSE,
         .front = {},

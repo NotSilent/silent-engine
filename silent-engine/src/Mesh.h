@@ -1,4 +1,6 @@
 #pragma once
+#include <glm/mat4x4.hpp>
+
 #include "vk-bootstrap/VkBootstrap.h"
 #include "vma/vk_mem_alloc.h"
 #include "vulkan/vulkan.h"
@@ -6,16 +8,15 @@
 #include <stdexcept>
 #include <vector>
 
-#include "VkInitPipeline.h"
 
-struct Vertex {
-    glm::vec3 position;
-};
+#include "Vertex.h"
+#include "VkInitPipeline.h"
 
 struct PushData {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 projection;
+    glm::vec3 viewPosition;
 };
 
 // TODO: MeshFactory to hold data about device, allocator, pipeline data, renderpass, sizes and command pool, and also destroying resources

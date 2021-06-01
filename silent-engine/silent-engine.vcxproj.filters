@@ -95,5 +95,11 @@
     <ClInclude Include="src\VkDraw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Vertex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

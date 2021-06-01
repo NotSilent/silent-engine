@@ -17,7 +17,7 @@ VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool com
         .renderPass = renderPass,
         .framebuffer = framebuffer,
         .renderArea = renderArea,
-        .clearValueCount = 1,
+        .clearValueCount = clearValueCount,
         .pClearValues = clearValues,
     };
 
@@ -49,7 +49,7 @@ VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool com
     VkPipelineLayout pipelineLayout = mesh->getPipelineLayout();
     VkPipeline pipeline = mesh->getPipeline();
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData), &pushData);
+    vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
     vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
     vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
