@@ -148,6 +148,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\MeshManager.cpp" />
+    <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="third-party\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="third-party\imgui\backends\imgui_impl_vulkan.cpp" />
     <ClCompile Include="third-party\imgui\imgui.cpp" />
@@ -164,6 +167,9 @@
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\MeshManager.h" />
+    <ClInclude Include="src\Buffer.h" />
     <ClInclude Include="src\Image.h" />
     <ClInclude Include="src\ImGuiData.h" />
     <ClInclude Include="src\Mesh.h" />

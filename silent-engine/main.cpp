@@ -7,13 +7,12 @@
 
 #include "VkDraw.h"
 #include "VkInit.h"
+#include "VkInitPipeline.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_LEFT_HANDED
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/rotate_vector.hpp>
 
 #define VMA_IMPLEMENTATION
 #include "ImGuiData.h"
@@ -21,16 +20,14 @@
 #include "memory"
 #include "vma/vk_mem_alloc.h"
 
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-#include <iostream>
-
+#include "Camera.h"
 #include "Image.h"
+#include "MeshManager.h"
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
 const std::string ENGINE_NAME = "Silent Engine";
+const std::string STANFORD_BUNNY_ASSET_LOCATION = "assets/stanford-bunny.obj";
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
@@ -57,75 +54,14 @@ VkRenderPass _renderPass;
 VkDescriptorPool _descriptorPool;
 VkDescriptorSetLayout _defaultDescriptorSetLayout;
 
-VkPipelineLayout _defaultPipelineLayout;
+VkPipelineLayout _pipelineLayout;
+VkPipeline _pipeline;
 
 VmaAllocator _allocator;
 
 std::unique_ptr<ImGuiData> _imGuiData;
 
-std::unique_ptr<Mesh> _mesh;
-
-class Camera {
-public:
-private:
-    const glm::vec3 FORWARD { 0.0f, 0.0f, 1.0f };
-
-    glm::vec3 _position { 0.0f, 0.0f, -1.0f };
-    glm::mat4 _projection { glm::perspective(glm::radians(45.0f), WIDTH / static_cast<float>(HEIGHT), 0.0001f, 200.0f) };
-
-    float _unitsPerSecond { 1.0f };
-    float _angle{0.15};
-    float _horizontalAngle { 0.0f };
-    float _verticalAngle { 0.0f };
-
-    glm::vec3 _currentDirection { 0.0f, 0.0f, 1.0f };
-
-public:
-    void update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotationInput)
-    {
-        directionInput *= deltaTime * _unitsPerSecond;
-        rotationInput *= deltaTime * _angle;
-
-        _horizontalAngle += rotationInput.x;
-        _verticalAngle = std::clamp(_verticalAngle + rotationInput.y, -90.0f + std::numeric_limits<float>::epsilon(), 90.0f + std::numeric_limits<float>::epsilon());
-
-        _currentDirection = glm::rotateX(FORWARD, _verticalAngle);
-        _currentDirection = glm::rotateY(_currentDirection, _horizontalAngle);
-
-        glm::vec3 movementDelta = _currentDirection * directionInput.y;
-        const glm::vec3 cross = glm::cross(_currentDirection, { 0.0f, 1.0f, 0.0f });
-        movementDelta -= cross * directionInput.x;
-        _position += movementDelta;
-    }
-
-    void setUnitsPerSecond(float value)
-    {
-        _unitsPerSecond = value;
-    }
-
-    void translate(const glm::vec3& translation)
-    {
-        _position += translation;
-    }
-
-    glm::vec3 getPosition() const
-    {
-        return _position;
-    }
-
-    glm::mat4 getViewMatrix() const
-    {
-        // TODO: up vector has negative y? NDC having y pointing down? Research to be sure
-        return glm::lookAt(_position, _position + _currentDirection, { 0.0f, -1.0f, 0.0f });
-    }
-
-    glm::mat4 getProjectionMatrix() const
-    {
-        return _projection;
-    }
-
-private:
-};
+MeshManager _meshManager;
 
 Camera _camera;
 
@@ -142,7 +78,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void init(GLFWwindow* window);
-void initMesh();
 void cleanup();
 void draw();
 
@@ -169,7 +104,6 @@ int main()
     glfwSetKeyCallback(window, key_callback);
 
     init(window);
-    initMesh();
 
     _currentTime = glfwGetTime();
 
@@ -207,8 +141,6 @@ int main()
         double xPos, yPos;
         glfwGetCursorPos(window, &xPos, &yPos);
         glfwSetCursorPos(window, 0.0, 0.0);
-
-        std::cout << xPos << " " << yPos << "\n";
 
         _camera.update(deltaTime, input, glm::vec2(xPos, yPos));
 
@@ -267,7 +199,7 @@ void init(GLFWwindow* window)
         throw std::runtime_error(swapchainResult.error().message());
     }
 
-    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_0, _swapchain.image_count);
+    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_1, _swapchain.image_count);
 
     _swapchain = swapchainResult.value();
     _swapchainImages = _swapchain.get_images().value();
@@ -290,56 +222,29 @@ void init(GLFWwindow* window)
 
     _defaultDescriptorSetLayout = VkInit::createDefaultDescriptorSetLayout(_device);
 
-    _defaultPipelineLayout = VkInit::Pipeline::createPipelineLayout(_device, 1, &_defaultDescriptorSetLayout, sizeof(PushData));
+    _pipelineLayout = VkInit::Pipeline::createPipelineLayout(_device, 1, &_defaultDescriptorSetLayout, sizeof(PushData));
+    _pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _pipelineLayout, _renderPass, WIDTH, HEIGHT);
 
     _imGuiData = std::make_unique<ImGuiData>(window, _instance.instance, _physicalDevice.physical_device, _device.device,
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
-}
 
-// TODO: move to mesh factory
-void initMesh()
-{
-    Assimp::Importer importer {};
+    _meshManager = MeshManager(_device, _allocator, _commandPool);
+    _meshManager.addMesh(STANFORD_BUNNY_ASSET_LOCATION);
 
-    const aiScene* scene = importer.ReadFile("assets/stanford-bunny.obj", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_FixInfacingNormals);
-
-    std::cout << importer.GetErrorString();
-
-    if (!scene || !scene->HasMeshes()) {
-        throw std::runtime_error(importer.GetErrorString());
-    }
-
-    const auto assimpMesh = scene->mMeshes[0];
-
-    std::vector<Vertex> meshData { assimpMesh->mNumVertices };
-    for (uint32_t i = 0; i < assimpMesh->mNumVertices; ++i) {
-        meshData[i].position.x = assimpMesh->mVertices[i].x;
-        meshData[i].position.y = assimpMesh->mVertices[i].y;
-        meshData[i].position.z = assimpMesh->mVertices[i].z;
-        meshData[i].normal.x = assimpMesh->mNormals[i].x;
-        meshData[i].normal.y = assimpMesh->mNormals[i].y;
-        meshData[i].normal.z = assimpMesh->mNormals[i].z;
-    }
-
-    std::vector<uint32_t> indices(assimpMesh->mNumFaces * 3);
-    for (uint32_t i = 0; i < assimpMesh->mNumFaces; ++i) {
-        indices[i * 3] = assimpMesh->mFaces[i].mIndices[0];
-        indices[i * 3 + 1] = assimpMesh->mFaces[i].mIndices[1];
-        indices[i * 3 + 2] = assimpMesh->mFaces[i].mIndices[2];
-    }
-
-    _mesh = std::make_unique<Mesh>(_device, _allocator, _defaultPipelineLayout, _renderPass, WIDTH, HEIGHT, _commandPool, meshData, indices);
+    _camera = Camera(WIDTH, HEIGHT);
 }
 
 void cleanup()
 {
+    _meshManager.release();
+
     for (auto& image : _depthStencilImages) {
         image.reset();
     }
-    _mesh.reset();
     _imGuiData.reset();
 
-    vkDestroyPipelineLayout(_device.device, _defaultPipelineLayout, nullptr);
+    vkDestroyPipeline(_device.device, _pipeline, nullptr);
+    vkDestroyPipelineLayout(_device.device, _pipelineLayout, nullptr);
     vkDestroyDescriptorSetLayout(_device.device, _defaultDescriptorSetLayout, nullptr);
     vkDestroyDescriptorPool(_device.device, _descriptorPool, nullptr);
 
@@ -383,7 +288,9 @@ void draw()
         .viewPosition = _camera.getPosition(),
     };
 
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, _mesh.get(), _renderPass, _framebuffers[imageIndex],
+    const auto mesh = _meshManager.getMesh(STANFORD_BUNNY_ASSET_LOCATION);
+
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, mesh, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
         VkRect2D { 0, 0, WIDTH, HEIGHT }, std::size(clearValues), clearValues, _imGuiData.get(), pushData);
 
     auto queueFence = VkInit::createFence(_device);

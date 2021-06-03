@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <vulkan/vulkan.h>
 
 #include "ImGuiData.h"
@@ -8,7 +9,7 @@
 // TODO: Decouple ImGui
 
 namespace VkDraw {
-VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool commandPool, const Mesh* mesh, const VkRenderPass renderPass,
+VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool commandPool, const std::weak_ptr<Mesh> mesh, const VkPipelineLayout pipelineLayout, const VkPipeline pipeline, const VkRenderPass renderPass,
     const VkFramebuffer framebuffer, const VkRect2D& renderArea, uint32_t clearValueCount, VkClearValue* clearValues, const ImGuiData* imGuiData, const PushData& pushData)
 {
     VkRenderPassBeginInfo beginInfo {
@@ -43,17 +44,19 @@ VkCommandBuffer recordCommandBuffer(const vkb::Device& device, VkCommandPool com
 
     vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    VkDeviceSize offset { 0 };
-    VkBuffer vertexBuffer = mesh->getVertexBuffer();
-    VkBuffer indexBuffer = mesh->getIndexBuffer();
-    VkPipelineLayout pipelineLayout = mesh->getPipelineLayout();
-    VkPipeline pipeline = mesh->getPipeline();
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
-    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
-    vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    if (!mesh.expired()) {
+        const auto m = mesh.lock();
 
-    vkCmdDrawIndexed(cmd, mesh->getIndexCount(), 1, 0, 0, 0);
+        VkDeviceSize offset { 0 };
+        VkBuffer vertexBuffer = m->getVertexBuffer();
+        VkBuffer indexBuffer = m->getIndexBuffer();
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
+        vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
+        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(cmd, m->getIndexCount(), 1, 0, 0, 0);
+    }
 
     imGuiData->appendDrawToCommandBuffer(cmd);
 
