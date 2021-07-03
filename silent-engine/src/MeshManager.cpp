@@ -13,10 +13,6 @@ MeshManager::MeshManager(const vkb::Device& device, const VmaAllocator allocator
 {
 }
 
-MeshManager::~MeshManager()
-{
-}
-
 void MeshManager::addMesh(const std::string& path)
 {
     if (_meshes.contains(path)) {

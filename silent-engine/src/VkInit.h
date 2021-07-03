@@ -5,62 +5,36 @@
 #include "vma/vk_mem_alloc.h"
 
 namespace VkInit {
-//TODO: Format and usage as parameters
-//VkImage createDepthStencilImage(const vkb::Device& device, uint32_t width, uint32_t height)
-//{
-//    VkImageCreateInfo createInfo {
-//        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-//        .pNext = nullptr,
-//        .flags = {},
-//        .imageType = VK_IMAGE_TYPE_2D,
-//        .format = VK_FORMAT_D24_UNORM_S8_UINT,
-//        .extent = { width, height, 1 },
-//        .mipLevels = 1,
-//        .arrayLayers = 1,
-//        .samples = VK_SAMPLE_COUNT_1_BIT,
-//        .tiling = VK_IMAGE_TILING_OPTIMAL,
-//        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-//        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-//        .queueFamilyIndexCount = 0,
-//        .pQueueFamilyIndices = nullptr,
-//        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-//    };
-//
-//    VkImage image;
-//    if (vkCreateImage(device.device, &createInfo, nullptr, &image) != VK_SUCCESS) {
-//        throw std::runtime_error("Error: vkCreateImage");
-//    }
-//
-//    return image;
-//}
-//
-////TODO: Format and usage as parameters
-//VkImageView createDepthStencilImageView(const vkb::Device& device, const VkImage image)
-//{
-//    VkImageViewCreateInfo createInfo {
-//        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-//        .pNext = nullptr,
-//        .flags = {},
-//        .image = image,
-//        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-//        .format = VK_FORMAT_D24_UNORM_S8_UINT,
-//        .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
-//        .subresourceRange = {
-//            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-//            .baseMipLevel = 0,
-//            .levelCount = 1,
-//            .baseArrayLayer = 0,
-//            .layerCount = 1,
-//        },
-//    };
-//
-//    VkImageView imageView;
-//    if (vkCreateImageView(device.device, &createInfo, nullptr, &imageView) != VK_SUCCESS) {
-//        throw std::runtime_error("Error: vkCreateImageView");
-//    }
-//
-//    return imageView;
-//}
+VkSampler createSampler(const vkb::Device& device)
+{
+    VkSamplerCreateInfo createInfo {
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = {},
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .mipLodBias = 0.0f,
+        .anisotropyEnable = VK_FALSE,
+        .maxAnisotropy = 0.0f,
+        .compareEnable = VK_FALSE,
+        .compareOp = VK_COMPARE_OP_NEVER,
+        .minLod = 0.0f,
+        .maxLod = 0.0f,
+        .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
+        .unnormalizedCoordinates = VK_FALSE,
+    };
+
+    VkSampler sampler;
+    if (vkCreateSampler(device.device, &createInfo, nullptr, &sampler) != VK_SUCCESS) {
+        throw std::runtime_error("Error: vkCreateSampler");
+    }
+
+    return sampler;
+}
 
 VmaAllocator createAllocator(const vkb::Instance& instance, const vkb::PhysicalDevice& physicalDevice, const vkb::Device& device, uint32_t vulkanApiVersion, const uint32_t frameInUseCount)
 {
@@ -89,18 +63,24 @@ VmaAllocator createAllocator(const vkb::Instance& instance, const vkb::PhysicalD
 
 VkDescriptorPool createDescriptorPool(const vkb::Device& device)
 {
-    VkDescriptorPoolSize descriptorPoolSize {
-        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .descriptorCount = 1,
+    VkDescriptorPoolSize descriptorPoolSizes[] {
+        {
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount = 1,
+        },
+        {
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = 1,
+        },
     };
 
     VkDescriptorPoolCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
-        .maxSets = 1,
-        .poolSizeCount = 1,
-        .pPoolSizes = &descriptorPoolSize,
+        .maxSets = 2,
+        .poolSizeCount = 2,
+        .pPoolSizes = descriptorPoolSizes,
     };
 
     VkDescriptorPool descriptorPool;
@@ -115,9 +95,9 @@ VkDescriptorSetLayout createDefaultDescriptorSetLayout(const vkb::Device& device
 {
     VkDescriptorSetLayoutBinding layoutBinding {
         .binding = 0,
-        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .pImmutableSamplers = nullptr,
     };
 
@@ -135,6 +115,24 @@ VkDescriptorSetLayout createDefaultDescriptorSetLayout(const vkb::Device& device
     }
 
     return descriptorSetLayout;
+}
+
+VkDescriptorSet createDescriptorSet(const vkb::Device& device, VkDescriptorPool pool, VkDescriptorSetLayout layout)
+{
+    VkDescriptorSetAllocateInfo allocateInfo {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .descriptorPool = pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &layout,
+    };
+
+    VkDescriptorSet set;
+    if (vkAllocateDescriptorSets(device.device, &allocateInfo, &set) != VK_SUCCESS) {
+        throw std::runtime_error("Error: vkCreateDescriptorSetLayout");
+    }
+
+    return set;
 }
 
 VkSemaphore createSemaphore(const vkb::Device& device)
@@ -256,7 +254,7 @@ VkRenderPass createRenderPass(const vkb::Device& device, const vkb::Swapchain& s
             .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
             .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ,
+            .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         },
     };
 

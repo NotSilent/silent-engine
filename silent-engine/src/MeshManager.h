@@ -21,8 +21,6 @@ public:
 
     MeshManager(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool);
 
-    ~MeshManager();
-
     void addMesh(const std::string& path);
 
     std::weak_ptr<Mesh> getMesh(const std::string& path);

@@ -14,7 +14,6 @@
 #define GLM_FORCE_LEFT_HANDED
 #include <glm/glm.hpp>
 
-#define VMA_IMPLEMENTATION
 #include "ImGuiData.h"
 #include "Mesh.h"
 #include "memory"
@@ -22,12 +21,17 @@
 
 #include "Camera.h"
 #include "Image.h"
+#include "ImageManager.h"
 #include "MeshManager.h"
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
 const std::string ENGINE_NAME = "Silent Engine";
 const std::string STANFORD_BUNNY_ASSET_LOCATION = "assets/stanford-bunny.obj";
+
+const std::string PINK_TEXTURE_ASSET_LOCATION = "assets/pink.png";
+const std::string TEST_TEXTURE_ASSET_LOCATION = "assets/test.png";
+
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
@@ -53,6 +57,7 @@ VkRenderPass _renderPass;
 
 VkDescriptorPool _descriptorPool;
 VkDescriptorSetLayout _defaultDescriptorSetLayout;
+VkDescriptorSet _defaultDescriptorSet;
 
 VkPipelineLayout _pipelineLayout;
 VkPipeline _pipeline;
@@ -62,8 +67,12 @@ VmaAllocator _allocator;
 std::unique_ptr<ImGuiData> _imGuiData;
 
 MeshManager _meshManager;
+ImageManager _imageManger;
 
 Camera _camera;
+
+Image _texture;
+VkSampler _textureSampler;
 
 // TODO: Input manager
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -219,8 +228,8 @@ void init(GLFWwindow* window)
     _commandPool = VkInit::createCommandPool(_device);
 
     _descriptorPool = VkInit::createDescriptorPool(_device);
-
     _defaultDescriptorSetLayout = VkInit::createDefaultDescriptorSetLayout(_device);
+    _defaultDescriptorSet = VkInit::createDescriptorSet(_device, _descriptorPool, _defaultDescriptorSetLayout);
 
     _pipelineLayout = VkInit::Pipeline::createPipelineLayout(_device, 1, &_defaultDescriptorSetLayout, sizeof(PushData));
     _pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _pipelineLayout, _renderPass, WIDTH, HEIGHT);
@@ -232,6 +241,9 @@ void init(GLFWwindow* window)
     _meshManager.addMesh(STANFORD_BUNNY_ASSET_LOCATION);
 
     _camera = Camera(WIDTH, HEIGHT);
+
+    _texture = Image(_device, _allocator, _commandPool, TEST_TEXTURE_ASSET_LOCATION);
+    _textureSampler = VkInit::createSampler(_device);
 }
 
 void cleanup()
@@ -239,9 +251,12 @@ void cleanup()
     _meshManager.release();
 
     for (auto& image : _depthStencilImages) {
-        image.reset();
+        image->destroy();
     }
     _imGuiData.reset();
+
+    _texture.destroy();
+    vkDestroySampler(_device.device, _textureSampler, nullptr);
 
     vkDestroyPipeline(_device.device, _pipeline, nullptr);
     vkDestroyPipelineLayout(_device.device, _pipelineLayout, nullptr);
@@ -291,7 +306,7 @@ void draw()
     const auto mesh = _meshManager.getMesh(STANFORD_BUNNY_ASSET_LOCATION);
 
     VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, mesh, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
-        VkRect2D { 0, 0, WIDTH, HEIGHT }, std::size(clearValues), clearValues, _imGuiData.get(), pushData);
+        VkRect2D { 0, 0, WIDTH, HEIGHT }, std::size(clearValues), clearValues, _imGuiData.get(), pushData, _defaultDescriptorSet, _textureSampler, _texture.getImageView());
 
     auto queueFence = VkInit::createFence(_device);
 

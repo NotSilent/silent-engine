@@ -1,4 +1,5 @@
 #version 450
+#extension GL_KHR_vulkan_glsl : enable
 
 layout(push_constant) uniform Push {
     mat4 model;
@@ -12,10 +13,13 @@ layout(location = 1) in vec3 normal;
 
 layout(location = 0) out vec4 outColor;
 
+layout(set = 0, binding = 0) uniform sampler2D texSampler;
+
 void main() {
     vec3 lightDirection = normalize(vec3(-1.0, 0.5, -1.0));
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
-    vec3 objectColor = vec3(1.0, 1.0, 1.0);
+    //vec3 objectColor = vec3(1.0, 1.0, 1.0);
+    vec3 objectColor = texture(texSampler, vec2(0.0, 0.0)).xyz;
 
     float ambientValue = 0.1;
     vec3 ambient = lightColor * ambientValue;
