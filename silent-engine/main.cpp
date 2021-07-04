@@ -235,11 +235,11 @@ void init(GLFWwindow* window)
     _imGuiData = ImGuiData(window, _instance.instance, _physicalDevice.physical_device, _device.device,
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
 
-    _meshManager = MeshManager(_device, _allocator, _commandPool);
-    _meshManager.addMesh(STANFORD_BUNNY_ASSET_LOCATION);
-
     _textureManger = TextureManager(_device.device, _allocator, _commandPool, _device.get_queue(vkb::QueueType::graphics).value());
     _textureManger.addTexture(TEST_TEXTURE_ASSET_LOCATION);
+
+    _meshManager = MeshManager(_device, _allocator, _commandPool);
+    _meshManager.addMesh(STANFORD_BUNNY_ASSET_LOCATION, _textureManger.getTexture(TEST_TEXTURE_ASSET_LOCATION));
 
     _camera = Camera(WIDTH, HEIGHT);
 }
@@ -295,10 +295,12 @@ void draw()
     };
 
     const auto mesh = _meshManager.getMesh(STANFORD_BUNNY_ASSET_LOCATION);
-    const auto texture = _textureManger.getTexture(TEST_TEXTURE_ASSET_LOCATION);
 
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device.device, _commandPool, mesh, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
-        VkRect2D { 0, 0, WIDTH, HEIGHT }, _imGuiData, pushData, _defaultDescriptorSet, texture);
+    std::vector<std::shared_ptr<Mesh>> meshes;
+    meshes.push_back(mesh);
+
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device.device, _commandPool, meshes, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
+        VkRect2D { 0, 0, WIDTH, HEIGHT }, _imGuiData, pushData, _defaultDescriptorSet);
 
     auto queueFence = VkInit::createFence(_device);
 

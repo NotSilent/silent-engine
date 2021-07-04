@@ -21,7 +21,7 @@ public:
 
     MeshManager(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool);
 
-    void addMesh(const std::string& path);
+    void addMesh(const std::string& path, std::shared_ptr<Texture> texture);
 
     std::shared_ptr<Mesh> getMesh(const std::string& path);
 

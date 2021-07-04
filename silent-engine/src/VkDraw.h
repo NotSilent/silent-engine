@@ -15,8 +15,8 @@ VkClearValue clearValues[] {
 };
 
 namespace VkDraw {
-VkCommandBuffer recordCommandBuffer(VkDevice device, VkCommandPool commandPool, const std::shared_ptr<Mesh> mesh, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass,
-    VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, const PushData& pushData, VkDescriptorSet descriptorSet, const std::shared_ptr<Texture>& texture)
+VkCommandBuffer recordCommandBuffer(VkDevice device, VkCommandPool commandPool, const std::vector<std::shared_ptr<Mesh>> meshes, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass,
+    VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, const PushData& pushData, VkDescriptorSet descriptorSet)
 {
     VkRenderPassBeginInfo beginInfo {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -50,37 +50,41 @@ VkCommandBuffer recordCommandBuffer(VkDevice device, VkCommandPool commandPool, 
 
     vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    VkDeviceSize offset { 0 };
-    VkBuffer vertexBuffer = mesh->getVertexBuffer();
-    VkBuffer indexBuffer = mesh->getIndexBuffer();
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
-    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
-    vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+    for (auto mesh : meshes) {
+        auto texture = mesh->getTexture();
 
-    VkDescriptorImageInfo imageInfo {
-        .sampler = texture->getSampler(),
-        .imageView = texture->getImageView(),
-        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    };
+        VkDeviceSize offset { 0 };
+        VkBuffer vertexBuffer = mesh->getVertexBuffer();
+        VkBuffer indexBuffer = mesh->getIndexBuffer();
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
+        vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
+        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
-    VkWriteDescriptorSet write {
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .pNext = nullptr,
-        .dstSet = descriptorSet,
-        .dstBinding = 0,
-        .dstArrayElement = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .pImageInfo = &imageInfo,
-        .pBufferInfo = nullptr,
-        .pTexelBufferView = nullptr,
-    };
+        VkDescriptorImageInfo imageInfo {
+            .sampler = texture->getSampler(),
+            .imageView = texture->getImageView(),
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        };
 
-    vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+        VkWriteDescriptorSet write {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext = nullptr,
+            .dstSet = descriptorSet,
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .pImageInfo = &imageInfo,
+            .pBufferInfo = nullptr,
+            .pTexelBufferView = nullptr,
+        };
 
-    vkCmdDrawIndexed(cmd, mesh->getIndexCount(), 1, 0, 0, 0);
+        vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+
+        vkCmdDrawIndexed(cmd, mesh->getIndexCount(), 1, 0, 0, 0);
+    }
 
     imGuiData.appendDrawToCommandBuffer(cmd);
 

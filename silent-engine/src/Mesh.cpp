@@ -1,11 +1,8 @@
 #include "Mesh.h"
 
-Mesh::Mesh(uint32_t vertexCount, const Buffer<Vertex>& vertexBuffer, uint32_t indexCount, const Buffer<uint32_t>& indexBuffer)
+Mesh::Mesh(uint32_t vertexCount, const Buffer<Vertex>& vertexBuffer, uint32_t indexCount, const Buffer<uint32_t>& indexBuffer, std::shared_ptr<Texture> texture) :
+    _vertexCount(vertexCount), _vertexBuffer(vertexBuffer), _indexCount(indexCount), _indexBuffer(indexBuffer), _texture(texture)
 {
-    _vertexCount = vertexCount;
-    _vertexBuffer = vertexBuffer;
-    _indexCount = indexCount;
-    _indexBuffer = indexBuffer;
 }
 
 void Mesh::destroy(VkDevice device, VmaAllocator allocator)
@@ -32,4 +29,9 @@ uint32_t Mesh::getIndexCount() const
 VkBuffer Mesh::getIndexBuffer() const
 {
     return _indexBuffer.getBuffer();
+}
+
+std::shared_ptr<Texture> Mesh::getTexture() const
+{
+    return _texture;
 }

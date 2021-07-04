@@ -13,15 +13,15 @@ MeshManager::MeshManager(const vkb::Device& device, const VmaAllocator allocator
 {
 }
 
-void MeshManager::addMesh(const std::string& path)
+void MeshManager::addMesh(const std::string& meshPath, std::shared_ptr<Texture> texture)
 {
-    if (_meshes.contains(path)) {
+    if (_meshes.contains(meshPath)) {
         return;
     }
 
     auto importer = Assimp::Importer {};
 
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_FixInfacingNormals);
+    const aiScene* scene = importer.ReadFile(meshPath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_FixInfacingNormals);
 
     if (!scene || !scene->HasMeshes()) {
         throw std::runtime_error(importer.GetErrorString());
@@ -54,7 +54,7 @@ void MeshManager::addMesh(const std::string& path)
     Buffer<Vertex> vertexBuffer = Buffer<Vertex>(_device, _allocator, _commandPool, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesSize, vertices.data());
     Buffer<uint32_t> indexBuffer = Buffer<uint32_t>(_device, _allocator, _commandPool, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesSize, indices.data());
 
-    _meshes[path] = std::make_shared<Mesh>(vertexCount, vertexBuffer, indexCount, indexBuffer);
+    _meshes[meshPath] = std::make_shared<Mesh>(vertexCount, vertexBuffer, indexCount, indexBuffer, texture);
 }
 
 std::shared_ptr<Mesh> MeshManager::getMesh(const std::string& path)
