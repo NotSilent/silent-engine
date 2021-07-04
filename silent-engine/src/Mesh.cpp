@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-Mesh::Mesh(const uint32_t vertexCount, const Buffer<Vertex>& vertexBuffer, const uint32_t indexCount, const Buffer<uint32_t> indexBuffer)
+Mesh::Mesh(uint32_t vertexCount, const Buffer<Vertex>& vertexBuffer, uint32_t indexCount, const Buffer<uint32_t>& indexBuffer)
 {
     _vertexCount = vertexCount;
     _vertexBuffer = vertexBuffer;
@@ -8,10 +8,10 @@ Mesh::Mesh(const uint32_t vertexCount, const Buffer<Vertex>& vertexBuffer, const
     _indexBuffer = indexBuffer;
 }
 
-Mesh::~Mesh()
+void Mesh::destroy(VkDevice device, VmaAllocator allocator)
 {
-    _vertexBuffer.destroy();
-    _indexBuffer.destroy();
+    _vertexBuffer.destroy(device, allocator);
+    _indexBuffer.destroy(device, allocator);
 }
 
 uint32_t Mesh::getVertexCount() const

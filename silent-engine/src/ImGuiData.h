@@ -7,6 +7,9 @@
 #include <glm/gtx/string_cast.hpp>
 #include <vulkan/vulkan.h>
 
+#include "VkResource.h"
+#include "vma/vk_mem_alloc.h"
+
 struct ImGuiFrameData {
     uint64_t currentFrame;
     double currentTime;
@@ -14,8 +17,10 @@ struct ImGuiFrameData {
     double fps;
 };
 
-class ImGuiData {
+class ImGuiData : public VkResource<ImGuiData> {
 public:
+    ImGuiData() = default;
+
     ImGuiData(GLFWwindow* window, const VkInstance instance, const VkPhysicalDevice physicalDevice, const VkDevice device,
         uint32_t queueFamily, VkQueue graphicsQueue, uint32_t imageCount, VkRenderPass renderPass, VkCommandPool commandPool)
         : _device(device)
@@ -50,9 +55,9 @@ public:
         endSingleTimeCommands(cmd, graphicsQueue, commandPool);
     }
 
-    ~ImGuiData()
+    void destroy(VkDevice device, VmaAllocator allocator)
     {
-        vkDestroyDescriptorPool(_device, _descriptorPool, nullptr);
+        vkDestroyDescriptorPool(device, _descriptorPool, nullptr);
         ImGui_ImplVulkan_Shutdown();
     }
 

@@ -57,12 +57,14 @@ void MeshManager::addMesh(const std::string& path)
     _meshes[path] = std::make_shared<Mesh>(vertexCount, vertexBuffer, indexCount, indexBuffer);
 }
 
-std::weak_ptr<Mesh> MeshManager::getMesh(const std::string& path)
+std::shared_ptr<Mesh> MeshManager::getMesh(const std::string& path)
 {
     return _meshes[path];
 }
 
-void MeshManager::release()
+void MeshManager::destroy()
 {
-    _meshes.clear();
+    for(auto& mesh : _meshes) {
+        mesh.second->destroy(_device.device, _allocator);
+    }
 }

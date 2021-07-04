@@ -1,18 +1,16 @@
 #pragma once
 #include "vk-bootstrap/VkBootstrap.h"
 #include "vma/vk_mem_alloc.h"
+#include "VkResource.h"
 
 template <typename T>
-class Buffer {
+class Buffer : public VkResource<Buffer<T>> {
 public:
     Buffer<T>() = default;
 
     Buffer<T>(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool, VkBufferUsageFlagBits usage, const uint32_t size, const T* data)
         : _buffer {}
-        , _allocation {}
     {
-        _allocator = allocator;
-
         VkBufferCreateInfo bufferCreateInfo {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
@@ -37,7 +35,7 @@ public:
         VkBuffer stagingBuffer;
         VmaAllocation stagingBufferAlloc;
         VmaAllocationInfo stagingBufferAllocInfo;
-        if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo) != VK_SUCCESS) {
+        if (vmaCreateBuffer(allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo) != VK_SUCCESS) {
             throw std::runtime_error("Error: vmaCreateBuffer");
         }
 
@@ -49,7 +47,7 @@ public:
         allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         allocationCreateInfo.flags = 0;
 
-        if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &_buffer, &_allocation, nullptr) != VK_SUCCESS) {
+        if (vmaCreateBuffer(allocator, &bufferCreateInfo, &allocationCreateInfo, &_buffer, &_allocation, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Error: vmaCreateBuffer");
         }
 
@@ -108,12 +106,12 @@ public:
         }
 
         vkFreeCommandBuffers(device.device, commandPool, 1, &transferCommandBuffer);
-        vmaDestroyBuffer(_allocator, stagingBuffer, stagingBufferAlloc);
+        vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAlloc);
     }
 
-    void destroy()
+    void destroy(VkDevice device, VmaAllocator allocator)
     {
-        vmaDestroyBuffer(_allocator, _buffer, _allocation);
+        vmaDestroyBuffer(allocator, _buffer, _allocation);
     }
 
     VkBuffer getBuffer() const
@@ -122,8 +120,6 @@ public:
     }
 
 private:
-    VmaAllocator _allocator;
-
     VkBuffer _buffer;
     VmaAllocation _allocation;
 };

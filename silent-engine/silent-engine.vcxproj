@@ -147,13 +147,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\ImageManager.cpp" />
+    <ClCompile Include="src\TextureManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Implementations.cpp" />
     <ClCompile Include="src\MeshManager.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
-    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="third-party\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="third-party\imgui\backends\imgui_impl_vulkan.cpp" />
     <ClCompile Include="third-party\imgui\imgui.cpp" />
@@ -170,7 +170,7 @@
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ImageManager.h" />
+    <ClInclude Include="src\TextureManager.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\MeshManager.h" />
     <ClInclude Include="src\Buffer.h" />
@@ -178,7 +178,8 @@
     <ClInclude Include="src\ImGuiData.h" />
     <ClInclude Include="src\Mesh.h" />
     <ClInclude Include="src\VkDraw.h" />
-    <ClInclude Include="Texture.h" />
+    <ClInclude Include="src\VkResource.h" />
+    <ClInclude Include="src\Texture.h" />
     <ClInclude Include="third-party\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="third-party\imgui\backends\imgui_impl_vulkan.h" />
     <ClInclude Include="third-party\imgui\imconfig.h" />

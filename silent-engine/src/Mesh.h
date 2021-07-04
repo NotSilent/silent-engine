@@ -15,9 +15,9 @@ struct PushData {
 
 class Mesh {
 public:
-    Mesh(const uint32_t vertexCount, const Buffer<Vertex>& vertexBuffer, const uint32_t indexCount, const Buffer<uint32_t> indexBuffer);
+    Mesh(uint32_t vertexCount, const Buffer<Vertex>& vertexBuffer, uint32_t indexCount, const Buffer<uint32_t>& indexBuffer);
 
-    ~Mesh();
+    void destroy(VkDevice device, VmaAllocator allocator);
 
     uint32_t getVertexCount() const;
 

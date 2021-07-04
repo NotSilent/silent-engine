@@ -21,8 +21,9 @@
 
 #include "Camera.h"
 #include "Image.h"
-#include "ImageManager.h"
+#include "TextureManager.h"
 #include "MeshManager.h"
+#include "Texture.h"
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
@@ -64,15 +65,12 @@ VkPipeline _pipeline;
 
 VmaAllocator _allocator;
 
-std::unique_ptr<ImGuiData> _imGuiData;
+ImGuiData _imGuiData;
 
 MeshManager _meshManager;
-ImageManager _imageManger;
+TextureManager _textureManger;
 
 Camera _camera;
-
-Image _texture;
-VkSampler _textureSampler;
 
 // TODO: Input manager
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -82,7 +80,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
 
     if (key == GLFW_KEY_F && action == GLFW_PRESS) {
-        _imGuiData->toggleShow();
+        _imGuiData.toggleShow();
     }
 }
 
@@ -153,9 +151,9 @@ int main()
 
         _camera.update(deltaTime, input, glm::vec2(xPos, yPos));
 
-        _imGuiData->setFrameData(_currentFrame, currentTime, frameTime, fps);
-        _imGuiData->setCameraPosition(_camera.getPosition());
-        _imGuiData->render();
+        _imGuiData.setFrameData(_currentFrame, currentTime, frameTime, fps);
+        _imGuiData.setCameraPosition(_camera.getPosition());
+        _imGuiData.render();
 
         draw();
 
@@ -234,29 +232,27 @@ void init(GLFWwindow* window)
     _pipelineLayout = VkInit::Pipeline::createPipelineLayout(_device, 1, &_defaultDescriptorSetLayout, sizeof(PushData));
     _pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _pipelineLayout, _renderPass, WIDTH, HEIGHT);
 
-    _imGuiData = std::make_unique<ImGuiData>(window, _instance.instance, _physicalDevice.physical_device, _device.device,
+    _imGuiData = ImGuiData(window, _instance.instance, _physicalDevice.physical_device, _device.device,
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
 
     _meshManager = MeshManager(_device, _allocator, _commandPool);
     _meshManager.addMesh(STANFORD_BUNNY_ASSET_LOCATION);
 
-    _camera = Camera(WIDTH, HEIGHT);
+    _textureManger = TextureManager(_device.device, _allocator, _commandPool, _device.get_queue(vkb::QueueType::graphics).value());
+    _textureManger.addTexture(TEST_TEXTURE_ASSET_LOCATION);
 
-    _texture = Image(_device, _allocator, _commandPool, TEST_TEXTURE_ASSET_LOCATION);
-    _textureSampler = VkInit::createSampler(_device);
+    _camera = Camera(WIDTH, HEIGHT);
 }
 
 void cleanup()
 {
-    _meshManager.release();
+    _meshManager.destroy();
+    _textureManger.destroy();
 
     for (auto& image : _depthStencilImages) {
-        image->destroy();
+        image->destroy(_device.device, _allocator);
     }
-    _imGuiData.reset();
-
-    _texture.destroy();
-    vkDestroySampler(_device.device, _textureSampler, nullptr);
+    _imGuiData.destroy(_device.device, _allocator);
 
     vkDestroyPipeline(_device.device, _pipeline, nullptr);
     vkDestroyPipelineLayout(_device.device, _pipelineLayout, nullptr);
@@ -291,11 +287,6 @@ void draw()
         throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
 
-    VkClearValue clearValues[] {
-        { 0.75f, 0.75f, 0.75f },
-        { 1.0f, 0 },
-    };
-
     PushData pushData {
         .model = glm::mat4(1.0f),
         .view = _camera.getViewMatrix(),
@@ -304,9 +295,10 @@ void draw()
     };
 
     const auto mesh = _meshManager.getMesh(STANFORD_BUNNY_ASSET_LOCATION);
+    const auto texture = _textureManger.getTexture(TEST_TEXTURE_ASSET_LOCATION);
 
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, mesh, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
-        VkRect2D { 0, 0, WIDTH, HEIGHT }, std::size(clearValues), clearValues, _imGuiData.get(), pushData, _defaultDescriptorSet, _textureSampler, _texture.getImageView());
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device.device, _commandPool, mesh, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
+        VkRect2D { 0, 0, WIDTH, HEIGHT }, _imGuiData, pushData, _defaultDescriptorSet, texture);
 
     auto queueFence = VkInit::createFence(_device);
 

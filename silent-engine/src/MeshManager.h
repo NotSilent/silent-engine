@@ -23,9 +23,9 @@ public:
 
     void addMesh(const std::string& path);
 
-    std::weak_ptr<Mesh> getMesh(const std::string& path);
+    std::shared_ptr<Mesh> getMesh(const std::string& path);
 
-    void release();
+    void destroy();
 
 private:
 };

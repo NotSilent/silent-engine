@@ -5,6 +5,7 @@
 #include "vma/vk_mem_alloc.h"
 
 #include "stb_image.h"
+#include "VkResource.h"
 
 struct ImageData {
     stbi_uc* data;
@@ -32,29 +33,15 @@ struct ImageData {
     }
 };
 
-class Image {
-public:
-private:
-    vkb::Device _device;
-    VmaAllocator _allocator;
-
-    VkImage _image;
-    VkImageView _imageView;
-    VkSampler _sampler;
-
-    VmaAllocation _allocation;
-
+class Image : public VkResource<Image> {
 public:
 
     Image() = default;
 
-    Image(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool, const std::string& path)
+    Image(VkDevice device, VmaAllocator allocator, VkCommandPool commandPool, VkQueue queue, const std::string& path)
         : _image {}
         , _allocation {}
     {
-        _device = device;
-        _allocator = allocator;
-
         ImageData imageData = ImageData::loadImage(path);
 
         size_t size = sizeof(float) * imageData.size();
@@ -85,7 +72,7 @@ public:
         VkBuffer stagingBuffer;
         VmaAllocation stagingBufferAlloc;
         VmaAllocationInfo stagingBufferAllocInfo;
-        if (vmaCreateBuffer(_allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo) != VK_SUCCESS) {
+        if (vmaCreateBuffer(allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo) != VK_SUCCESS) {
             throw std::runtime_error("Error: vmaCreateImage");
         }
 
@@ -114,7 +101,7 @@ public:
         allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         allocationCreateInfo.flags = 0;
 
-        if (vmaCreateImage(_allocator, &imageCreateInfo, &allocationCreateInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
+        if (vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Error: vmaCreateImage");
         }
 
@@ -127,7 +114,7 @@ public:
         };
 
         VkCommandBuffer transferCommandBuffer;
-        if (vkAllocateCommandBuffers(device.device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkAllocateCommandBuffers");
         }
 
@@ -208,15 +195,15 @@ public:
             .pSignalSemaphores = nullptr,
         };
 
-        if (vkQueueSubmit(device.get_queue(vkb::QueueType::graphics).value(), 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
+        if (vkQueueSubmit(queue, 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkQueueSubmit");
         }
-        if (vkQueueWaitIdle(device.get_queue(vkb::QueueType::graphics).value()) != VK_SUCCESS) {
+        if (vkQueueWaitIdle(queue) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkQueueWaitIdle");
         }
 
-        vkFreeCommandBuffers(device.device, commandPool, 1, &transferCommandBuffer);
-        vmaDestroyBuffer(_allocator, stagingBuffer, stagingBufferAlloc);
+        vkFreeCommandBuffers(device, commandPool, 1, &transferCommandBuffer);
+        vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAlloc);
 
         VkImageViewCreateInfo viewCreateInfo {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -235,16 +222,13 @@ public:
             },
         };
 
-        if (vkCreateImageView(device.device, &viewCreateInfo, nullptr, &_imageView) != VK_SUCCESS) {
+        if (vkCreateImageView(device, &viewCreateInfo, nullptr, &_imageView) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkCreateImageView");
         }
     }
 
     Image(const vkb::Device& device, const VmaAllocator allocator, uint32_t width, uint32_t height)
     {
-        _device = device;
-        _allocator = allocator;
-
         VkImageCreateInfo createInfo {
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .pNext = nullptr,
@@ -273,7 +257,7 @@ public:
             .pUserData = nullptr,
         };
 
-        if (vmaCreateImage(_allocator, &createInfo, &allocationCreateInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
+        if (vmaCreateImage(allocator, &createInfo, &allocationCreateInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Error: vmaCreateImage");
         }
 
@@ -299,14 +283,21 @@ public:
         }
     }
 
-    void destroy()
+    void destroy(VkDevice device, VmaAllocator allocator)
     {
-        vkDestroyImageView(_device.device, _imageView, nullptr);
-        vmaDestroyImage(_allocator, _image, _allocation);
+        vkDestroyImageView(device, _imageView, nullptr);
+        vmaDestroyImage(allocator, _image, _allocation);
     }
 
     VkImageView getImageView() const
     {
         return _imageView;
     }
+
+private:
+    VkImage _image;
+    VkImageView _imageView;
+
+    VmaAllocation _allocation;
+
 };
