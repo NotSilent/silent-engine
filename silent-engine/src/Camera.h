@@ -11,13 +11,9 @@ public:
     Camera(Camera&& other) = default;
     Camera& operator=(Camera&& other) noexcept;
 
-    Camera(const float width, const float height);
+    Camera(float width, float height);
 
     void update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotationInput);
-
-    void setUnitsPerSecond(float value);
-
-    void translate(const glm::vec3& translation);
 
     glm::vec3 getPosition() const;
 
@@ -32,7 +28,7 @@ private:
     glm::mat4 _projection {};
 
     float _unitsPerSecond { 1.0f };
-    float _angle { 0.15 };
+    float _angle { 0.15f };
     float _horizontalAngle { 0.0f };
     float _verticalAngle { 0.0f };
 

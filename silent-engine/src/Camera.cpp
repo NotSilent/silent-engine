@@ -4,7 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
-Camera::Camera(const float width, const float height)
+Camera::Camera(float width, float height)
     : _projection { glm::perspective(glm::radians(45.0f), width / static_cast<float>(height), 0.0001f, 200.0f) }
 {
 }
@@ -60,16 +60,6 @@ void Camera::update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotatio
     const glm::vec3 cross = glm::cross(_currentDirection, { 0.0f, 1.0f, 0.0f });
     movementDelta -= cross * directionInput.x;
     _position += movementDelta;
-}
-
-void Camera::setUnitsPerSecond(float value)
-{
-    _unitsPerSecond = value;
-}
-
-void Camera::translate(const glm::vec3& translation)
-{
-    _position += translation;
 }
 
 glm::vec3 Camera::getPosition() const

@@ -6,6 +6,7 @@
 #include <glm/vec3.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <vulkan/vulkan.h>
+#include <stdexcept>
 
 #include "VkResource.h"
 #include "vma/vk_mem_alloc.h"
@@ -126,18 +127,12 @@ private:
             { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
         };
 
-        VkDescriptorPoolCreateInfo pool_info = {};
-        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 1000;
-        pool_info.poolSizeCount = std::size(descriptorPoolSizes);
-
         VkDescriptorPoolCreateInfo createInfo {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
             .pNext = nullptr,
             .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
             .maxSets = 1000,
-            .poolSizeCount = std::size(descriptorPoolSizes),
+            .poolSizeCount = static_cast<uint32_t>(std::size(descriptorPoolSizes)),
             .pPoolSizes = descriptorPoolSizes,
         };
 

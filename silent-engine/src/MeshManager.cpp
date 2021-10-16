@@ -46,8 +46,8 @@ void MeshManager::addMesh(const std::string& meshPath, std::shared_ptr<Texture> 
         indices[i * 3 + 2] = assimpMesh->mFaces[i].mIndices[2];
     }
 
-    uint32_t vertexCount = vertices.size();
-    uint32_t indexCount = indices.size();
+    uint32_t vertexCount = static_cast<uint32_t>(vertices.size());
+    uint32_t indexCount = static_cast<uint32_t>(indices.size());
     uint32_t verticesSize = sizeof(Vertex) * vertexCount;
     uint32_t indicesSize = sizeof(uint32_t) * indexCount;
 

@@ -9,9 +9,9 @@
 
 struct ImageData {
     stbi_uc* data;
-    int x;
-    int y;
-    int channels;
+    uint32_t x;
+    uint32_t y;
+    uint32_t channels;
 
     int size()
     {
@@ -26,9 +26,9 @@ struct ImageData {
 
         return {
             .data = data,
-            .x = x,
-            .y = y,
-            .channels = channels,
+            .x = static_cast<uint32_t>(x),
+            .y = static_cast<uint32_t>(y),
+            .channels = static_cast<uint32_t>(channels),
         };
     }
 };
