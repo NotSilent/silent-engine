@@ -5,7 +5,7 @@
 class Texture : public VkResource<Texture> {
 public:
     Texture() = default;
-    Texture(VkDevice device, VmaAllocator allocator, VkCommandPool commandPool, VkQueue queue, const std::string& path);
+    Texture(const vkb::Device& device, VmaAllocator allocator, VkCommandPool commandPool, const std::string& path);
 
     void destroy(VkDevice device, VmaAllocator allocator);
 

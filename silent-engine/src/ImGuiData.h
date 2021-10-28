@@ -13,9 +13,9 @@
 
 struct ImGuiFrameData {
     uint64_t currentFrame;
-    double currentTime;
-    double frameTime;
-    double fps;
+    float currentTime;
+    float frameTime;
+    float fps;
 };
 
 class ImGuiData : public VkResource<ImGuiData> {
@@ -97,7 +97,7 @@ public:
         _cameraPosition = position;
     }
 
-    void setFrameData(uint64_t currentFrame, double currentTime, double frameTime, double fps)
+    void setFrameData(uint64_t currentFrame, float currentTime, float frameTime, float fps)
     {
         _frameData = { currentFrame, currentTime, frameTime, fps };
     }

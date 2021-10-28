@@ -13,7 +13,7 @@ MeshManager::MeshManager(const vkb::Device& device, const VmaAllocator allocator
 {
 }
 
-void MeshManager::addMesh(const std::string& meshPath, std::shared_ptr<Texture> texture)
+void MeshManager::addMesh(const std::string& meshPath)
 {
     if (_meshes.contains(meshPath)) {
         return;
@@ -54,11 +54,15 @@ void MeshManager::addMesh(const std::string& meshPath, std::shared_ptr<Texture> 
     Buffer<Vertex> vertexBuffer = Buffer<Vertex>(_device, _allocator, _commandPool, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesSize, vertices.data());
     Buffer<uint32_t> indexBuffer = Buffer<uint32_t>(_device, _allocator, _commandPool, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesSize, indices.data());
 
-    _meshes[meshPath] = std::make_shared<Mesh>(vertexCount, vertexBuffer, indexCount, indexBuffer, texture);
+    _meshes[meshPath] = std::make_shared<Mesh>(vertexCount, vertexBuffer, indexCount, indexBuffer);
 }
 
 std::shared_ptr<Mesh> MeshManager::getMesh(const std::string& path)
 {
+    if(!_meshes.contains(path)){
+        addMesh(path);
+    }
+
     return _meshes[path];
 }
 

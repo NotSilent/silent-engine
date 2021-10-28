@@ -45,13 +45,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
-    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>true</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
-    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>true</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -90,6 +90,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\InputManager.cpp" />
+    <ClCompile Include="src\DrawData.cpp" />
+    <ClCompile Include="src\MeshComponent.cpp" />
+    <ClCompile Include="src\Component.cpp" />
+    <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\TextureManager.cpp" />
     <ClCompile Include="main.cpp" />
@@ -109,6 +114,8 @@
     <ClCompile Include="third-party\imgui\imgui_tables.cpp" />
     <ClCompile Include="third-party\imgui\imgui_widgets.cpp" />
     <ClCompile Include="third-party\vk-bootstrap\VkBootstrap.cpp" />
+    <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="src\TimeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -117,6 +124,11 @@
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\InputManager.h" />
+    <ClInclude Include="src\DrawData.h" />
+    <ClInclude Include="src\MeshComponent.h" />
+    <ClInclude Include="src\Component.h" />
+    <ClInclude Include="src\Entity.h" />
     <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\TextureManager.h" />
     <ClInclude Include="src\Camera.h" />
@@ -142,6 +154,8 @@
     <ClInclude Include="third-party\vma\vk_mem_alloc.h" />
     <ClInclude Include="src\VkInitPipeline.h" />
     <ClInclude Include="src\Vertex.h" />
+    <ClInclude Include="src\Window.h" />
+    <ClInclude Include="src\TimeManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -5,7 +5,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 
 Camera::Camera(float width, float height)
-    : _projection { glm::perspective(glm::radians(45.0f), width / static_cast<float>(height), 0.0001f, 200.0f) }
+    : _projection { glm::perspective(glm::radians(45.0f), width / height, 0.0001f, 200.0f) }
 {
 }
 
@@ -51,7 +51,7 @@ void Camera::update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotatio
     rotationInput *= deltaTime * _angle;
 
     _horizontalAngle += rotationInput.x;
-    _verticalAngle = std::clamp(_verticalAngle + rotationInput.y, -90.0f + std::numeric_limits<float>::epsilon(), 90.0f + std::numeric_limits<float>::epsilon());
+    _verticalAngle = std::clamp(_verticalAngle + rotationInput.y, -90.0f + std::numeric_limits<float>::epsilon(), 90.0f - std::numeric_limits<float>::epsilon());
 
     _currentDirection = glm::rotateX(FORWARD, _verticalAngle);
     _currentDirection = glm::rotateY(_currentDirection, _horizontalAngle);

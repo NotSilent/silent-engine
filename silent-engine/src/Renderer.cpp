@@ -1,7 +1,7 @@
 #include "Renderer.h"
 
-#include <stdexcept>
 #include <memory>
+#include <stdexcept>
 
 #include "VkDraw.h"
 #include "VkInit.h"
@@ -10,107 +10,14 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_LEFT_HANDED
-#include <glm/glm.hpp>
 #include "vma/vk_mem_alloc.h"
+#include <glm/glm.hpp>
 
-void Renderer::run()
+Renderer::Renderer(std::shared_ptr<Window> window)
 {
-    if (!glfwInit()) {
-        throw std::runtime_error("Error: glfwInit");
-    }
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Silent Engine", NULL, NULL);
-    if (!window) {
-        glfwTerminate();
-
-        throw std::runtime_error("Error: glfwCreateWindow");
-    }
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-
-    glfwSetCursorPos(window, 0.0, 0.0);
-
-    glfwSetKeyCallback(window, key_callback);
-
-    init(window);
-
-    _currentTime = glfwGetTime();
-
-    while (!glfwWindowShouldClose(window)) {
-        const double currentTime = glfwGetTime();
-        // deltaTime in seconds
-        const double deltaTime = currentTime - _currentTime;
-        // frameTIme in milliseconds
-        const double frameTime = deltaTime * 1000.0;
-        const double fps = 1000.0 / frameTime;
-        _currentTime = currentTime;
-
-        glfwPollEvents();
-
-        glm::vec2 input { 0.0f };
-
-        // TODO: Input manager
-        // TODO: Add deltaTime
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            input.y += 1.0f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            input.y += -1.0f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            input.x += -1.0f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            input.x += 1.0f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-            _imGuiData.toggleShow();
-        }
-
-        double xPos, yPos;
-        glfwGetCursorPos(window, &xPos, &yPos);
-        glfwSetCursorPos(window, 0.0, 0.0);
-        xPos *= 10.0;
-        yPos *= 10.0;
-
-        _camera.update(static_cast<float>(deltaTime), input, glm::vec2(xPos, yPos));
-
-        _imGuiData.setFrameData(_currentFrame, currentTime, frameTime, fps);
-        _imGuiData.setCameraPosition(_camera.getPosition());
-        _imGuiData.render();
-
-        draw();
-
-        _currentFrame++;
-    }
-
-    cleanup();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
-
-
-// TODO: Input manager
-
-void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GL_TRUE);
-    }
-}
-
-void Renderer::init(GLFWwindow* window)
-{
+    _window = window;
     vkb::InstanceBuilder builder;
-    auto instanceResult = builder.set_app_name(ENGINE_NAME.c_str()).request_validation_layers(true).use_default_debug_messenger().build();
+    auto instanceResult = builder.set_app_name(_window->getName().c_str()).request_validation_layers(true).use_default_debug_messenger().build();
 
     if (!instanceResult) {
         throw std::runtime_error(instanceResult.error().message());
@@ -118,7 +25,7 @@ void Renderer::init(GLFWwindow* window)
 
     _instance = instanceResult.value();
 
-    glfwCreateWindowSurface(_instance.instance, window, nullptr, &_surface);
+    _surface = _window->createSurface(_instance.instance);
 
     vkb::PhysicalDeviceSelector selector { _instance };
 
@@ -140,7 +47,7 @@ void Renderer::init(GLFWwindow* window)
 
     vkb::SwapchainBuilder swapchainBuilder { _device };
 
-    auto swapchainResult = swapchainBuilder.use_default_format_selection().set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR).set_desired_extent(WIDTH, HEIGHT).build();
+    auto swapchainResult = swapchainBuilder.use_default_format_selection().set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR).set_desired_extent(_window->getWidth(), _window->getHeight()).build();
     if (!swapchainResult) {
         throw std::runtime_error(swapchainResult.error().message());
     }
@@ -158,8 +65,8 @@ void Renderer::init(GLFWwindow* window)
     _depthStencilImages = std::vector<std::unique_ptr<Image>>(_swapchain.image_count);
     _framebuffers = std::vector<VkFramebuffer>(_swapchain.image_count);
     for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
-        _depthStencilImages[i] = std::make_unique<Image>(_device, _allocator, WIDTH, HEIGHT);
-        _framebuffers[i] = VkInit::createFramebuffer(_device, _renderPass, _swapchainImageViews[i], _depthStencilImages[i]->getImageView(), WIDTH, HEIGHT);
+        _depthStencilImages[i] = std::make_unique<Image>(_device, _allocator, _window->getWidth(), _window->getHeight());
+        _framebuffers[i] = VkInit::createFramebuffer(_device, _renderPass, _swapchainImageViews[i], _depthStencilImages[i]->getImageView(), _window->getWidth(), _window->getHeight());
     }
 
     _commandPool = VkInit::createCommandPool(_device);
@@ -169,21 +76,18 @@ void Renderer::init(GLFWwindow* window)
     _defaultDescriptorSet = VkInit::createDescriptorSet(_device, _descriptorPool, _defaultDescriptorSetLayout);
 
     _pipelineLayout = VkInit::Pipeline::createPipelineLayout(_device, 1, &_defaultDescriptorSetLayout, sizeof(PushData));
-    _pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _pipelineLayout, _renderPass, WIDTH, HEIGHT);
+    _pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _pipelineLayout, _renderPass, _window->getWidth(), _window->getHeight());
 
-    _imGuiData = ImGuiData(window, _instance.instance, _physicalDevice.physical_device, _device.device,
+    _imGuiData = ImGuiData(_window->getInternalWindow(), _instance.instance, _physicalDevice.physical_device, _device.device,
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
 
-    _textureManger = TextureManager(_device.device, _allocator, _commandPool, _device.get_queue(vkb::QueueType::graphics).value());
-    _textureManger.addTexture(TEST_TEXTURE_ASSET_LOCATION);
-
+    _textureManger = TextureManager(_device, _allocator, _commandPool);
     _meshManager = MeshManager(_device, _allocator, _commandPool);
-    _meshManager.addMesh(STANFORD_BUNNY_ASSET_LOCATION, _textureManger.getTexture(TEST_TEXTURE_ASSET_LOCATION));
 
-    _camera = Camera(static_cast<float>(WIDTH), static_cast<float>(HEIGHT));
+    _currentTime = glfwGetTime();
 }
 
-void Renderer::cleanup()
+Renderer::~Renderer()
 {
     _meshManager.destroy();
     _textureManger.destroy();
@@ -200,8 +104,8 @@ void Renderer::cleanup()
 
     vmaDestroyAllocator(_allocator);
 
-    for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
-        vkDestroyFramebuffer(_device.device, _framebuffers[i], nullptr);
+    for (auto& framebuffer : _framebuffers) {
+        vkDestroyFramebuffer(_device.device, framebuffer, nullptr);
     }
 
     vkDestroyRenderPass(_device.device, _renderPass, nullptr);
@@ -211,13 +115,35 @@ void Renderer::cleanup()
     _swapchain.destroy_image_views(_swapchainImageViews);
     vkb::destroy_swapchain(_swapchain);
 
-    vkDestroySurfaceKHR(_instance.instance, _surface, nullptr);
+    _window->destroySurface(_instance.instance, _surface);
 
     vkb::destroy_device(_device);
     vkb::destroy_instance(_instance);
 }
 
-void Renderer::draw()
+void Renderer::update(const DrawData& drawData, float currentTime, float deltaTime, uint64_t currentFrame)
+{
+    float frameTime = deltaTime * 1000.0;
+    float fps = 1000.0 / frameTime;
+
+    _imGuiData.setFrameData(_currentFrame, currentTime, frameTime, fps);
+    _imGuiData.setCameraPosition(drawData.getCamera().getPosition());
+    _imGuiData.render();
+
+    draw(drawData);
+}
+
+std::shared_ptr<Mesh> Renderer::getMesh(const std::string& path)
+{
+    return _meshManager.getMesh(path);
+}
+
+std::shared_ptr<Texture> Renderer::getTexture(const std::string& path)
+{
+    return _textureManger.getTexture(path);
+}
+
+void Renderer::draw(const DrawData& drawData)
 {
     auto acquireSemaphore = VkInit::createSemaphore(_device);
     uint32_t imageIndex;
@@ -228,18 +154,13 @@ void Renderer::draw()
 
     PushData pushData {
         .model = glm::mat4(1.0f),
-        .view = _camera.getViewMatrix(),
-        .projection = _camera.getProjectionMatrix(),
-        .viewPosition = _camera.getPosition(),
+        .view = drawData.getCamera().getViewMatrix(),
+        .projection = drawData.getCamera().getProjectionMatrix(),
+        .viewPosition = drawData.getCamera().getPosition(),
     };
 
-    const auto mesh = _meshManager.getMesh(STANFORD_BUNNY_ASSET_LOCATION);
-
-    std::vector<std::shared_ptr<Mesh>> meshes;
-    meshes.push_back(mesh);
-
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device.device, _commandPool, meshes, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
-        VkRect2D { {0, 0}, {WIDTH, HEIGHT }}, _imGuiData, pushData, _defaultDescriptorSet);
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device.device, _commandPool, drawData, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
+        VkRect2D { { 0, 0 }, { _window->getWidth(), _window->getHeight() } }, _imGuiData, pushData, _defaultDescriptorSet);
 
     auto queueFence = VkInit::createFence(_device);
 

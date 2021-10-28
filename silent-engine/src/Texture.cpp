@@ -1,8 +1,8 @@
 #include "Texture.h"
 
-Texture::Texture(VkDevice device, VmaAllocator allocator, VkCommandPool commandPool, VkQueue queue, const std::string& path)
+Texture::Texture(const vkb::Device& device, VmaAllocator allocator, VkCommandPool commandPool, const std::string& path)
 {
-    _image = Image(device, allocator, commandPool, queue, path);
+    _image = Image(device, allocator, commandPool, path);
 
     VkSamplerCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -25,7 +25,7 @@ Texture::Texture(VkDevice device, VmaAllocator allocator, VkCommandPool commandP
         .unnormalizedCoordinates = VK_FALSE,
     };
 
-    if (vkCreateSampler(device, &createInfo, nullptr, &_sampler) != VK_SUCCESS) {
+    if (vkCreateSampler(device.device, &createInfo, nullptr, &_sampler) != VK_SUCCESS) {
         throw std::runtime_error("Error: vkCreateSampler");
     }
 }

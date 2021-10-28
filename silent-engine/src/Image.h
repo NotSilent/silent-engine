@@ -38,7 +38,7 @@ public:
 
     Image() = default;
 
-    Image(VkDevice device, VmaAllocator allocator, VkCommandPool commandPool, VkQueue queue, const std::string& path)
+    Image(const vkb::Device device, VmaAllocator allocator, VkCommandPool commandPool, const std::string& path)
         : _image {}
         , _allocation {}
     {
@@ -114,7 +114,7 @@ public:
         };
 
         VkCommandBuffer transferCommandBuffer;
-        if (vkAllocateCommandBuffers(device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(device.device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkAllocateCommandBuffers");
         }
 
@@ -195,14 +195,14 @@ public:
             .pSignalSemaphores = nullptr,
         };
 
-        if (vkQueueSubmit(queue, 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
+        if (vkQueueSubmit(device.get_queue(vkb::QueueType::graphics).value(), 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkQueueSubmit");
         }
-        if (vkQueueWaitIdle(queue) != VK_SUCCESS) {
+        if (vkQueueWaitIdle(device.get_queue(vkb::QueueType::graphics).value()) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkQueueWaitIdle");
         }
 
-        vkFreeCommandBuffers(device, commandPool, 1, &transferCommandBuffer);
+        vkFreeCommandBuffers(device.device, commandPool, 1, &transferCommandBuffer);
         vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAlloc);
 
         VkImageViewCreateInfo viewCreateInfo {
@@ -222,7 +222,7 @@ public:
             },
         };
 
-        if (vkCreateImageView(device, &viewCreateInfo, nullptr, &_imageView) != VK_SUCCESS) {
+        if (vkCreateImageView(device.device, &viewCreateInfo, nullptr, &_imageView) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkCreateImageView");
         }
     }

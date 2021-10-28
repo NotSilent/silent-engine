@@ -6,7 +6,7 @@ VkClearValue clearValues[] {
     { 1.0f, 0 },
 };
 
-VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool commandPool, const std::vector<std::shared_ptr<Mesh>> meshes, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass, VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, const PushData& pushData, VkDescriptorSet descriptorSet)
+VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool commandPool, const DrawData& drawData, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass, VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, const PushData& pushData, VkDescriptorSet descriptorSet)
 {
     VkRenderPassBeginInfo beginInfo {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -40,12 +40,10 @@ VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool comma
 
     vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    for (auto mesh : meshes) {
-        auto texture = mesh->getTexture();
-
+    for (auto& drawCall : drawData.getDrawCalls()) {
         VkDeviceSize offset { 0 };
-        VkBuffer vertexBuffer = mesh->getVertexBuffer();
-        VkBuffer indexBuffer = mesh->getIndexBuffer();
+        VkBuffer vertexBuffer = drawCall.first->getVertexBuffer();
+        VkBuffer indexBuffer = drawCall.first->getIndexBuffer();
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
         vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
         vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
@@ -53,8 +51,8 @@ VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool comma
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
         VkDescriptorImageInfo imageInfo {
-            .sampler = texture->getSampler(),
-            .imageView = texture->getImageView(),
+            .sampler = drawCall.second->getSampler(),
+            .imageView = drawCall.second->getImageView(),
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         };
 
@@ -73,7 +71,7 @@ VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool comma
 
         vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
 
-        vkCmdDrawIndexed(cmd, mesh->getIndexCount(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(cmd, drawCall.first->getIndexCount(), 1, 0, 0, 0);
     }
 
     imGuiData.appendDrawToCommandBuffer(cmd);

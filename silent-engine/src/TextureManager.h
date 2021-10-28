@@ -8,7 +8,7 @@ class TextureManager {
 public:
     TextureManager() = default;
 
-    TextureManager(VkDevice device, VmaAllocator allocator, VkCommandPool commandPool, VkQueue queue);
+    TextureManager(const vkb::Device& device, VmaAllocator allocator, VkCommandPool commandPool);
 
     void addTexture(const std::string& path);
 
@@ -17,10 +17,9 @@ public:
     void destroy();
 
 private:
-    VkDevice _device;
+    vkb::Device _device;
     VmaAllocator _allocator;
     VkCommandPool _commandPool;
-    VkQueue _queue;
 
     std::unordered_map<std::string, std::shared_ptr<Texture>> _textures {};
 

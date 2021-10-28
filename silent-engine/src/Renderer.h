@@ -1,7 +1,4 @@
 #pragma once
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #include "vk-bootstrap/VkBootstrap.h"
 
 #include "ImGuiData.h"
@@ -12,29 +9,26 @@
 #include "MeshManager.h"
 #include "Texture.h"
 #include "TextureManager.h"
+#include <Window.h>
+#include "DrawData.h"
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
 class Renderer {
 public:
+    Renderer(std::shared_ptr<Window> window);
+    ~Renderer();
 
-    void init(GLFWwindow* window);
-    void cleanup();
-    void draw();
-    void run();
+    // TODO: Reduce input to DrawData and EditorDrawData
+    void update(const DrawData& drawData, float currentTime, float deltaTime, uint64_t currentFrame);
+
+    std::shared_ptr<Mesh> getMesh(const std::string& path);
+    std::shared_ptr<Texture> getTexture(const std::string& path);
 
 private:
-    // TODO: Input manager
-    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    void draw(const DrawData& drawData);
 
-    const std::string ENGINE_NAME = "Silent Engine";
-    const std::string STANFORD_BUNNY_ASSET_LOCATION = "assets/stanford-bunny.obj";
-
-    const std::string PINK_TEXTURE_ASSET_LOCATION = "assets/pink.png";
-    const std::string TEST_TEXTURE_ASSET_LOCATION = "assets/test.png";
-
-    const uint32_t WIDTH = 1920;
-    const uint32_t HEIGHT = 1080;
+    std::shared_ptr<Window> _window;
 
     uint64_t _currentFrame = 0;
     double _currentTime { 0.0 };
@@ -69,6 +63,4 @@ private:
 
     MeshManager _meshManager;
     TextureManager _textureManger;
-
-    Camera _camera;
 };
