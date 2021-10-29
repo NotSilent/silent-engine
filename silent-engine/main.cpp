@@ -31,13 +31,15 @@ int main()
     meshComponent->setMesh(renderer.getMesh(STANFORD_BUNNY_ASSET_LOCATION));
     meshComponent->setTexture(renderer.getTexture(TEST_TEXTURE_ASSET_LOCATION));
 
-    Entity test;
-    test.addComponent(meshComponent);
+    std::shared_ptr<Entity> test = std::make_shared<Entity>();
+    Entity::addComponent(test, meshComponent);
 
     // TODO: move exit on escape to some component
     while (!window->shouldClose() && inputManager.getKeyState(Key::Escape) != KeyState::Press) {
         timeManager.update();
         inputManager.update();
+
+        test->update(timeManager.getDeltaTime());
 
         glm::vec2 input { 0.0f };
 
@@ -64,7 +66,7 @@ int main()
         DrawData drawData(camera);
         // TODO: gather all MeshComponents from entities and add a draw call for each
         // TODO: add translation
-        drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getTexture());
+        drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getTexture(), test->getModel());
 
         renderer.update(drawData, timeManager.getCurrentTime(), timeManager.getDeltaTime(), timeManager.getCurrentFrame());
     }

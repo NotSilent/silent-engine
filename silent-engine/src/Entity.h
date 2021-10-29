@@ -1,20 +1,21 @@
 #pragma once
 
-#include "Component.h"
-#include <vector>
+#include "glm/glm.hpp"
 #include <memory>
+#include <vector>
+
+class Component;
 
 class Entity {
 public:
-	Entity();
-	~Entity();
+    virtual void update(float deltaTime);
 
-	virtual void update(float deltaTime);
+    glm::mat4 getModel();
 
-	void addComponent(std::shared_ptr<Component> component);
-
-	void destroy();
+    static void addComponent(std::shared_ptr<Entity> entity, std::shared_ptr<Component> component);
 
 private:
-	std::vector<std::shared_ptr<Component>> _components;
+    std::vector<std::shared_ptr<Component>> _components;
+
+    glm::mat4 _model { 1.0f };
 };

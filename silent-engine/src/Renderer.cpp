@@ -123,8 +123,8 @@ Renderer::~Renderer()
 
 void Renderer::update(const DrawData& drawData, float currentTime, float deltaTime, uint64_t currentFrame)
 {
-    float frameTime = deltaTime * 1000.0;
-    float fps = 1000.0 / frameTime;
+    float frameTime = deltaTime * 1000.0f;
+    float fps = 1000.0f / frameTime;
 
     _imGuiData.setFrameData(_currentFrame, currentTime, frameTime, fps);
     _imGuiData.setCameraPosition(drawData.getCamera().getPosition());
@@ -152,15 +152,8 @@ void Renderer::draw(const DrawData& drawData)
         throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
 
-    PushData pushData {
-        .model = glm::mat4(1.0f),
-        .view = drawData.getCamera().getViewMatrix(),
-        .projection = drawData.getCamera().getProjectionMatrix(),
-        .viewPosition = drawData.getCamera().getPosition(),
-    };
-
     VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device.device, _commandPool, drawData, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
-        VkRect2D { { 0, 0 }, { _window->getWidth(), _window->getHeight() } }, _imGuiData, pushData, _defaultDescriptorSet);
+        VkRect2D { { 0, 0 }, { _window->getWidth(), _window->getHeight() } }, _imGuiData, _defaultDescriptorSet);
 
     auto queueFence = VkInit::createFence(_device);
 

@@ -8,7 +8,7 @@ layout(push_constant) uniform Push {
     vec3 viewPosition;
 } push;
 
-layout(location = 0) in vec3 worldPosition;
+layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 
 layout(location = 0) out vec4 outColor;
@@ -18,7 +18,7 @@ layout(set = 0, binding = 0) uniform sampler2D texSampler;
 void main() {
     vec3 lightDirection = normalize(vec3(-1.0, 0.5, -1.0));
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
-    //vec3 objectColor = vec3(1.0, 1.0, 1.0);
+    //vec3 objectColor = vec3(1.0, 1.0, 0.0);
     vec3 objectColor = texture(texSampler, vec2(0.4375, 0.9375)).xyz;
 
     float ambientValue = 0.1;
@@ -27,7 +27,7 @@ void main() {
     float diffuseValue = max(dot(lightDirection, normal), 0.0);
     vec3 diffuse = lightColor * diffuseValue;
 
-    vec3 viewDirection = normalize(push.viewPosition - worldPosition);
+    vec3 viewDirection = normalize(push.viewPosition - position);
     vec3 reflectDirection = reflect(-lightDirection, normal);
 
     float specularValue = 0.5;

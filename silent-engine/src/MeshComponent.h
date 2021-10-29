@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include "Texture.h"
+#include <Entity.h>
 
 class MeshComponent : public Component {
 public:
@@ -14,7 +15,6 @@ public:
 
     std::shared_ptr<Mesh> getMesh() const;
     std::shared_ptr<Texture> getTexture() const;
-    glm::vec3 getTranslation() const;
 
 private:
     std::shared_ptr<Mesh> _mesh;

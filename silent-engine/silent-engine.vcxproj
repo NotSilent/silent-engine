@@ -68,6 +68,11 @@
       <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.vert -o unlit.vert.spv
+$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o unlit.frag.spv
+$(ProjectDir)shaders\compile_shaders.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -88,6 +93,11 @@
       <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.vert -o unlit.vert.spv
+$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o unlit.frag.spv
+$(ProjectDir)shaders\compile_shaders.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\InputManager.cpp" />

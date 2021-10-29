@@ -16,9 +16,7 @@ public:
     void update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotationInput);
 
     glm::vec3 getPosition() const;
-
     glm::mat4 getViewMatrix() const;
-
     glm::mat4 getProjectionMatrix() const;
 
 private:

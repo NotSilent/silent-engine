@@ -5,14 +5,18 @@
 #include <vector>
 #include <Texture.h>
 
-using DrawCall = std::pair<std::shared_ptr<Mesh>, std::shared_ptr<Texture>>;
+struct DrawCall {
+	std::shared_ptr<Mesh> mesh;
+	std::shared_ptr<Texture> texture;
+	glm::mat4 model;
+};
 
 class DrawData {
 public:
 	DrawData(const Camera& camera);
 	~DrawData();
 
-	void addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture);
+	void addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, const glm::mat4& model);
 
 	Camera getCamera() const;
 	std::vector<DrawCall> getDrawCalls() const;

@@ -1,11 +1,5 @@
 #include "MeshComponent.h"
 
-glm::vec3 MeshComponent::getTranslation() const
-{
-    //TODO: Get parent Entity translation
-    return glm::vec3(0.0f);
-}
-
 void MeshComponent::setMesh(std::shared_ptr<Mesh> mesh)
 {
     _mesh = mesh;

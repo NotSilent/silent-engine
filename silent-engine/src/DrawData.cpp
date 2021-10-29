@@ -9,9 +9,13 @@ DrawData::~DrawData()
 {
 }
 
-void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture)
+void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, const glm::mat4& model)
 {
-	_drawCalls.push_back({mesh, texture});
+	_drawCalls.push_back({
+		.mesh = mesh,
+		.texture = texture,
+		.model = model,
+		});
 }
 
 Camera DrawData::getCamera() const
