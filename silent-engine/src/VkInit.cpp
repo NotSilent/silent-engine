@@ -30,11 +30,11 @@ VkDescriptorPool VkInit::createDescriptorPool(const vkb::Device& device)
     VkDescriptorPoolSize descriptorPoolSizes[] {
         {
             .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
+            .descriptorCount = 500,
         },
         {
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1,
+            .descriptorCount = 500,
         },
     };
 
@@ -42,7 +42,7 @@ VkDescriptorPool VkInit::createDescriptorPool(const vkb::Device& device)
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
-        .maxSets = 2,
+        .maxSets = 1000,
         .poolSizeCount = 2,
         .pPoolSizes = descriptorPoolSizes,
     };
@@ -81,7 +81,7 @@ VkDescriptorSetLayout VkInit::createDefaultDescriptorSetLayout(const vkb::Device
     return descriptorSetLayout;
 }
 
-VkDescriptorSet VkInit::createDescriptorSet(const vkb::Device& device, VkDescriptorPool pool, VkDescriptorSetLayout layout)
+VkDescriptorSet VkInit::createDescriptorSet(const vkb::Device& device, VkDescriptorPool pool, VkDescriptorSetLayout layout, VkSampler sampler, VkImageView imageView)
 {
     VkDescriptorSetAllocateInfo allocateInfo {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -91,12 +91,33 @@ VkDescriptorSet VkInit::createDescriptorSet(const vkb::Device& device, VkDescrip
         .pSetLayouts = &layout,
     };
 
-    VkDescriptorSet set;
-    if (vkAllocateDescriptorSets(device.device, &allocateInfo, &set) != VK_SUCCESS) {
+    VkDescriptorSet descriptorSet;
+    if (vkAllocateDescriptorSets(device.device, &allocateInfo, &descriptorSet) != VK_SUCCESS) {
         throw std::runtime_error("Error: vkCreateDescriptorSetLayout");
     }
 
-    return set;
+    VkDescriptorImageInfo imageInfo {
+        .sampler = sampler,
+        .imageView = imageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+
+    VkWriteDescriptorSet write {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .pNext = nullptr,
+        .dstSet = descriptorSet,
+        .dstBinding = 0,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .pImageInfo = &imageInfo,
+        .pBufferInfo = nullptr,
+        .pTexelBufferView = nullptr,
+    };
+
+    vkUpdateDescriptorSets(device.device, 1, &write, 0, nullptr);
+
+    return descriptorSet;
 }
 
 VkSemaphore VkInit::createSemaphore(const vkb::Device& device)

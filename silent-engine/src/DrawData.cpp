@@ -1,8 +1,8 @@
 #include "DrawData.h"
 
-DrawData::DrawData(const Camera& camera)
+DrawData::DrawData(std::shared_ptr<Camera> camera)
 {
-	_camera = camera;
+    _camera = camera;
 }
 
 DrawData::~DrawData()
@@ -11,14 +11,14 @@ DrawData::~DrawData()
 
 void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, const glm::mat4& model)
 {
-	_drawCalls.push_back({
-		.mesh = mesh,
-		.texture = texture,
-		.model = model,
-		});
+    _drawCalls.push_back({
+        .mesh = mesh,
+        .texture = texture,
+        .model = model,
+    });
 }
 
-Camera DrawData::getCamera() const
+std::shared_ptr<Camera> DrawData::getCamera() const
 {
     return _camera;
 }

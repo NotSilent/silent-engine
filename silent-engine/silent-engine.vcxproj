@@ -69,10 +69,13 @@
       <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.vert -o unlit.vert.spv
-$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o unlit.frag.spv
-$(ProjectDir)shaders\compile_shaders.bat</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.vert -o $(ProjectDir)shaders\unlit.vert.spv
+$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shaders\unlit.frag.spv</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -94,12 +97,17 @@ $(ProjectDir)shaders\compile_shaders.bat</Command>
       <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.vert -o unlit.vert.spv
-$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o unlit.frag.spv
-$(ProjectDir)shaders\compile_shaders.bat</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.vert -o $(ProjectDir)shaders\unlit.vert.spv
+$(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shaders\unlit.frag.spv</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\EngineStatics.cpp" />
+    <ClCompile Include="src\CameraComponent.cpp" />
     <ClCompile Include="src\InputManager.cpp" />
     <ClCompile Include="src\DrawData.cpp" />
     <ClCompile Include="src\MeshComponent.cpp" />
@@ -109,7 +117,7 @@ $(ProjectDir)shaders\compile_shaders.bat</Command>
     <ClCompile Include="src\TextureManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\Implementations.cpp" />
+    <ClCompile Include="third-party\Implementations.cpp" />
     <ClCompile Include="src\MeshManager.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Texture.cpp" />
@@ -134,8 +142,11 @@ $(ProjectDir)shaders\compile_shaders.bat</Command>
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\EngineStatics.h" />
+    <ClInclude Include="src\CameraComponent.h" />
     <ClInclude Include="src\InputManager.h" />
     <ClInclude Include="src\DrawData.h" />
+    <ClInclude Include="src\Manager.h" />
     <ClInclude Include="src\MeshComponent.h" />
     <ClInclude Include="src\Component.h" />
     <ClInclude Include="src\Entity.h" />

@@ -11,7 +11,7 @@ public:
     Camera(Camera&& other) = default;
     Camera& operator=(Camera&& other) noexcept;
 
-    Camera(float width, float height);
+    Camera(float aspectRatio);
 
     void update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotationInput);
 

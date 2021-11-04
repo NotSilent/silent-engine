@@ -73,7 +73,6 @@ Renderer::Renderer(std::shared_ptr<Window> window)
 
     _descriptorPool = VkInit::createDescriptorPool(_device);
     _defaultDescriptorSetLayout = VkInit::createDefaultDescriptorSetLayout(_device);
-    _defaultDescriptorSet = VkInit::createDescriptorSet(_device, _descriptorPool, _defaultDescriptorSetLayout);
 
     _pipelineLayout = VkInit::Pipeline::createPipelineLayout(_device, 1, &_defaultDescriptorSetLayout, sizeof(PushData));
     _pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _pipelineLayout, _renderPass, _window->getWidth(), _window->getHeight());
@@ -127,7 +126,7 @@ void Renderer::update(const DrawData& drawData, float currentTime, float deltaTi
     float fps = 1000.0f / frameTime;
 
     _imGuiData.setFrameData(_currentFrame, currentTime, frameTime, fps);
-    _imGuiData.setCameraPosition(drawData.getCamera().getPosition());
+    _imGuiData.setCameraPosition(drawData.getCamera()->getPosition());
     _imGuiData.render();
 
     draw(drawData);
@@ -145,6 +144,8 @@ std::shared_ptr<Texture> Renderer::getTexture(const std::string& path)
 
 void Renderer::draw(const DrawData& drawData)
 {
+    vkResetDescriptorPool(_device.device, _descriptorPool, {});
+
     auto acquireSemaphore = VkInit::createSemaphore(_device);
     uint32_t imageIndex;
 
@@ -152,8 +153,8 @@ void Renderer::draw(const DrawData& drawData)
         throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
 
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device.device, _commandPool, drawData, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
-        VkRect2D { { 0, 0 }, { _window->getWidth(), _window->getHeight() } }, _imGuiData, _defaultDescriptorSet);
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, drawData, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
+        VkRect2D { { 0, 0 }, { _window->getWidth(), _window->getHeight() } }, _imGuiData, _descriptorPool, _defaultDescriptorSetLayout);
 
     auto queueFence = VkInit::createFence(_device);
 

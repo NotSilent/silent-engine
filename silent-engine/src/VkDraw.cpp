@@ -1,11 +1,12 @@
 #include "VkDraw.h"
+#include "VkInit.h"
 
 VkClearValue clearValues[] {
     { 0.75f, 0.75f, 0.75f },
     { 1.0f, 0 },
 };
 
-VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool commandPool, const DrawData& drawData, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass, VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, VkDescriptorSet descriptorSet)
+VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device& device, VkCommandPool commandPool, const DrawData& drawData, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass, VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout)
 {
     VkRenderPassBeginInfo beginInfo {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -33,7 +34,7 @@ VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool comma
     };
 
     VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(device, &allocateInfo, &cmd);
+    vkAllocateCommandBuffers(device.device, &allocateInfo, &cmd);
 
     vkBeginCommandBuffer(cmd, &cmdBeginInfo);
 
@@ -42,9 +43,9 @@ VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool comma
     for (auto& drawCall : drawData.getDrawCalls()) {
         PushData pushData {
             .model = drawCall.model,
-            .view = drawData.getCamera().getViewMatrix(),
-            .projection = drawData.getCamera().getProjectionMatrix(),
-            .viewPosition = drawData.getCamera().getPosition(),
+            .view = drawData.getCamera()->getViewMatrix(),
+            .projection = drawData.getCamera()->getProjectionMatrix(),
+            .viewPosition = drawData.getCamera()->getPosition(),
         };
 
         VkDeviceSize offset { 0 };
@@ -54,28 +55,9 @@ VkCommandBuffer VkDraw::recordCommandBuffer(VkDevice device, VkCommandPool comma
         vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
         vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
         vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+        VkDescriptorSet descriptorSet = VkInit::createDescriptorSet(device, descriptorPool, descriptorSetLayout, drawCall.texture->getSampler(), drawCall.texture->getImageView());
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-
-        VkDescriptorImageInfo imageInfo {
-            .sampler = drawCall.texture->getSampler(),
-            .imageView = drawCall.texture->getImageView(),
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        };
-
-        VkWriteDescriptorSet write {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .pNext = nullptr,
-            .dstSet = descriptorSet,
-            .dstBinding = 0,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .pImageInfo = &imageInfo,
-            .pBufferInfo = nullptr,
-            .pTexelBufferView = nullptr,
-        };
-
-        vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
 
         vkCmdDrawIndexed(cmd, drawCall.mesh->getIndexCount(), 1, 0, 0, 0);
     }

@@ -19,6 +19,8 @@ enum class KeyState {
 };
 
 class InputManager {
+    friend class EngineStatics;
+
 public:
     InputManager(std::shared_ptr<Window> window);
 

@@ -52,7 +52,6 @@ private:
 
     VkDescriptorPool _descriptorPool;
     VkDescriptorSetLayout _defaultDescriptorSetLayout;
-    VkDescriptorSet _defaultDescriptorSet;
 
     VkPipelineLayout _pipelineLayout;
     VkPipeline _pipeline;

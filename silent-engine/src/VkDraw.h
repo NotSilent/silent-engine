@@ -11,6 +11,6 @@
 // TODO: Decouple ImGui
 
 namespace VkDraw {
-VkCommandBuffer recordCommandBuffer(VkDevice device, VkCommandPool commandPool, const DrawData& drawData, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass,
-    VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, VkDescriptorSet descriptorSet);
+VkCommandBuffer recordCommandBuffer(vkb::Device& device, VkCommandPool commandPool, const DrawData& drawData, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass,
+    VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout);
 }

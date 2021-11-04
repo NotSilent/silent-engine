@@ -12,6 +12,8 @@ public:
 
     glm::mat4 getModel();
 
+    void translate(const glm::vec3 translation);
+
     static void addComponent(std::shared_ptr<Entity> entity, std::shared_ptr<Component> component);
 
 private:

@@ -4,19 +4,24 @@
 
 void Entity::update(float deltaTime)
 {
-	_model = glm::rotate(_model, std::sin(deltaTime), glm::vec3{0.0f, 1.0f, 0.0f});
-	for(auto& component : _components) { 
-		component->update(deltaTime);
-	}
+    _model = glm::rotate(_model, std::sin(deltaTime), glm::vec3 { 0.0f, 1.0f, 0.0f });
+    for (auto& component : _components) {
+        component->update(deltaTime);
+    }
 }
 
 glm::mat4 Entity::getModel()
 {
-	return _model;
+    return _model;
+}
+
+void Entity::translate(const glm::vec3 translation)
+{
+    _model = glm::translate(_model, translation);
 }
 
 void Entity::addComponent(std::shared_ptr<Entity> entity, std::shared_ptr<Component> component)
 {
-	component->setEntity(entity);
-	entity->_components.push_back(component);
+    component->setEntity(entity);
+    entity->_components.push_back(component);
 }

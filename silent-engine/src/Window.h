@@ -19,6 +19,7 @@ public:
     uint32_t getWidth() const;
     uint32_t getHeight() const;
     std::string getName() const;
+    float getAspectRatio() const;
 
     GLFWwindow* getInternalWindow() const;
 

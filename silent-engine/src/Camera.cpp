@@ -4,8 +4,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
-Camera::Camera(float width, float height)
-    : _projection { glm::perspective(glm::radians(45.0f), width / height, 0.0001f, 200.0f) }
+Camera::Camera(float aspectRatio)
+    : _projection { glm::perspective(glm::radians(45.0f), aspectRatio, 0.0001f, 200.0f) }
 {
 }
 

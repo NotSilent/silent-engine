@@ -11,7 +11,7 @@ VkDescriptorPool createDescriptorPool(const vkb::Device& device);
 
 VkDescriptorSetLayout createDefaultDescriptorSetLayout(const vkb::Device& device);
 
-VkDescriptorSet createDescriptorSet(const vkb::Device& device, VkDescriptorPool pool, VkDescriptorSetLayout layout);
+VkDescriptorSet createDescriptorSet(const vkb::Device& device, VkDescriptorPool pool, VkDescriptorSetLayout layout, VkSampler sampler, VkImageView imageView);
 
 VkSemaphore createSemaphore(const vkb::Device& device);
 

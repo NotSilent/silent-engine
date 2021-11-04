@@ -65,6 +65,11 @@ std::string Window::getName() const
     return _name;
 }
 
+float Window::getAspectRatio() const
+{
+    return static_cast<float>(_width) / static_cast<float>(_height);
+}
+
 GLFWwindow* Window::getInternalWindow() const
 {
     return _window;
