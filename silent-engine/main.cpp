@@ -1,5 +1,6 @@
 #include "Entity.h"
 #include "MeshComponent.h"
+#include "ProfillerTimer.h"
 #include "Renderer.h"
 #include "tinygltf\tiny_gltf.h"
 #include <CameraComponent.h>
@@ -7,9 +8,8 @@
 #include <EngineStatics.h>
 #include <InputManager.h>
 #include <TimeManager.h>
-#include <vector>
-#include "ProfillerTimer.h"
 #include <iostream>
+#include <vector>
 
 const std::string ENGINE_NAME = "Silent Engine";
 
@@ -41,8 +41,8 @@ int main()
     ProfillerTimer loadGLTFFile;
     bool result = loader.LoadASCIIFromFile(&model, &err, &warn, SPONZA_FILENAME);
     float loadGLTFduration = loadGLTFFile.end();
-    std::cout<< "Loading gltf file took: " << loadGLTFduration << "\n";
-    
+    std::cout << "Loading gltf file took: " << loadGLTFduration << "\n";
+
     ProfillerTimer createBuffers;
     if (result) {
         for (auto& mesh : model.meshes) {
@@ -107,10 +107,24 @@ int main()
                     //meshComponent->setTexture(renderer.getTexture(TEST_TEXTURE_ASSET_LOCATION));
                     //
                     // TEMP
-                    tinygltf::Material material = model.materials[primitive.material];
-                    tinygltf::Texture texture = model.textures[material.pbrMetallicRoughness.baseColorTexture.index];
-                    tinygltf::Image image = model.images[texture.source];
-                    meshComponent->setTexture(renderer.getTexture(TEMP_SPONZA_IMAGES_LOCATION + image.uri));
+                    tinygltf::Material gltfMaterial = model.materials[primitive.material];
+                    tinygltf::Texture gltfTexture = model.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
+                    tinygltf::Sampler gltfSampler = model.samplers[gltfTexture.sampler];
+                    tinygltf::Image gltfImage = model.images[gltfTexture.source];
+
+                    std::string samplerName = buffer.uri + ".sampler." + std::to_string(gltfTexture.sampler);
+                    renderer.addSampler(samplerName);
+
+                    std::string imageName = buffer.uri + ".image." + std::to_string(gltfTexture.source);
+                    renderer.addImage(imageName, gltfImage.width, gltfImage.height, gltfImage.image.size() * sizeof(unsigned char), gltfImage.image.data());
+
+                    std::string textureName = buffer.uri + ".texture." + std::to_string(primitive.material);
+                    std::shared_ptr<Sampler> sampler = renderer.getSampler(samplerName);
+                    std::shared_ptr<Image> image = renderer.getImage(imageName);
+                    renderer.addTexture(textureName, sampler, image);
+
+                    std::shared_ptr<Texture> texture = renderer.getTexture(textureName);
+                    meshComponent->setTexture(texture);
                     // ~TEMP
 
                     std::shared_ptr<Entity> entity = std::make_shared<Entity>();
@@ -130,7 +144,7 @@ int main()
     }
 
     float creatingBuffersDuration = createBuffers.end();
-    std::cout<< "Creating buffers took: " << creatingBuffersDuration << "\n";
+    std::cout << "Creating buffers took: " << creatingBuffersDuration << "\n";
 
     {
         // Add Camera

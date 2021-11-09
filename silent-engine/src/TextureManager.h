@@ -1,8 +1,9 @@
 #pragma once
+#include "Texture.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "Texture.h"
+#include <Sampler.h>
 
 class TextureManager {
 public:
@@ -10,9 +11,9 @@ public:
 
     TextureManager(const vkb::Device& device, VmaAllocator allocator, VkCommandPool commandPool);
 
-    void addTexture(const std::string& path);
+    void addTexture(const std::string& name, std::shared_ptr<Sampler> sampler, std::shared_ptr<Image> image);
 
-    std::shared_ptr<Texture> getTexture(const std::string& path);
+    std::shared_ptr<Texture> getTexture(const std::string& name);
 
     void destroy();
 
@@ -22,5 +23,4 @@ private:
     VkCommandPool _commandPool;
 
     std::unordered_map<std::string, std::shared_ptr<Texture>> _textures {};
-
 };

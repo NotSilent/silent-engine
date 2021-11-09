@@ -7,45 +7,15 @@
 #include "VkResource.h"
 #include "tinygltf/stb_image.h"
 
-struct ImageData {
-    stbi_uc* data;
-    uint32_t x;
-    uint32_t y;
-
-    int size()
-    {
-        return (x * y) * STBI_rgb_alpha;
-    }
-
-    static ImageData loadImage(std::string path)
-    {
-        int x, y, channels;
-
-        // channels returns however many components file would have
-        stbi_uc* data = stbi_load(path.c_str(), &x, &y, &channels, STBI_rgb_alpha);
-
-        return {
-            .data = data,
-            .x = static_cast<uint32_t>(x),
-            .y = static_cast<uint32_t>(y),
-        };
-    }
-};
-
 class Image : public VkResource<Image> {
 public:
     Image() = default;
 
-    Image(const vkb::Device device, VmaAllocator allocator, VkCommandPool commandPool, const std::string& path)
+    Image(const vkb::Device device, VmaAllocator allocator, VkCommandPool commandPool, uint32_t width, uint32_t height, VkFormat format, uint32_t size, const void* data)
         : _image {}
         , _allocation {}
     {
-        ImageData imageData = ImageData::loadImage(path);
-
-        stbi_uc* data = imageData.data;
-        size_t size = imageData.size();
-
-        VkExtent3D extent { imageData.x, imageData.y, 1 };
+        VkExtent3D extent { width, height, 1 };
 
         VkBufferCreateInfo bufferCreateInfo {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -84,7 +54,7 @@ public:
             .pNext = nullptr,
             .flags = {},
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_R8G8B8A8_SRGB,
+            .format = format,
             .extent = extent,
             .mipLevels = 1,
             .arrayLayers = 1,
@@ -210,7 +180,7 @@ public:
             .flags = {},
             .image = _image,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = VK_FORMAT_R8G8B8A8_SRGB,
+            .format = format,
             .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
             .subresourceRange = {
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -224,8 +194,6 @@ public:
         if (vkCreateImageView(device.device, &viewCreateInfo, nullptr, &_imageView) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkCreateImageView");
         }
-        
-        stbi_image_free(data);
     }
 
     Image(const vkb::Device& device, const VmaAllocator allocator, uint32_t width, uint32_t height)

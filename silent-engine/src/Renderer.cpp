@@ -81,19 +81,20 @@ Renderer::Renderer(std::shared_ptr<Window> window)
     _imGuiData = ImGuiData(_window->getInternalWindow(), _instance.instance, _physicalDevice.physical_device, _device.device,
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
 
-    _textureManger = TextureManager(_device, _allocator, _commandPool);
-    _meshManager = MeshManager(_device, _allocator, _commandPool);
+    _textureManager = TextureManager(_device, _allocator, _commandPool);
     _bufferManager = BufferManager(_device, _allocator, _commandPool);
+    _imageManager = ImageManager(_device, _allocator, _commandPool);
+    _samplerManager = SamplerManager(_device, _allocator, _commandPool);
 
     _currentTime = glfwGetTime();
 }
 
 Renderer::~Renderer()
 {
-    _meshManager.destroy();
-    _textureManger.destroy();
-
     _bufferManager.destroy();
+    _imageManager.destroy();
+    _samplerManager.destroy();
+    _textureManager.destroy();
 
     for (auto& image : _depthStencilImages) {
         image->destroy(_device.device, _allocator);
@@ -136,9 +137,19 @@ void Renderer::update(const DrawData& drawData, float currentTime, float deltaTi
     draw(drawData);
 }
 
-void Renderer::addBuffer(const std::string& name, uint32_t sizeBytes, const void* data)
+void Renderer::addSampler(const std::string& name)
 {
-    _bufferManager.addBuffer(name, sizeBytes, data);
+    _samplerManager.addSampler(name);
+}
+
+std::shared_ptr<Sampler> Renderer::getSampler(const std::string& name)
+{
+    return _samplerManager.getSampler(name);
+}
+
+void Renderer::addBuffer(const std::string& name, uint32_t size, const void* data)
+{
+    _bufferManager.addBuffer(name, size, data);
 }
 
 std::shared_ptr<Buffer> Renderer::getBuffer(const std::string& name)
@@ -146,14 +157,24 @@ std::shared_ptr<Buffer> Renderer::getBuffer(const std::string& name)
     return _bufferManager.getBuffer(name);
 }
 
-std::shared_ptr<Mesh> Renderer::getMesh(const std::string& path)
+void Renderer::addImage(const std::string& name, uint32_t width, uint32_t height, uint32_t size, const void* data)
 {
-    return _meshManager.getMesh(path);
+    _imageManager.addImage(name, width, height, size, data);
 }
 
-std::shared_ptr<Texture> Renderer::getTexture(const std::string& path)
+std::shared_ptr<Image> Renderer::getImage(const std::string& name)
 {
-    return _textureManger.getTexture(path);
+    return _imageManager.getImage(name);
+}
+
+void Renderer::addTexture(const std::string& name, std::shared_ptr<Sampler> sampler, std::shared_ptr<Image> image)
+{
+    _textureManager.addTexture(name, sampler, image);
+}
+
+std::shared_ptr<Texture> Renderer::getTexture(const std::string& name)
+{
+    return _textureManager.getTexture(name);
 }
 
 void Renderer::draw(const DrawData& drawData)

@@ -4,14 +4,15 @@
 #include "ImGuiData.h"
 #include "Mesh.h"
 
-#include "Camera.h"
-#include "Image.h"
-#include "MeshManager.h"
 #include "BufferManager.h"
+#include "Camera.h"
+#include "DrawData.h"
+#include "Image.h"
+#include "ImageManager.h"
 #include "Texture.h"
 #include "TextureManager.h"
+#include "SamplerManager.h"
 #include <Window.h>
-#include "DrawData.h"
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
@@ -23,11 +24,17 @@ public:
     // TODO: Reduce input to DrawData and EditorDrawData
     void update(const DrawData& drawData, float currentTime, float deltaTime, uint64_t currentFrame);
 
-    void addBuffer(const std::string& name, uint32_t sizeBytes, const void* data);
+    void addSampler(const std::string& name);
+    std::shared_ptr<Sampler> getSampler(const std::string& name);
+
+    void addBuffer(const std::string& name, uint32_t size, const void* data);
     std::shared_ptr<Buffer> getBuffer(const std::string& name);
 
-    std::shared_ptr<Mesh> getMesh(const std::string& path);
-    std::shared_ptr<Texture> getTexture(const std::string& path);
+    void addImage(const std::string& name, uint32_t width, uint32_t height, uint32_t size, const void* data);
+    std::shared_ptr<Image> getImage(const std::string& name);
+
+    void addTexture(const std::string& name, std::shared_ptr<Sampler> sampler, std::shared_ptr<Image> image);
+    std::shared_ptr<Texture> getTexture(const std::string& name);
 
 private:
     void draw(const DrawData& drawData);
@@ -63,8 +70,9 @@ private:
     VmaAllocator _allocator;
 
     ImGuiData _imGuiData;
-    
-    MeshManager _meshManager;
+
     BufferManager _bufferManager;
-    TextureManager _textureManger;
+    ImageManager _imageManager;
+    TextureManager _textureManager;
+    SamplerManager _samplerManager;
 };

@@ -106,7 +106,10 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\SamplerManager.cpp" />
+    <ClCompile Include="src\ImageManager.cpp" />
     <ClCompile Include="ProfillerTimer.cpp" />
+    <ClCompile Include="src\Sampler.cpp" />
     <ClCompile Include="src\BufferManager.cpp" />
     <ClCompile Include="src\EngineStatics.cpp" />
     <ClCompile Include="src\CameraComponent.cpp" />
@@ -121,7 +124,6 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\VertexAttribute.cpp" />
     <ClCompile Include="third-party\Implementations.cpp" />
-    <ClCompile Include="src\MeshManager.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\VkDraw.cpp" />
@@ -145,7 +147,10 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\SamplerManager.h" />
+    <ClInclude Include="src\ImageManager.h" />
     <ClInclude Include="ProfillerTimer.h" />
+    <ClInclude Include="src\Sampler.h" />
     <ClInclude Include="src\BufferManager.h" />
     <ClInclude Include="src\EngineStatics.h" />
     <ClInclude Include="src\CameraComponent.h" />
@@ -158,7 +163,6 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\TextureManager.h" />
     <ClInclude Include="src\Camera.h" />
-    <ClInclude Include="src\MeshManager.h" />
     <ClInclude Include="src\Buffer.h" />
     <ClInclude Include="src\Image.h" />
     <ClInclude Include="src\ImGuiData.h" />
@@ -187,8 +191,6 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\glfw.3.3.4\build\native\glfw.targets" Condition="Exists('..\packages\glfw.3.3.4\build\native\glfw.targets')" />
     <Import Project="..\packages\glm.0.9.9.800\build\native\glm.targets" Condition="Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" />
-    <Import Project="..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets" Condition="Exists('..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets')" />
-    <Import Project="..\packages\Assimp.3.0.0\build\native\Assimp.targets" Condition="Exists('..\packages\Assimp.3.0.0\build\native\Assimp.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -196,7 +198,5 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\glfw.3.3.4\build\native\glfw.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glfw.3.3.4\build\native\glfw.targets'))" />
     <Error Condition="!Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glm.0.9.9.800\build\native\glm.targets'))" />
-    <Error Condition="!Exists('..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\Assimp.3.0.0\build\native\Assimp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Assimp.3.0.0\build\native\Assimp.targets'))" />
   </Target>
 </Project>

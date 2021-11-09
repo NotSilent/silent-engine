@@ -7,7 +7,7 @@ class Buffer : public VkResource<Buffer> {
 public:
     Buffer() = default;
 
-    Buffer(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool, VkBufferUsageFlags usage, const uint32_t size, const void* data)
+    Buffer(const vkb::Device& device, VmaAllocator allocator, VkCommandPool commandPool, VkBufferUsageFlags usage, uint32_t size, const void* data)
         : _buffer {}
         , _sizeBytes{size}
     {
