@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <vector>
+#include <vulkan\vulkan.h>
 
 std::tuple<size_t, std::vector<char>> VkInit::Pipeline::getShaderDataFromFile(const std::string& shaderPath)
 {
@@ -79,7 +80,7 @@ VkPipelineLayout VkInit::Pipeline::createPipelineLayout(const vkb::Device& devic
     return pipelineLayout;
 }
 
-VkPipeline VkInit::Pipeline::createDefaultPipeline(const vkb::Device& device, const VkPipelineLayout layout, const VkRenderPass renderPass, const uint32_t width, const uint32_t height)
+VkPipeline VkInit::Pipeline::createDefaultPipeline(const vkb::Device& device, const VkPipelineLayout layout, const VkRenderPass renderPass, const uint32_t width, const uint32_t height, const std::vector<VertexAttribute>& attributes)
 {
     static const uint32_t SHADER_STAGES = 2;
 
@@ -91,35 +92,31 @@ VkPipeline VkInit::Pipeline::createDefaultPipeline(const vkb::Device& device, co
         createPipelineShaderStageCreateinfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule),
     };
 
-    VkVertexInputBindingDescription vertexInputBindingDescription {
-        .binding = 0,
-        .stride = sizeof(Vertex),
-        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-    };
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    for (uint32_t i = 0; i < attributes.size(); ++i) {
+        bindingDescriptions.push_back({
+            .binding = i,
+            .stride = attributes[i].stride,
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+        });
 
-    VkVertexInputAttributeDescription vertexInputAttributeDescriptions[] {
-        {
-            .location = 0,
-            .binding = 0,
-            .format = VK_FORMAT_R32G32B32_SFLOAT,
+        attributeDescriptions.push_back({
+            .location = i,
+            .binding = i,
+            .format = attributes[i].format,
             .offset = 0,
-        },
-        {
-            .location = 1,
-            .binding = 0,
-            .format = VK_FORMAT_R32G32B32_SFLOAT,
-            .offset = static_cast<uint32_t>(offsetof(Vertex, normal)),
-        },
-    };
+        });
+    }
 
     const VkPipelineVertexInputStateCreateInfo vertexInputState {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = {},
-        .vertexBindingDescriptionCount = 1,
-        .pVertexBindingDescriptions = &vertexInputBindingDescription,
-        .vertexAttributeDescriptionCount = 2,
-        .pVertexAttributeDescriptions = vertexInputAttributeDescriptions,
+        .vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size()),
+        .pVertexBindingDescriptions = bindingDescriptions.data(),
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
+        .pVertexAttributeDescriptions = attributeDescriptions.data(),
     };
 
     const VkPipelineInputAssemblyStateCreateInfo inputAssemblyState {
@@ -192,7 +189,7 @@ VkPipeline VkInit::Pipeline::createDefaultPipeline(const vkb::Device& device, co
         .flags = {},
         .depthTestEnable = VK_TRUE,
         .depthWriteEnable = VK_TRUE,
-        .depthCompareOp = VK_COMPARE_OP_LESS,
+        .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
         .depthBoundsTestEnable = VK_FALSE,
         .stencilTestEnable = VK_FALSE,
         .front = {},

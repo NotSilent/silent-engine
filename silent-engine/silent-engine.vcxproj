@@ -57,7 +57,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;VMA_RECORDING_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(ProjectDir)third-party;$(ProjectDir)third-party\imgui;$(ProjectDir)third-party\imgui\backends;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -83,7 +83,7 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;VMA_RECORDING_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(ProjectDir)third-party;$(ProjectDir)third-party\imgui;$(ProjectDir)third-party\imgui\backends;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -106,6 +106,8 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ProfillerTimer.cpp" />
+    <ClCompile Include="src\BufferManager.cpp" />
     <ClCompile Include="src\EngineStatics.cpp" />
     <ClCompile Include="src\CameraComponent.cpp" />
     <ClCompile Include="src\InputManager.cpp" />
@@ -117,6 +119,7 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClCompile Include="src\TextureManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\VertexAttribute.cpp" />
     <ClCompile Include="third-party\Implementations.cpp" />
     <ClCompile Include="src\MeshManager.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
@@ -142,6 +145,8 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ProfillerTimer.h" />
+    <ClInclude Include="src\BufferManager.h" />
     <ClInclude Include="src\EngineStatics.h" />
     <ClInclude Include="src\CameraComponent.h" />
     <ClInclude Include="src\InputManager.h" />
@@ -158,6 +163,7 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClInclude Include="src\Image.h" />
     <ClInclude Include="src\ImGuiData.h" />
     <ClInclude Include="src\Mesh.h" />
+    <ClInclude Include="src\VertexAttribute.h" />
     <ClInclude Include="src\VkDraw.h" />
     <ClInclude Include="src\VkResource.h" />
     <ClInclude Include="src\Texture.h" />
@@ -169,7 +175,6 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClInclude Include="third-party\imgui\imstb_rectpack.h" />
     <ClInclude Include="third-party\imgui\imstb_textedit.h" />
     <ClInclude Include="third-party\imgui\imstb_truetype.h" />
-    <ClInclude Include="third-party\stb_image.h" />
     <ClInclude Include="third-party\vk-bootstrap\VkBootstrap.h" />
     <ClInclude Include="src\VkInit.h" />
     <ClInclude Include="third-party\vma\vk_mem_alloc.h" />

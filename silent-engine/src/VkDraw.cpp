@@ -1,12 +1,13 @@
 #include "VkDraw.h"
 #include "VkInit.h"
+#include "VkInitPipeline.h"
 
 VkClearValue clearValues[] {
     { 0.75f, 0.75f, 0.75f },
     { 1.0f, 0 },
 };
 
-VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device& device, VkCommandPool commandPool, const DrawData& drawData, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass, VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout)
+VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device& device, VkCommandPool commandPool, const DrawData& drawData, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRenderPass renderPass, VkFramebuffer framebuffer, const VkRect2D& renderArea, const ImGuiData& imGuiData, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, std::vector<VkPipeline>& pipelines)
 {
     VkRenderPassBeginInfo beginInfo {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -48,13 +49,22 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device& device, VkCommandPool c
             .viewPosition = drawData.getCamera()->getPosition(),
         };
 
-        VkDeviceSize offset { 0 };
-        VkBuffer vertexBuffer = drawCall.mesh->getVertexBuffer();
+        std::vector<VkBuffer> vertexBuffers;
+        std::vector<VkDeviceSize> offsets;
+        for(auto& attribute : drawCall.mesh->getAttributes()) {
+            vertexBuffers.push_back(attribute.buffer->getBuffer());
+            offsets.push_back(0);
+        }
+
+        VkPipeline pipeline = VkInit::Pipeline::createDefaultPipeline(device, pipelineLayout, 
+            renderPass, renderArea.extent.width, renderArea.extent.height, drawCall.mesh->getAttributes());
+        pipelines.push_back(pipeline);
+
         VkBuffer indexBuffer = drawCall.mesh->getIndexBuffer();
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
         vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
-        vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
-        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(cmd, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
+        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         VkDescriptorSet descriptorSet = VkInit::createDescriptorSet(device, descriptorPool, descriptorSetLayout, drawCall.texture->getSampler(), drawCall.texture->getImageView());
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);

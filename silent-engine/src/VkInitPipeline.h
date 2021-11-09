@@ -1,7 +1,9 @@
 #pragma once
 #include <string>
+#include <vector>
 #include <vulkan\vulkan.h>
 #include <vk-bootstrap\VkBootstrap.h>
+#include "VertexAttribute.h"
 
 // TODO: Extract shader creation, shader manager?
 
@@ -14,5 +16,5 @@ VkPipelineShaderStageCreateInfo createPipelineShaderStageCreateinfo(const VkShad
 
 VkPipelineLayout createPipelineLayout(const vkb::Device& device, const uint32_t setLayoutCount, const VkDescriptorSetLayout* setLayouts, uint32_t pushSize);
 
-VkPipeline createDefaultPipeline(const vkb::Device& device, const VkPipelineLayout layout, const VkRenderPass renderPass, const uint32_t width, const uint32_t height);
+VkPipeline createDefaultPipeline(const vkb::Device& device, const VkPipelineLayout layout, const VkRenderPass renderPass, const uint32_t width, const uint32_t height, const std::vector<VertexAttribute>& attributes);
 }

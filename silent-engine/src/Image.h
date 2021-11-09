@@ -4,38 +4,36 @@
 #include "vk-bootstrap/VkBootstrap.h"
 #include "vma/vk_mem_alloc.h"
 
-#include "stb_image.h"
 #include "VkResource.h"
+#include "tinygltf/stb_image.h"
 
 struct ImageData {
     stbi_uc* data;
     uint32_t x;
     uint32_t y;
-    uint32_t channels;
 
     int size()
     {
-        return (x * y) * channels;
+        return (x * y) * STBI_rgb_alpha;
     }
 
     static ImageData loadImage(std::string path)
     {
         int x, y, channels;
 
+        // channels returns however many components file would have
         stbi_uc* data = stbi_load(path.c_str(), &x, &y, &channels, STBI_rgb_alpha);
 
         return {
             .data = data,
             .x = static_cast<uint32_t>(x),
             .y = static_cast<uint32_t>(y),
-            .channels = static_cast<uint32_t>(channels),
         };
     }
 };
 
 class Image : public VkResource<Image> {
 public:
-
     Image() = default;
 
     Image(const vkb::Device device, VmaAllocator allocator, VkCommandPool commandPool, const std::string& path)
@@ -44,7 +42,8 @@ public:
     {
         ImageData imageData = ImageData::loadImage(path);
 
-        size_t size = sizeof(float) * imageData.size();
+        stbi_uc* data = imageData.data;
+        size_t size = imageData.size();
 
         VkExtent3D extent { imageData.x, imageData.y, 1 };
 
@@ -76,7 +75,7 @@ public:
             throw std::runtime_error("Error: vmaCreateImage");
         }
 
-        memcpy(stagingBufferAllocInfo.pMappedData, imageData.data, imageData.size() * sizeof(float));
+        memcpy(stagingBufferAllocInfo.pMappedData, data, size);
 
         // No need to flush stagingVertexBuffer memory because CPU_ONLY memory is always HOST_COHERENT.
 
@@ -225,6 +224,8 @@ public:
         if (vkCreateImageView(device.device, &viewCreateInfo, nullptr, &_imageView) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkCreateImageView");
         }
+        
+        stbi_image_free(data);
     }
 
     Image(const vkb::Device& device, const VmaAllocator allocator, uint32_t width, uint32_t height)
@@ -234,7 +235,7 @@ public:
             .pNext = nullptr,
             .flags = {},
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_D24_UNORM_S8_UINT,
+            .format = VK_FORMAT_D32_SFLOAT_S8_UINT,
             .extent = { width, height, 1 },
             .mipLevels = 1,
             .arrayLayers = 1,
@@ -267,7 +268,7 @@ public:
             .flags = {},
             .image = _image,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = VK_FORMAT_D24_UNORM_S8_UINT,
+            .format = VK_FORMAT_D32_SFLOAT_S8_UINT,
             .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
             .subresourceRange = {
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -299,5 +300,4 @@ private:
     VkImageView _imageView;
 
     VmaAllocation _allocation;
-
 };

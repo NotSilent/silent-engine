@@ -2,6 +2,12 @@
 
 VmaAllocator VkInit::createAllocator(const vkb::Instance& instance, const vkb::PhysicalDevice& physicalDevice, const vkb::Device& device, uint32_t vulkanApiVersion, const uint32_t frameInUseCount)
 {
+    VmaRecordSettings recordSettings {
+        /// Flags for recording. Use #VmaRecordFlagBits enum.
+        .flags = {},
+        .pFilePath = "vma_log.csv",
+    };
+
     VmaAllocatorCreateInfo createInfo {
         .flags = {},
         .physicalDevice = physicalDevice.physical_device,
@@ -12,14 +18,14 @@ VmaAllocator VkInit::createAllocator(const vkb::Instance& instance, const vkb::P
         .frameInUseCount = frameInUseCount,
         .pHeapSizeLimit = nullptr,
         .pVulkanFunctions = nullptr,
-        .pRecordSettings = nullptr,
+        .pRecordSettings = &recordSettings,
         .instance = instance.instance,
         .vulkanApiVersion = vulkanApiVersion,
     };
 
     VmaAllocator allocator;
     if (vmaCreateAllocator(&createInfo, &allocator) != VK_SUCCESS) {
-        throw std::runtime_error("Couldn't create semaphore");
+        throw std::runtime_error("vmaCreateAllocator");
     }
 
     return allocator;
@@ -232,7 +238,7 @@ VkRenderPass VkInit::createRenderPass(const vkb::Device& device, const vkb::Swap
         },
         {
             .flags = {},
-            .format = VK_FORMAT_D24_UNORM_S8_UINT,
+            .format = VK_FORMAT_D32_SFLOAT_S8_UINT,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,

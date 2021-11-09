@@ -51,10 +51,10 @@ void MeshManager::addMesh(const std::string& meshPath)
     uint32_t verticesSize = sizeof(Vertex) * vertexCount;
     uint32_t indicesSize = sizeof(uint32_t) * indexCount;
 
-    Buffer<Vertex> vertexBuffer = Buffer<Vertex>(_device, _allocator, _commandPool, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesSize, vertices.data());
-    Buffer<uint32_t> indexBuffer = Buffer<uint32_t>(_device, _allocator, _commandPool, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesSize, indices.data());
+    Buffer vertexBuffer = Buffer(_device, _allocator, _commandPool, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesSize, vertices.data());
+    Buffer indexBuffer = Buffer(_device, _allocator, _commandPool, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesSize, indices.data());
 
-    _meshes[meshPath] = std::make_shared<Mesh>(vertexCount, vertexBuffer, indexCount, indexBuffer);
+    //_meshes[meshPath] = std::make_shared<Mesh>(vertexCount, vertexBuffer, indexCount, indexBuffer);
 }
 
 std::shared_ptr<Mesh> MeshManager::getMesh(const std::string& path)

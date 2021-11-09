@@ -1,0 +1,6 @@
+[submodule "tinygltf"]
+	path = silent-engine/src/third-party/tinygltf
+	url = https://github.com/syoyo/tinygltf
+[submodule "glTF-Sample-Models"]
+	path = silent-engine/src/third-party/glTF-Sample-Models
+	url = https://github.com/KhronosGroup/glTF-Sample-Models

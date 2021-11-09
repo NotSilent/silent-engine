@@ -3,9 +3,11 @@
 #include <glm/vec3.hpp>
 #include <memory>
 #include <vulkan/vulkan.h>
+#include <vector>
 
 #include "Buffer.h"
 #include "Vertex.h"
+#include <VertexAttribute.h>
 
 struct PushData {
     glm::mat4 model;
@@ -16,16 +18,15 @@ struct PushData {
 
 class Mesh {
 public:
-    Mesh(uint32_t vertexCount, const Buffer<Vertex>& vertexBuffer, uint32_t indexCount, const Buffer<uint32_t>& indexBuffer);
+    Mesh(uint32_t indexCount, std::shared_ptr<Buffer> indexBuffer, std::vector<VertexAttribute>& attributes);
     void destroy(VkDevice device, VmaAllocator allocator);
-    uint32_t getVertexCount() const;
-    VkBuffer getVertexBuffer() const;
     uint32_t getIndexCount() const;
     VkBuffer getIndexBuffer() const;
+    std::vector<VertexAttribute> getAttributes() const;
 
 private:
-    uint32_t _vertexCount;
-    Buffer<Vertex> _vertexBuffer;
     uint32_t _indexCount;
-    Buffer<uint32_t> _indexBuffer;
+    std::shared_ptr<Buffer> _indexBuffer;
+
+    std::vector<VertexAttribute> _attributes;
 };

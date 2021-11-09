@@ -3,13 +3,13 @@
 #include "vma/vk_mem_alloc.h"
 #include "VkResource.h"
 
-template <typename T>
-class Buffer : public VkResource<Buffer<T>> {
+class Buffer : public VkResource<Buffer> {
 public:
-    Buffer<T>() = default;
+    Buffer() = default;
 
-    Buffer<T>(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool, VkBufferUsageFlagBits usage, const uint32_t size, const T* data)
+    Buffer(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool, VkBufferUsageFlags usage, const uint32_t size, const void* data)
         : _buffer {}
+        , _sizeBytes{size}
     {
         VkBufferCreateInfo bufferCreateInfo {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -122,4 +122,6 @@ public:
 private:
     VkBuffer _buffer;
     VmaAllocation _allocation;
+
+    uint32_t _sizeBytes;
 };

@@ -32,7 +32,7 @@ void CameraComponent::update(float deltaTime)
         input.x += _displacementPerSecond * deltaTime;
     }
 
-    _camera->update(deltaTime, input, _inputManager->getCursorDisplacement() * _cameraRotationPerSecond * deltaTime);
+    _camera->update(input, _inputManager->getCursorDisplacement() * _cameraRotationPerSecond * deltaTime);
 }
 
 std::shared_ptr<Camera> CameraComponent::getCamera()

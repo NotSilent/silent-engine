@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "Image.h"
 #include "MeshManager.h"
+#include "BufferManager.h"
 #include "Texture.h"
 #include "TextureManager.h"
 #include <Window.h>
@@ -21,6 +22,9 @@ public:
 
     // TODO: Reduce input to DrawData and EditorDrawData
     void update(const DrawData& drawData, float currentTime, float deltaTime, uint64_t currentFrame);
+
+    void addBuffer(const std::string& name, uint32_t sizeBytes, const void* data);
+    std::shared_ptr<Buffer> getBuffer(const std::string& name);
 
     std::shared_ptr<Mesh> getMesh(const std::string& path);
     std::shared_ptr<Texture> getTexture(const std::string& path);
@@ -59,7 +63,8 @@ private:
     VmaAllocator _allocator;
 
     ImGuiData _imGuiData;
-
+    
     MeshManager _meshManager;
+    BufferManager _bufferManager;
     TextureManager _textureManger;
 };

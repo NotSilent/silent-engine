@@ -5,7 +5,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 
 Camera::Camera(float aspectRatio)
-    : _projection { glm::perspective(glm::radians(45.0f), aspectRatio, 0.0001f, 200.0f) }
+    : _projection { glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 10000.0f) }
 {
 }
 
@@ -45,10 +45,10 @@ Camera& Camera::operator=(Camera&& other) noexcept
     return *this;
 }
 
-void Camera::update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotationInput)
+void Camera::update(glm::vec2 directionInput, glm::vec2 rotationInput)
 {
-    directionInput *= deltaTime * _unitsPerSecond;
-    rotationInput *= deltaTime * _angle;
+    directionInput *= _unitsPerSecond;
+    rotationInput *= _angle;
 
     _horizontalAngle += rotationInput.x;
     _verticalAngle = std::clamp(_verticalAngle + rotationInput.y, -90.0f + std::numeric_limits<float>::epsilon(), 90.0f - std::numeric_limits<float>::epsilon());

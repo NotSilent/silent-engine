@@ -13,7 +13,7 @@ public:
 
     Camera(float aspectRatio);
 
-    void update(float deltaTime, glm::vec2 directionInput, glm::vec2 rotationInput);
+    void update(glm::vec2 directionInput, glm::vec2 rotationInput);
 
     glm::vec3 getPosition() const;
     glm::mat4 getViewMatrix() const;
