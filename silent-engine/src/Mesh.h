@@ -1,6 +1,4 @@
 #pragma once
-#include <glm/mat4x4.hpp>
-#include <glm/vec3.hpp>
 #include <memory>
 #include <vulkan/vulkan.h>
 #include <vector>
@@ -8,13 +6,6 @@
 #include "Buffer.h"
 #include "Vertex.h"
 #include <VertexAttribute.h>
-
-struct PushData {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 projection;
-    glm::vec3 viewPosition;
-};
 
 class Mesh {
 public:

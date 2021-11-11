@@ -1,5 +1,6 @@
 *.spv
 *imgui.ini
+*vma_log.csv
 silent-engine/third-party/glTF-Sample-Models/*
 
 ## Ignore Visual Studio temporary files, build results, and

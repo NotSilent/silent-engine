@@ -5,7 +5,6 @@
 
 #include "VkDraw.h"
 #include "VkInit.h"
-#include "VkInitPipeline.h"
 
 #include "vma/vk_mem_alloc.h"
 
@@ -72,12 +71,6 @@ Renderer::Renderer(std::shared_ptr<Window> window)
 
     _commandPool = VkInit::createCommandPool(_device);
 
-    _descriptorPool = VkInit::createDescriptorPool(_device);
-    _defaultDescriptorSetLayout = VkInit::createDefaultDescriptorSetLayout(_device);
-
-    _pipelineLayout = VkInit::Pipeline::createPipelineLayout(_device, 1, &_defaultDescriptorSetLayout, sizeof(PushData));
-    //_pipeline = VkInit::Pipeline::createDefaultPipeline(_device, _pipelineLayout, _renderPass, _window->getWidth(), _window->getHeight());
-
     _imGuiData = ImGuiData(_window->getInternalWindow(), _instance.instance, _physicalDevice.physical_device, _device.device,
         _device.get_queue_index(vkb::QueueType::graphics).value(), _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass, _commandPool);
 
@@ -85,6 +78,11 @@ Renderer::Renderer(std::shared_ptr<Window> window)
     _bufferManager = BufferManager(_device, _allocator, _commandPool);
     _imageManager = ImageManager(_device, _allocator, _commandPool);
     _samplerManager = SamplerManager(_device, _allocator, _commandPool);
+    _descriptorSetLayoutManager = std::make_shared<DescriptorSetLayoutManager>(_device);
+    _descriptorSetManager = std::make_shared<DescriptorSetManager>(_device, _descriptorSetLayoutManager);
+    _pipelineLayoutManager = std::make_shared<PipelineLayoutManager>(_device, _descriptorSetLayoutManager);
+    _pipelineManager = std::make_shared<PipelineManager>(_device, static_cast<float>(window->getWidth()), static_cast<float>(window->getHeight()), _renderPass, _pipelineLayoutManager);
+    _materialManager = MaterialManager(_device, _pipelineManager, _descriptorSetManager);
 
     _currentTime = glfwGetTime();
 }
@@ -95,16 +93,16 @@ Renderer::~Renderer()
     _imageManager.destroy();
     _samplerManager.destroy();
     _textureManager.destroy();
+    _materialManager.destroy();
+    _pipelineManager->destroy();
+    _descriptorSetManager->destroy();
+    _pipelineLayoutManager->destroy();
+    _descriptorSetLayoutManager->destroy();
 
     for (auto& image : _depthStencilImages) {
         image->destroy(_device.device, _allocator);
     }
     _imGuiData.destroy(_device.device, _allocator);
-
-    //vkDestroyPipeline(_device.device, _pipeline, nullptr);
-    vkDestroyPipelineLayout(_device.device, _pipelineLayout, nullptr);
-    vkDestroyDescriptorSetLayout(_device.device, _defaultDescriptorSetLayout, nullptr);
-    vkDestroyDescriptorPool(_device.device, _descriptorPool, nullptr);
 
     vmaDestroyAllocator(_allocator);
 
@@ -177,10 +175,13 @@ std::shared_ptr<Texture> Renderer::getTexture(const std::string& name)
     return _textureManager.getTexture(name);
 }
 
+std::shared_ptr<Material> Renderer::getMaterial(const std::vector<VertexAttributeDescription>& descriptions, const std::vector<VkDescriptorType>& types, std::vector<std::shared_ptr<Texture>>& textures)
+{
+    return _materialManager.getMaterial(descriptions, types, textures);
+}
+
 void Renderer::draw(const DrawData& drawData)
 {
-    vkResetDescriptorPool(_device.device, _descriptorPool, {});
-
     auto acquireSemaphore = VkInit::createSemaphore(_device);
     uint32_t imageIndex;
 
@@ -188,9 +189,8 @@ void Renderer::draw(const DrawData& drawData)
         throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
 
-    std::vector<VkPipeline> pipelines;
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, drawData, _pipelineLayout, _pipeline, _renderPass, _framebuffers[imageIndex],
-        VkRect2D { { 0, 0 }, { _window->getWidth(), _window->getHeight() } }, _imGuiData, _descriptorPool, _defaultDescriptorSetLayout, pipelines);
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, drawData, _renderPass, _framebuffers[imageIndex],
+        VkRect2D { { 0, 0 }, { _window->getWidth(), _window->getHeight() } }, _imGuiData);
 
     auto queueFence = VkInit::createFence(_device);
 
@@ -231,8 +231,4 @@ void Renderer::draw(const DrawData& drawData)
     vkDestroyFence(_device.device, queueFence, nullptr);
     vkDestroySemaphore(_device.device, acquireSemaphore, nullptr);
     vkDestroySemaphore(_device.device, submitSemaphore, nullptr);
-
-    for(auto pipeline : pipelines) {
-        vkDestroyPipeline(_device.device, pipeline, nullptr);
-    }
 }

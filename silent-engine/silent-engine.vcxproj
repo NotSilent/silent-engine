@@ -106,9 +106,19 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\MaterialManager.cpp" />
+    <ClCompile Include="src\DescriptorSetManager.cpp" />
+    <ClCompile Include="src\DescriptorSet.cpp" />
+    <ClCompile Include="src\PipelineManager.cpp" />
+    <ClCompile Include="src\DescriptorSetLayoutManager.cpp" />
+    <ClCompile Include="src\PipelineLayoutManager.cpp" />
+    <ClCompile Include="src\PipelineLayout.cpp" />
+    <ClCompile Include="src\DescriptorSetLayout.cpp" />
+    <ClCompile Include="src\Pipeline.cpp" />
+    <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\SamplerManager.cpp" />
     <ClCompile Include="src\ImageManager.cpp" />
-    <ClCompile Include="ProfillerTimer.cpp" />
+    <ClCompile Include="src\ProfillerTimer.cpp" />
     <ClCompile Include="src\Sampler.cpp" />
     <ClCompile Include="src\BufferManager.cpp" />
     <ClCompile Include="src\EngineStatics.cpp" />
@@ -128,7 +138,6 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\VkDraw.cpp" />
     <ClCompile Include="src\VkInit.cpp" />
-    <ClCompile Include="src\VkInitPipeline.cpp" />
     <ClCompile Include="third-party\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="third-party\imgui\backends\imgui_impl_vulkan.cpp" />
     <ClCompile Include="third-party\imgui\imgui.cpp" />
@@ -147,9 +156,20 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\MaterialManager.h" />
+    <ClInclude Include="src\DescriptorSetManager.h" />
+    <ClInclude Include="src\DescriptorSet.h" />
+    <ClInclude Include="src\PipelineManager.h" />
+    <ClInclude Include="src\DescriptorSetLayoutManager.h" />
+    <ClInclude Include="src\PipelineLayoutManager.h" />
+    <ClInclude Include="src\PipelineLayout.h" />
+    <ClInclude Include="src\DescriptorSetLayout.h" />
+    <ClInclude Include="src\Pipeline.h" />
+    <ClInclude Include="src\Material.h" />
+    <ClInclude Include="src\PushData.h" />
     <ClInclude Include="src\SamplerManager.h" />
     <ClInclude Include="src\ImageManager.h" />
-    <ClInclude Include="ProfillerTimer.h" />
+    <ClInclude Include="src\ProfillerTimer.h" />
     <ClInclude Include="src\Sampler.h" />
     <ClInclude Include="src\BufferManager.h" />
     <ClInclude Include="src\EngineStatics.h" />
@@ -182,7 +202,6 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClInclude Include="third-party\vk-bootstrap\VkBootstrap.h" />
     <ClInclude Include="src\VkInit.h" />
     <ClInclude Include="third-party\vma\vk_mem_alloc.h" />
-    <ClInclude Include="src\VkInitPipeline.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\Window.h" />
     <ClInclude Include="src\TimeManager.h" />

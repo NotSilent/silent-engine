@@ -6,12 +6,17 @@
 
 #include "BufferManager.h"
 #include "Camera.h"
+#include "DescriptorSetLayoutManager.h"
+#include "DescriptorSetManager.h"
 #include "DrawData.h"
 #include "Image.h"
 #include "ImageManager.h"
+#include "PipelineLayoutManager.h"
+#include "PipelineManager.h"
+#include "SamplerManager.h"
 #include "Texture.h"
 #include "TextureManager.h"
-#include "SamplerManager.h"
+#include <MaterialManager.h>
 #include <Window.h>
 
 // TODO: VkCommandPool and VkCommands creation manager;
@@ -35,6 +40,8 @@ public:
 
     void addTexture(const std::string& name, std::shared_ptr<Sampler> sampler, std::shared_ptr<Image> image);
     std::shared_ptr<Texture> getTexture(const std::string& name);
+
+    std::shared_ptr<Material> getMaterial(const std::vector<VertexAttributeDescription>& descriptions, const std::vector<VkDescriptorType>& types, std::vector<std::shared_ptr<Texture>>& textures);
 
 private:
     void draw(const DrawData& drawData);
@@ -62,10 +69,6 @@ private:
     VkRenderPass _renderPass;
 
     VkDescriptorPool _descriptorPool;
-    VkDescriptorSetLayout _defaultDescriptorSetLayout;
-
-    VkPipelineLayout _pipelineLayout;
-    VkPipeline _pipeline;
 
     VmaAllocator _allocator;
 
@@ -75,4 +78,9 @@ private:
     ImageManager _imageManager;
     TextureManager _textureManager;
     SamplerManager _samplerManager;
+    MaterialManager _materialManager;
+    std::shared_ptr<PipelineManager> _pipelineManager;
+    std::shared_ptr<DescriptorSetManager> _descriptorSetManager;
+    std::shared_ptr<PipelineLayoutManager> _pipelineLayoutManager;
+    std::shared_ptr<DescriptorSetLayoutManager> _descriptorSetLayoutManager;
 };

@@ -1,4 +1,5 @@
 #include "DrawData.h"
+#include "Material.h"
 
 DrawData::DrawData(std::shared_ptr<Camera> camera)
 {
@@ -9,11 +10,11 @@ DrawData::~DrawData()
 {
 }
 
-void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, const glm::mat4& model)
+void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, const glm::mat4& model)
 {
     _drawCalls.push_back({
         .mesh = mesh,
-        .texture = texture,
+        .material = material,
         .model = model,
     });
 }

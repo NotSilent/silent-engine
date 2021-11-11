@@ -7,12 +7,6 @@
 namespace VkInit {
 VmaAllocator createAllocator(const vkb::Instance& instance, const vkb::PhysicalDevice& physicalDevice, const vkb::Device& device, uint32_t vulkanApiVersion, const uint32_t frameInUseCount);
 
-VkDescriptorPool createDescriptorPool(const vkb::Device& device);
-
-VkDescriptorSetLayout createDefaultDescriptorSetLayout(const vkb::Device& device);
-
-VkDescriptorSet createDescriptorSet(const vkb::Device& device, VkDescriptorPool pool, VkDescriptorSetLayout layout, VkSampler sampler, VkImageView imageView);
-
 VkSemaphore createSemaphore(const vkb::Device& device);
 
 VkFence createFence(const vkb::Device& device);

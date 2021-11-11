@@ -14,7 +14,6 @@
 const std::string ENGINE_NAME = "Silent Engine";
 
 const std::string SPONZA_FILENAME = "third-party/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf";
-const std::string TEMP_SPONZA_IMAGES_LOCATION = "third-party/glTF-Sample-Models/2.0/Sponza/glTF/";
 
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
@@ -35,7 +34,6 @@ int main()
     std::string warn;
 
     std::vector<std::shared_ptr<Entity>> entities;
-    int a = 0;
     std::vector<std::shared_ptr<MeshComponent>> meshComponents;
 
     ProfillerTimer loadGLTFFile;
@@ -44,11 +42,18 @@ int main()
     std::cout << "Loading gltf file took: " << loadGLTFduration << "\n";
 
     ProfillerTimer createBuffers;
+
+    uint32_t totalNumberOfPrimitives(0);
+    uint32_t compatiblePrimitives(0);
     if (result) {
         for (auto& mesh : model.meshes) {
             for (auto& primitive : mesh.primitives) {
+                totalNumberOfPrimitives++;
                 // TODO: Variable number of attributes
                 if (primitive.attributes.size() == 4) {
+                    compatiblePrimitives++;
+
+                    std::vector<VertexAttributeDescription> attributeDescriptions { 4 };
                     std::vector<VertexAttribute> attributes { 4 };
 
                     for (auto& attribute : primitive.attributes) {
@@ -79,10 +84,14 @@ int main()
                             index = 3;
                         }
 
-                        attributes[index] = {
+                        attributeDescriptions[index] = {
                             .type = type,
                             .format = format,
                             .stride = stride,
+                        };
+
+                        attributes[index] = {
+                            .description = attributeDescriptions[index],
                             .buffer = renderer.getBuffer(bufferName)
                         };
                     }
@@ -101,12 +110,6 @@ int main()
                         renderer.getBuffer(bufferName),
                         attributes);
 
-                    std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
-                    meshComponent->setMesh(mesh);
-
-                    //meshComponent->setTexture(renderer.getTexture(TEST_TEXTURE_ASSET_LOCATION));
-                    //
-                    // TEMP
                     tinygltf::Material gltfMaterial = model.materials[primitive.material];
                     tinygltf::Texture gltfTexture = model.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
                     tinygltf::Sampler gltfSampler = model.samplers[gltfTexture.sampler];
@@ -124,8 +127,17 @@ int main()
                     renderer.addTexture(textureName, sampler, image);
 
                     std::shared_ptr<Texture> texture = renderer.getTexture(textureName);
-                    meshComponent->setTexture(texture);
-                    // ~TEMP
+
+                    std::vector<VkDescriptorType> types { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER };
+                    std::vector<std::shared_ptr<Texture>> textures { texture };
+                    auto material = renderer.getMaterial(attributeDescriptions, types, textures);
+
+                    // TODO: Recreate MeshManager
+                    std::shared_ptr<MeshComponent>
+                        meshComponent
+                        = std::make_shared<MeshComponent>();
+                    meshComponent->setMesh(mesh);
+                    meshComponent->setMaterial(material);
 
                     std::shared_ptr<Entity> entity = std::make_shared<Entity>();
                     //entity->setScale({100.0f, 100.0f, 100.0f});
@@ -133,11 +145,9 @@ int main()
 
                     entities.push_back(entity);
                     meshComponents.push_back(meshComponent);
-
-                    if (a >= 10) {
-                        break;
-                    }
-                    a++;
+                } else {
+                    // TODO: Manage all
+                    int temp;
                 }
             }
         }
@@ -145,6 +155,8 @@ int main()
 
     float creatingBuffersDuration = createBuffers.end();
     std::cout << "Creating buffers took: " << creatingBuffersDuration << "\n";
+    std::cout << "Number of primitives:  " << totalNumberOfPrimitives << "\n";
+    std::cout << "Compatible primitives: " << compatiblePrimitives << "\n";
 
     {
         // Add Camera
@@ -169,7 +181,7 @@ int main()
         //drawData.addDrawCall(meshComponent2->getMesh(), meshComponent2->getTexture(), entityWithMesh2->getModel());
 
         for (auto& meshComponent : meshComponents) {
-            drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getTexture(), meshComponent->getModel());
+            drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getMaterial(), meshComponent->getModel());
         }
 
         renderer.update(drawData, timeManager->getCurrentTime(), timeManager->getDeltaTime(), timeManager->getCurrentFrame());

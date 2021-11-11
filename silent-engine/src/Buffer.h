@@ -101,6 +101,7 @@ public:
         if (vkQueueSubmit(device.get_queue(vkb::QueueType::graphics).value(), 1, &submitTransferInfo, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkQueueSubmit");
         }
+
         if (vkQueueWaitIdle(device.get_queue(vkb::QueueType::graphics).value()) != VK_SUCCESS) {
             throw std::runtime_error("Error: vkQueueWaitIdle");
         }

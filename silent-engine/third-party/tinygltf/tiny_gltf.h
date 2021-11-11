@@ -1699,6 +1699,7 @@ void JsonParse(JsonDocument &doc, const char *str, size_t length,
 
 #ifdef __APPLE__
 #include "TargetConditionals.h"
+#include "..\..\src\Material.h"
 #endif
 
 #ifdef __clang__

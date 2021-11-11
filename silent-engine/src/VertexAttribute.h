@@ -10,11 +10,16 @@ enum class VertexAttributeType {
     Tangent,
 };
 
-struct VertexAttribute {
+struct VertexAttributeDescription {
     VertexAttributeType type;
     VkFormat format;
     uint32_t stride;
 
+    auto operator<=>(const VertexAttributeDescription&) const = default;
+};
+
+struct VertexAttribute {
+    VertexAttributeDescription description;
     std::shared_ptr<Buffer> buffer;
 
     static VertexAttributeType getType(const std::string& name)
