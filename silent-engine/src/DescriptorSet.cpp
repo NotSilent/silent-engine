@@ -22,14 +22,16 @@ DescriptorSet::DescriptorSet(const vkb::Device& device, VkDescriptorPool descrip
     }
 
     std::vector<VkWriteDescriptorSet> writes;
+    std::vector<VkDescriptorImageInfo> imageInfos;
     for (uint32_t i = 0; i < _textures.size(); ++i) {
-
-        VkDescriptorImageInfo imageInfo {
+        imageInfos.push_back({
             .sampler = _textures[i]->getSampler(),
             .imageView = _textures[i]->getImageView(),
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        };
+        });
+    }
 
+    for (uint32_t i = 0; i < _textures.size(); ++i) {
         writes.push_back({
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .pNext = nullptr,
@@ -38,13 +40,13 @@ DescriptorSet::DescriptorSet(const vkb::Device& device, VkDescriptorPool descrip
             .dstArrayElement = 0,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .pImageInfo = &imageInfo,
+            .pImageInfo = &imageInfos[i],
             .pBufferInfo = nullptr,
             .pTexelBufferView = nullptr,
         });
-
-        vkUpdateDescriptorSets(device.device, writes.size(), writes.data(), 0, nullptr);
     }
+
+    vkUpdateDescriptorSets(device.device, writes.size(), writes.data(), 0, nullptr);
 }
 
 DescriptorSet::~DescriptorSet()

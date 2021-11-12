@@ -52,7 +52,7 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device& device, VkCommandPool c
 
         std::vector<VkBuffer> vertexBuffers;
         std::vector<VkDeviceSize> offsets;
-        for(auto& attribute : drawCall.mesh->getAttributes()) {
+        for (auto& attribute : drawCall.mesh->getAttributes()) {
             vertexBuffers.push_back(attribute.buffer->getBuffer());
             offsets.push_back(0);
         }

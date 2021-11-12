@@ -111,25 +111,44 @@ int main()
                         attributes);
 
                     tinygltf::Material gltfMaterial = model.materials[primitive.material];
-                    tinygltf::Texture gltfTexture = model.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
-                    tinygltf::Sampler gltfSampler = model.samplers[gltfTexture.sampler];
-                    tinygltf::Image gltfImage = model.images[gltfTexture.source];
+                    tinygltf::Texture gltfColorTexture = model.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
+                    tinygltf::Texture gltfNormalTexture = model.textures[gltfMaterial.normalTexture.index];
+                    tinygltf::Sampler gltfColorSampler = model.samplers[gltfColorTexture.sampler];
+                    tinygltf::Sampler gltfNormalSampler = model.samplers[gltfNormalTexture.sampler];
+                    tinygltf::Image gltfColorImage = model.images[gltfColorTexture.source];
+                    tinygltf::Image gltfNormalImage = model.images[gltfNormalTexture.source];
 
-                    std::string samplerName = buffer.uri + ".sampler." + std::to_string(gltfTexture.sampler);
-                    renderer.addSampler(samplerName);
+                    std::string colorSamplerName = buffer.uri + ".sampler." + std::to_string(gltfColorTexture.sampler);
+                    renderer.addSampler(colorSamplerName);
 
-                    std::string imageName = buffer.uri + ".image." + std::to_string(gltfTexture.source);
-                    renderer.addImage(imageName, gltfImage.width, gltfImage.height, gltfImage.image.size() * sizeof(unsigned char), gltfImage.image.data());
+                    std::string colorImageName = buffer.uri + ".image." + std::to_string(gltfColorTexture.source);
+                    renderer.addImage(colorImageName, gltfColorImage.width, gltfColorImage.height, gltfColorImage.image.size() * sizeof(unsigned char), gltfColorImage.image.data());
 
-                    std::string textureName = buffer.uri + ".texture." + std::to_string(primitive.material);
-                    std::shared_ptr<Sampler> sampler = renderer.getSampler(samplerName);
-                    std::shared_ptr<Image> image = renderer.getImage(imageName);
-                    renderer.addTexture(textureName, sampler, image);
+                    std::string colorTextureName = buffer.uri + ".texture.color." + std::to_string(primitive.material);
+                    std::shared_ptr<Sampler> colorSampler = renderer.getSampler(colorSamplerName);
+                    std::shared_ptr<Image> colorImage = renderer.getImage(colorImageName);
+                    renderer.addTexture(colorTextureName, colorSampler, colorImage);
+                    std::shared_ptr<Texture> colorTexture = renderer.getTexture(colorTextureName);
 
-                    std::shared_ptr<Texture> texture = renderer.getTexture(textureName);
+                    //
 
-                    std::vector<VkDescriptorType> types { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER };
-                    std::vector<std::shared_ptr<Texture>> textures { texture };
+                    std::string normalSamplerName = buffer.uri + ".sampler." + std::to_string(gltfNormalTexture.sampler);
+                    renderer.addSampler(normalSamplerName);
+
+                    std::string normalImageName = buffer.uri + ".image." + std::to_string(gltfNormalTexture.source);
+                    renderer.addImage(normalImageName, gltfNormalImage.width, gltfNormalImage.height, gltfNormalImage.image.size() * sizeof(unsigned char), gltfNormalImage.image.data());
+
+                    std::string normalTextureName = buffer.uri + ".texture.normal" + std::to_string(primitive.material);
+                    std::shared_ptr<Sampler> normalSampler = renderer.getSampler(normalSamplerName);
+                    std::shared_ptr<Image> normalImage = renderer.getImage(normalImageName);
+                    renderer.addTexture(normalTextureName, normalSampler, normalImage);
+                    std::shared_ptr<Texture> normalTexture = renderer.getTexture(normalTextureName);
+
+                    // Should be somehow related
+                    std::vector<VkDescriptorType> types { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER };
+                    std::vector<std::shared_ptr<Texture>> textures { colorTexture, normalTexture };
+                    // ~Should be somehow related
+
                     auto material = renderer.getMaterial(attributeDescriptions, types, textures);
 
                     // TODO: Recreate MeshManager
