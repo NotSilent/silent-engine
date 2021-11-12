@@ -1,4 +1,4 @@
-#include "TimeManager.h"
+#include "TimeSystem.h"
 
 TimeManager::TimeManager(std::shared_ptr<Window> window)
 {

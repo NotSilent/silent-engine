@@ -1,7 +1,7 @@
 #include "CameraComponent.h"
 #include "Camera.h"
-#include "EngineStatics.h"
-#include "InputManager.h"
+#include "EngineSystems/EngineStatics.h"
+#include "EngineSystems/InputSystem.h"
 
 CameraComponent::CameraComponent()
 {

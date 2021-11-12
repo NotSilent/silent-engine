@@ -1,14 +1,14 @@
-#include "InputManager.h"
+#include "InputSystem.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-InputManager::InputManager(std::shared_ptr<Window> window)
+InputSystem::InputSystem(std::shared_ptr<Window> window)
 {
 	_window = window;
 }
 
-void InputManager::update()
+void InputSystem::update()
 {
 	glfwPollEvents();
 
@@ -20,12 +20,12 @@ void InputManager::update()
 	_cursorDisplacement = {xPos, yPos};
 }
 
-KeyState InputManager::getKeyState(Key key) const
+KeyState InputSystem::getKeyState(Key key) const
 {
 	return static_cast<KeyState>(glfwGetKey(_window->getInternalWindow(), static_cast<int>(key)));
 }
 
-glm::vec2 InputManager::getCursorDisplacement() const
+glm::vec2 InputSystem::getCursorDisplacement() const
 {
 	return _cursorDisplacement;
 }

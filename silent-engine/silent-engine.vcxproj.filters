@@ -48,7 +48,7 @@
     <ClCompile Include="src\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TextureManager.cpp">
+    <ClCompile Include="src\EngineManagers\TextureManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="third-party\Implementations.cpp">
@@ -66,34 +66,34 @@
     <ClCompile Include="src\VkDraw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Entity.cpp">
+    <ClCompile Include="src\ECS\Entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Component.cpp">
+    <ClCompile Include="src\ECS\Component.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\MeshComponent.cpp">
+    <ClCompile Include="src\ECS\MeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\DrawData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\InputManager.cpp">
+    <ClCompile Include="src\EngineSystems\InputSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TimeManager.cpp">
+    <ClCompile Include="src\EngineSystems\TimeSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CameraComponent.cpp">
+    <ClCompile Include="src\ECS\CameraComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EngineStatics.cpp">
+    <ClCompile Include="src\EngineSystems\EngineStatics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\BufferManager.cpp">
+    <ClCompile Include="src\EngineManagers\BufferManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\VertexAttribute.cpp">
@@ -105,10 +105,10 @@
     <ClCompile Include="src\Sampler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ImageManager.cpp">
+    <ClCompile Include="src\EngineManagers\ImageManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SamplerManager.cpp">
+    <ClCompile Include="src\EngineManagers\SamplerManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Material.cpp">
@@ -123,22 +123,22 @@
     <ClCompile Include="src\PipelineLayout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\PipelineLayoutManager.cpp">
+    <ClCompile Include="src\EngineManagers\PipelineLayoutManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DescriptorSetLayoutManager.cpp">
+    <ClCompile Include="src\EngineManagers\DescriptorSetLayoutManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\PipelineManager.cpp">
+    <ClCompile Include="src\EngineManagers\PipelineManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\DescriptorSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DescriptorSetManager.cpp">
+    <ClCompile Include="src\EngineManagers\DescriptorSetManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\MaterialManager.cpp">
+    <ClCompile Include="src\EngineManagers\MaterialManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -203,7 +203,7 @@
     <ClInclude Include="src\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TextureManager.h">
+    <ClInclude Include="src\EngineManagers\TextureManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Texture.h">
@@ -215,37 +215,37 @@
     <ClInclude Include="src\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Entity.h">
+    <ClInclude Include="src\ECS\Entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Component.h">
+    <ClInclude Include="src\ECS\Component.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\MeshComponent.h">
+    <ClInclude Include="src\ECS\MeshComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\DrawData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\InputManager.h">
+    <ClInclude Include="src\EngineSystems\InputSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TimeManager.h">
+    <ClInclude Include="src\EngineSystems\TimeSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CameraComponent.h">
+    <ClInclude Include="src\ECS\CameraComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\EngineStatics.h">
+    <ClInclude Include="src\EngineSystems\EngineStatics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\BufferManager.h">
+    <ClInclude Include="src\EngineManagers\BufferManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\VertexAttribute.h">
@@ -257,10 +257,10 @@
     <ClInclude Include="src\Sampler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ImageManager.h">
+    <ClInclude Include="src\EngineManagers\ImageManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SamplerManager.h">
+    <ClInclude Include="src\EngineManagers\SamplerManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Material.h">
@@ -275,25 +275,25 @@
     <ClInclude Include="src\PipelineLayout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\PipelineLayoutManager.h">
+    <ClInclude Include="src\EngineManagers\PipelineLayoutManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\PushData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\DescriptorSetLayoutManager.h">
+    <ClInclude Include="src\EngineManagers\DescriptorSetLayoutManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\PipelineManager.h">
+    <ClInclude Include="src\EngineManagers\PipelineManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\DescriptorSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\DescriptorSetManager.h">
+    <ClInclude Include="src\EngineManagers\DescriptorSetManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\MaterialManager.h">
+    <ClInclude Include="src\EngineManagers\MaterialManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

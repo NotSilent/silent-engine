@@ -1,13 +1,13 @@
 #include "EngineStatics.h"
 #include "Camera.h"
-#include "InputManager.h"
-#include "TimeManager.h"
+#include "EngineSystems/InputSystem.h"
+#include "EngineSystems/TimeSystem.h"
 #include "Window.h"
 #include <stdexcept>
 
 std::shared_ptr<Window> EngineStatics::_window;
 std::shared_ptr<Camera> EngineStatics::_camera;
-std::shared_ptr<InputManager> EngineStatics::_inputManager;
+std::shared_ptr<InputSystem> EngineStatics::_inputManager;
 std::shared_ptr<TimeManager> EngineStatics::_timeManager;
 
 EngineStatics::EngineStatics(std::shared_ptr<Window> window)
@@ -20,7 +20,7 @@ EngineStatics::EngineStatics(std::shared_ptr<Window> window)
 
     _camera = std::make_shared<Camera>();
 
-    _inputManager = std::make_shared<InputManager>(window);
+    _inputManager = std::make_shared<InputSystem>(window);
     _timeManager = std::make_shared<TimeManager>(window);
 }
 
@@ -45,7 +45,7 @@ std::shared_ptr<Camera> EngineStatics::getCamera()
     return _camera;
 }
 
-std::shared_ptr<InputManager> EngineStatics::getInputManager()
+std::shared_ptr<InputSystem> EngineStatics::getInputManager()
 {
     return _inputManager;
 }

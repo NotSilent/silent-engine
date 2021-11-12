@@ -5,7 +5,7 @@ class Window;
 
 class Camera;
 
-class InputManager;
+class InputSystem;
 class TimeManager;
 
 class EngineStatics {
@@ -19,7 +19,7 @@ public:
     static void setCamera(std::shared_ptr<Camera> camera);
     static std::shared_ptr<Camera> getCamera();
 
-    static std::shared_ptr<InputManager> getInputManager();
+    static std::shared_ptr<InputSystem> getInputManager();
     static std::shared_ptr<TimeManager> getTimeManager();
 
 private:
@@ -28,6 +28,6 @@ private:
     // Main Camera used to render a frame
     static std::shared_ptr<Camera> _camera;
 
-    static std::shared_ptr<InputManager> _inputManager;
+    static std::shared_ptr<InputSystem> _inputManager;
     static std::shared_ptr<TimeManager> _timeManager;
 };

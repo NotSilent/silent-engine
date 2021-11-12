@@ -21,11 +21,11 @@ enum class KeyState {
     Release = GLFW_RELEASE,
 };
 
-class InputManager {
+class InputSystem {
     friend class EngineStatics;
 
 public:
-    InputManager(std::shared_ptr<Window> window);
+    InputSystem(std::shared_ptr<Window> window);
 
     void update();
     KeyState getKeyState(Key key) const;

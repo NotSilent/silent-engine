@@ -106,30 +106,30 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\MaterialManager.cpp" />
-    <ClCompile Include="src\DescriptorSetManager.cpp" />
+    <ClCompile Include="src\EngineManagers\MaterialManager.cpp" />
+    <ClCompile Include="src\EngineManagers\DescriptorSetManager.cpp" />
     <ClCompile Include="src\DescriptorSet.cpp" />
-    <ClCompile Include="src\PipelineManager.cpp" />
-    <ClCompile Include="src\DescriptorSetLayoutManager.cpp" />
-    <ClCompile Include="src\PipelineLayoutManager.cpp" />
+    <ClCompile Include="src\EngineManagers\PipelineManager.cpp" />
+    <ClCompile Include="src\EngineManagers\DescriptorSetLayoutManager.cpp" />
+    <ClCompile Include="src\EngineManagers\PipelineLayoutManager.cpp" />
     <ClCompile Include="src\PipelineLayout.cpp" />
     <ClCompile Include="src\DescriptorSetLayout.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
     <ClCompile Include="src\Material.cpp" />
-    <ClCompile Include="src\SamplerManager.cpp" />
-    <ClCompile Include="src\ImageManager.cpp" />
+    <ClCompile Include="src\EngineManagers\SamplerManager.cpp" />
+    <ClCompile Include="src\EngineManagers\ImageManager.cpp" />
     <ClCompile Include="src\ProfillerTimer.cpp" />
     <ClCompile Include="src\Sampler.cpp" />
-    <ClCompile Include="src\BufferManager.cpp" />
-    <ClCompile Include="src\EngineStatics.cpp" />
-    <ClCompile Include="src\CameraComponent.cpp" />
-    <ClCompile Include="src\InputManager.cpp" />
+    <ClCompile Include="src\EngineManagers\BufferManager.cpp" />
+    <ClCompile Include="src\EngineSystems\EngineStatics.cpp" />
+    <ClCompile Include="src\ECS\CameraComponent.cpp" />
+    <ClCompile Include="src\EngineSystems\InputSystem.cpp" />
     <ClCompile Include="src\DrawData.cpp" />
-    <ClCompile Include="src\MeshComponent.cpp" />
-    <ClCompile Include="src\Component.cpp" />
-    <ClCompile Include="src\Entity.cpp" />
+    <ClCompile Include="src\ECS\MeshComponent.cpp" />
+    <ClCompile Include="src\ECS\Component.cpp" />
+    <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
-    <ClCompile Include="src\TextureManager.cpp" />
+    <ClCompile Include="src\EngineManagers\TextureManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\VertexAttribute.cpp" />
@@ -147,7 +147,7 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClCompile Include="third-party\imgui\imgui_widgets.cpp" />
     <ClCompile Include="third-party\vk-bootstrap\VkBootstrap.cpp" />
     <ClCompile Include="src\Window.cpp" />
-    <ClCompile Include="src\TimeManager.cpp" />
+    <ClCompile Include="src\EngineSystems\TimeSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -156,32 +156,32 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <None Include="shaders\unlit.vert" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\MaterialManager.h" />
-    <ClInclude Include="src\DescriptorSetManager.h" />
+    <ClInclude Include="src\EngineManagers\MaterialManager.h" />
+    <ClInclude Include="src\EngineManagers\DescriptorSetManager.h" />
     <ClInclude Include="src\DescriptorSet.h" />
-    <ClInclude Include="src\PipelineManager.h" />
-    <ClInclude Include="src\DescriptorSetLayoutManager.h" />
-    <ClInclude Include="src\PipelineLayoutManager.h" />
+    <ClInclude Include="src\EngineManagers\PipelineManager.h" />
+    <ClInclude Include="src\EngineManagers\DescriptorSetLayoutManager.h" />
+    <ClInclude Include="src\EngineManagers\PipelineLayoutManager.h" />
     <ClInclude Include="src\PipelineLayout.h" />
     <ClInclude Include="src\DescriptorSetLayout.h" />
     <ClInclude Include="src\Pipeline.h" />
     <ClInclude Include="src\Material.h" />
     <ClInclude Include="src\PushData.h" />
-    <ClInclude Include="src\SamplerManager.h" />
-    <ClInclude Include="src\ImageManager.h" />
+    <ClInclude Include="src\EngineManagers\SamplerManager.h" />
+    <ClInclude Include="src\EngineManagers\ImageManager.h" />
     <ClInclude Include="src\ProfillerTimer.h" />
     <ClInclude Include="src\Sampler.h" />
-    <ClInclude Include="src\BufferManager.h" />
-    <ClInclude Include="src\EngineStatics.h" />
-    <ClInclude Include="src\CameraComponent.h" />
-    <ClInclude Include="src\InputManager.h" />
+    <ClInclude Include="src\EngineManagers\BufferManager.h" />
+    <ClInclude Include="src\EngineSystems\EngineStatics.h" />
+    <ClInclude Include="src\ECS\CameraComponent.h" />
+    <ClInclude Include="src\EngineSystems\InputSystem.h" />
     <ClInclude Include="src\DrawData.h" />
     <ClInclude Include="src\Manager.h" />
-    <ClInclude Include="src\MeshComponent.h" />
-    <ClInclude Include="src\Component.h" />
-    <ClInclude Include="src\Entity.h" />
+    <ClInclude Include="src\ECS\MeshComponent.h" />
+    <ClInclude Include="src\ECS\Component.h" />
+    <ClInclude Include="src\ECS\Entity.h" />
     <ClInclude Include="src\Renderer.h" />
-    <ClInclude Include="src\TextureManager.h" />
+    <ClInclude Include="src\EngineManagers\TextureManager.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Buffer.h" />
     <ClInclude Include="src\Image.h" />
@@ -204,7 +204,7 @@ $(VULKAN_SDK)\Bin\glslc.exe $(ProjectDir)shaders\unlit.frag -o $(ProjectDir)shad
     <ClInclude Include="third-party\vma\vk_mem_alloc.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\Window.h" />
-    <ClInclude Include="src\TimeManager.h" />
+    <ClInclude Include="src\EngineSystems\TimeSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

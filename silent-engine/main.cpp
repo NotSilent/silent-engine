@@ -1,13 +1,13 @@
-#include "Entity.h"
-#include "MeshComponent.h"
+#include "ECS/Entity.h"
+#include "ECS/MeshComponent.h"
 #include "ProfillerTimer.h"
 #include "Renderer.h"
 #include "tinygltf\tiny_gltf.h"
-#include <CameraComponent.h>
+#include <ECS/CameraComponent.h>
 #include <DrawData.h>
-#include <EngineStatics.h>
-#include <InputManager.h>
-#include <TimeManager.h>
+#include <EngineSystems/EngineStatics.h>
+#include <EngineSystems/InputSystem.h>
+#include <EngineSystems/TimeSystem.h>
 #include <iostream>
 #include <vector>
 
@@ -23,7 +23,7 @@ int main()
     std::shared_ptr<Window> window = std::make_shared<Window>(WIDTH, HEIGHT, ENGINE_NAME);
     std::shared_ptr<EngineStatics> engineStatics = std::make_shared<EngineStatics>(window);
 
-    std::shared_ptr<InputManager> inputManager = EngineStatics::getInputManager();
+    std::shared_ptr<InputSystem> inputManager = EngineStatics::getInputManager();
     std::shared_ptr<TimeManager> timeManager = EngineStatics::getTimeManager();
 
     Renderer renderer { window };

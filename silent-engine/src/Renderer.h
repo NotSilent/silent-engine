@@ -4,19 +4,19 @@
 #include "ImGuiData.h"
 #include "Mesh.h"
 
-#include "BufferManager.h"
+#include "EngineManagers/BufferManager.h"
 #include "Camera.h"
-#include "DescriptorSetLayoutManager.h"
-#include "DescriptorSetManager.h"
+#include "EngineManagers/DescriptorSetLayoutManager.h"
+#include "EngineManagers/DescriptorSetManager.h"
 #include "DrawData.h"
 #include "Image.h"
-#include "ImageManager.h"
-#include "PipelineLayoutManager.h"
-#include "PipelineManager.h"
-#include "SamplerManager.h"
+#include "EngineManagers/ImageManager.h"
+#include "EngineManagers/PipelineLayoutManager.h"
+#include "EngineManagers/PipelineManager.h"
+#include "EngineManagers/SamplerManager.h"
 #include "Texture.h"
-#include "TextureManager.h"
-#include <MaterialManager.h>
+#include "EngineManagers/TextureManager.h"
+#include "EngineManagers/MaterialManager.h"
 #include <Window.h>
 
 // TODO: VkCommandPool and VkCommands creation manager;
