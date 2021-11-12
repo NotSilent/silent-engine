@@ -69,7 +69,7 @@ Pipeline::Pipeline(const vkb::Device& device, float width, float height, VkRende
         .maxDepth = 1.0f,
     };
 
-    const VkRect2D scissor { { 0, 0 }, { width, height } };
+    const VkRect2D scissor { { 0, 0 }, { static_cast<uint32_t>(width), static_cast<uint32_t>(height) } };
 
     const VkPipelineViewportStateCreateInfo viewportState {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,

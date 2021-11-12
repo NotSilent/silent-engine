@@ -3,12 +3,13 @@
 #include "vma/vk_mem_alloc.h"
 #include "VkResource.h"
 
-class Buffer : public VkResource<Buffer> {
+class Buffer {
 public:
     Buffer() = default;
 
     Buffer(const vkb::Device& device, VmaAllocator allocator, VkCommandPool commandPool, VkBufferUsageFlags usage, uint32_t size, const void* data)
-        : _buffer {}
+        : _allocator(allocator)
+        , _buffer {}
         , _sizeBytes{size}
     {
         VkBufferCreateInfo bufferCreateInfo {
@@ -110,9 +111,9 @@ public:
         vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAlloc);
     }
 
-    void destroy(VkDevice device, VmaAllocator allocator)
+    ~Buffer()
     {
-        vmaDestroyBuffer(allocator, _buffer, _allocation);
+        vmaDestroyBuffer(_allocator, _buffer, _allocation);
     }
 
     VkBuffer getBuffer() const
@@ -121,6 +122,8 @@ public:
     }
 
 private:
+    VmaAllocator _allocator;
+
     VkBuffer _buffer;
     VmaAllocation _allocation;
 

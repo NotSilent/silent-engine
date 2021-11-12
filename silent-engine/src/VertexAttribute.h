@@ -19,7 +19,7 @@ struct VertexAttributeDescription {
 };
 
 struct VertexAttribute {
-    VertexAttributeDescription description;
+    VertexAttributeDescription description{};
     std::shared_ptr<Buffer> buffer;
 
     static VertexAttributeType getType(const std::string& name)

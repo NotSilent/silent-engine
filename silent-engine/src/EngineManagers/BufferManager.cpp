@@ -15,9 +15,7 @@ std::shared_ptr<Buffer> BufferManager::getBuffer(const std::string& name)
 
 void BufferManager::destroy()
 {
-    for (auto& buffer : _buffers) {
-        buffer.second->destroy(_device.device, _allocator);
-    }
+    _buffers.clear();
 }
 
 void BufferManager::addBuffer(const std::string& name, uint32_t sizeBytes, const void* data)

@@ -63,11 +63,11 @@ int main()
 
                         VertexAttributeType type = VertexAttribute::getType(attribute.first);
                         VkFormat format = VertexAttribute::getFormat(accessor.type, accessor.componentType);
-                        uint32_t offset = model.bufferViews[accessor.bufferView].byteOffset;
+                        uint32_t offset = static_cast<uint32_t>(model.bufferViews[accessor.bufferView].byteOffset);
                         uint32_t stride = VertexAttribute::getFormatSize(format);
                         std::string bufferName = buffer.uri + ".vertex." + std::to_string(accessor.bufferView);
                         unsigned char* bytes = buffer.data.data() + offset;
-                        renderer.addBuffer(bufferName, bufferView.byteLength, bytes);
+                        renderer.addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), bytes);
 
                         uint32_t index = 0;
 
@@ -101,9 +101,9 @@ int main()
 
                     std::string bufferName = buffer.uri + ".index." + std::to_string(accessor.bufferView);
 
-                    uint32_t offset = model.bufferViews[accessor.bufferView].byteOffset;
+                    uint32_t offset = static_cast<uint32_t>(model.bufferViews[accessor.bufferView].byteOffset);
                     unsigned char* bytes = buffer.data.data() + offset;
-                    renderer.addBuffer(bufferName, bufferView.byteLength, bytes);
+                    renderer.addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), bytes);
 
                     std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(
                         model.accessors[primitive.indices].count,
@@ -122,7 +122,7 @@ int main()
                     renderer.addSampler(colorSamplerName);
 
                     std::string colorImageName = buffer.uri + ".image." + std::to_string(gltfColorTexture.source);
-                    renderer.addImage(colorImageName, gltfColorImage.width, gltfColorImage.height, gltfColorImage.image.size() * sizeof(unsigned char), gltfColorImage.image.data());
+                    renderer.addImage(colorImageName, static_cast<uint32_t>(gltfColorImage.width), static_cast<uint32_t>(gltfColorImage.height), static_cast<uint32_t>(gltfColorImage.image.size()) * sizeof(unsigned char), gltfColorImage.image.data());
 
                     std::string colorTextureName = buffer.uri + ".texture.color." + std::to_string(primitive.material);
                     std::shared_ptr<Sampler> colorSampler = renderer.getSampler(colorSamplerName);
@@ -136,7 +136,7 @@ int main()
                     renderer.addSampler(normalSamplerName);
 
                     std::string normalImageName = buffer.uri + ".image." + std::to_string(gltfNormalTexture.source);
-                    renderer.addImage(normalImageName, gltfNormalImage.width, gltfNormalImage.height, gltfNormalImage.image.size() * sizeof(unsigned char), gltfNormalImage.image.data());
+                    renderer.addImage(normalImageName, static_cast<uint32_t>(gltfNormalImage.width), static_cast<uint32_t>(gltfNormalImage.height), static_cast<uint32_t>(gltfNormalImage.image.size()) * sizeof(unsigned char), gltfNormalImage.image.data());
 
                     std::string normalTextureName = buffer.uri + ".texture.normal" + std::to_string(primitive.material);
                     std::shared_ptr<Sampler> normalSampler = renderer.getSampler(normalSamplerName);
