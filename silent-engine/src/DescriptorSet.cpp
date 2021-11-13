@@ -2,7 +2,7 @@
 #include "DescriptorSetLayout.h";
 #include "Texture.h"
 
-DescriptorSet::DescriptorSet(const vkb::Device& device, VkDescriptorPool descriptorPool, std::shared_ptr<DescriptorSetLayout> layout, std::vector<std::shared_ptr<Texture>>& textures)
+DescriptorSet::DescriptorSet(const vkb::Device& device, VkDescriptorPool descriptorPool, std::shared_ptr<DescriptorSetLayout> layout, const std::vector<std::shared_ptr<Texture>>& textures)
     : _device(device)
     , _layout(layout)
     , _textures(textures)
@@ -59,7 +59,7 @@ VkDescriptorSet DescriptorSet::getDescriptorSet() const
     return _descriptorSet;
 }
 
-bool DescriptorSet::isCompatible(std::shared_ptr<DescriptorSetLayout> layout, std::vector<std::shared_ptr<Texture>>& textures)
+bool DescriptorSet::isCompatible(std::shared_ptr<DescriptorSetLayout> layout, const std::vector<std::shared_ptr<Texture>>& textures)
 {
     return _layout == layout && _textures == textures;
 }

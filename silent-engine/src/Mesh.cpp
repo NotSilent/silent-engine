@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-Mesh::Mesh(uint32_t indexCount, std::shared_ptr<Buffer> indexBuffer, std::vector<VertexAttribute>& attributes)
+Mesh::Mesh(uint32_t indexCount, std::shared_ptr<Buffer> indexBuffer, const std::vector<VertexAttribute>& attributes)
     : _indexCount(indexCount)
     , _indexBuffer(indexBuffer)
     , _attributes(attributes)
@@ -23,7 +23,7 @@ VkBuffer Mesh::getIndexBuffer() const
     return _indexBuffer->getBuffer();
 }
 
-std::vector<VertexAttribute> Mesh::getAttributes() const
+std::vector<VertexAttribute> const& Mesh::getAttributes() const
 {
     return _attributes;
 }

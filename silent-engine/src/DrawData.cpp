@@ -24,7 +24,7 @@ std::shared_ptr<Camera> DrawData::getCamera() const
     return _camera;
 }
 
-std::vector<DrawCall> DrawData::getDrawCalls() const
+std::vector<DrawCall> const& DrawData::getDrawCalls() const
 {
     return _drawCalls;
 }

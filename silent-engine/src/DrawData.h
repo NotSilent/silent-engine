@@ -21,7 +21,7 @@ public:
     void addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, const glm::mat4& model);
 
     std::shared_ptr<Camera> getCamera() const;
-    std::vector<DrawCall> getDrawCalls() const;
+    std::vector<DrawCall> const& getDrawCalls() const;
 
 private:
     std::shared_ptr<Camera> _camera;

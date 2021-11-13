@@ -42,16 +42,23 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device& device, VkCommandPool c
 
     vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    std::vector<VkBuffer> vertexBuffers;
+    std::vector<VkDeviceSize> offsets;
+    auto view = drawData.getCamera()->getViewMatrix();
+    auto projection = drawData.getCamera()->getProjectionMatrix();
+    auto viewPosition = drawData.getCamera()->getPosition();
+
     for (auto& drawCall : drawData.getDrawCalls()) {
+        vertexBuffers.clear();
+        offsets.clear();
+
         PushData pushData {
             .model = drawCall.model,
-            .view = drawData.getCamera()->getViewMatrix(),
-            .projection = drawData.getCamera()->getProjectionMatrix(),
-            .viewPosition = drawData.getCamera()->getPosition(),
+            .view = view,
+            .projection = projection,
+            .viewPosition = viewPosition,
         };
 
-        std::vector<VkBuffer> vertexBuffers;
-        std::vector<VkDeviceSize> offsets;
         for (auto& attribute : drawCall.mesh->getAttributes()) {
             vertexBuffers.push_back(attribute.buffer->getBuffer());
             offsets.push_back(0);
@@ -60,11 +67,10 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device& device, VkCommandPool c
         std::shared_ptr<Material> material = drawCall.material;
         VkDescriptorSet descriptorSet = material->getDescriptorSet();
 
-        VkBuffer indexBuffer = drawCall.mesh->getIndexBuffer();
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->getPipeline());
         vkCmdPushConstants(cmd, material->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
         vkCmdBindVertexBuffers(cmd, 0, static_cast<uint32_t>(vertexBuffers.size()), vertexBuffers.data(), offsets.data());
-        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(cmd, drawCall.mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->getPipelineLayout(), 0, 1, &descriptorSet, 0, nullptr);
 
         vkCmdDrawIndexed(cmd, drawCall.mesh->getIndexCount(), 1, 0, 0, 0);

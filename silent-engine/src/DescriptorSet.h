@@ -9,12 +9,12 @@ class DescriptorSetLayout;
 
 class DescriptorSet {
 public:
-    DescriptorSet(const vkb::Device& device, VkDescriptorPool descriptorPool, std::shared_ptr<DescriptorSetLayout> layout, std::vector<std::shared_ptr<Texture>>& textures);
+    DescriptorSet(const vkb::Device& device, VkDescriptorPool descriptorPool, std::shared_ptr<DescriptorSetLayout> layout, const std::vector<std::shared_ptr<Texture>>& textures);
     ~DescriptorSet();
 
     VkDescriptorSet getDescriptorSet() const;
 
-    bool isCompatible(std::shared_ptr<DescriptorSetLayout> layout, std::vector<std::shared_ptr<Texture>>& textures);
+    bool isCompatible(std::shared_ptr<DescriptorSetLayout> layout, const std::vector<std::shared_ptr<Texture>>& textures);
 
 private:
     vkb::Device _device;

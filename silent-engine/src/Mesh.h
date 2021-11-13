@@ -9,11 +9,11 @@
 
 class Mesh {
 public:
-    Mesh(uint32_t indexCount, std::shared_ptr<Buffer> indexBuffer, std::vector<VertexAttribute>& attributes);
+    Mesh(uint32_t indexCount, std::shared_ptr<Buffer> indexBuffer, const std::vector<VertexAttribute>& attributes);
     void destroy(VkDevice device, VmaAllocator allocator);
     uint32_t getIndexCount() const;
     VkBuffer getIndexBuffer() const;
-    std::vector<VertexAttribute> getAttributes() const;
+    std::vector<VertexAttribute> const& getAttributes() const;
 
 private:
     uint32_t _indexCount;
