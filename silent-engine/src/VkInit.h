@@ -9,7 +9,7 @@ VmaAllocator createAllocator(const vkb::Instance& instance, const vkb::PhysicalD
 
 VkSemaphore createSemaphore(const vkb::Device& device);
 
-VkFence createFence(const vkb::Device& device);
+VkFence createFence(const vkb::Device& device, VkFenceCreateFlags flags);
 
 VkFramebuffer createFramebuffer(const vkb::Device& device, const VkRenderPass renderPass, const VkImageView color, VkImageView depthStencil, const uint32_t width, const uint32_t height);
 

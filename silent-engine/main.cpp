@@ -107,7 +107,7 @@ int main()
                         renderer.addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), bytes);
 
                         std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(
-                            model.accessors[primitive.indices].count,
+                            static_cast<uint32_t>(model.accessors[primitive.indices].count),
                             renderer.getBuffer(bufferName),
                             attributes);
 
@@ -153,9 +153,7 @@ int main()
                         auto material = renderer.getMaterial(attributeDescriptions, types, textures);
 
                         // TODO: Recreate MeshManager
-                        std::shared_ptr<MeshComponent>
-                            meshComponent
-                            = std::make_shared<MeshComponent>();
+                        std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
                         meshComponent->setMesh(mesh);
                         meshComponent->setMaterial(material);
 
@@ -165,9 +163,6 @@ int main()
 
                         entities.push_back(entity);
                         meshComponents.push_back(meshComponent);
-                    } else {
-                        // TODO: Manage all
-                        int temp;
                     }
                 }
             }
@@ -207,6 +202,6 @@ int main()
 
         renderer.update(drawData, timeManager->getCurrentTime(), timeManager->getDeltaTime(), timeManager->getCurrentFrame());
     }
-    
+
     return 0;
 }

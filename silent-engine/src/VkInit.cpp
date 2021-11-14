@@ -47,12 +47,12 @@ VkSemaphore VkInit::createSemaphore(const vkb::Device& device)
     return semaphore;
 }
 
-VkFence VkInit::createFence(const vkb::Device& device)
+VkFence VkInit::createFence(const vkb::Device& device, VkFenceCreateFlags flags)
 {
     VkFenceCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .pNext = nullptr,
-        .flags = {},
+        .flags = flags,
     };
 
     VkFence fence;

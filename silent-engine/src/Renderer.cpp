@@ -192,7 +192,7 @@ void Renderer::draw(const DrawData& drawData)
     VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, drawData, _renderPass, _framebuffers[imageIndex],
         VkRect2D { { 0, 0 }, { _window->getWidth(), _window->getHeight() } }, _imGuiData);
 
-    auto queueFence = VkInit::createFence(_device);
+    auto queueFence = VkInit::createFence(_device, {});
 
     VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
