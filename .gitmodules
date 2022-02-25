@@ -1,6 +1,21 @@
+[submodule "glfw"]
+	path = glfw
+	url = https://github.com/glfw/glfw
+[submodule "vk-bootstrap"]
+	path = vk-bootstrap
+	url = https://github.com/charles-lunarg/vk-bootstrap
+[submodule "VulkanMemoryAllocator"]
+	path = VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+[submodule "glm"]
+	path = glm
+	url = https://github.com/g-truc/glm
 [submodule "tinygltf"]
-	path = silent-engine/src/third-party/tinygltf
+	path = tinygltf
 	url = https://github.com/syoyo/tinygltf
+[submodule "imgui"]
+	path = imgui
+	url = https://github.com/ocornut/imgui
 [submodule "glTF-Sample-Models"]
-	path = silent-engine/src/third-party/glTF-Sample-Models
+	path = glTF-Sample-Models
 	url = https://github.com/KhronosGroup/glTF-Sample-Models
