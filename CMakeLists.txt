@@ -20,12 +20,7 @@ add_subdirectory(VulkanMemoryAllocator)
 add_subdirectory(SilentEngine)
 
 set(IMGUI_DIR imgui)
-include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
 add_library(ImGui ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
-target_include_directories(ImGui PUBLIC ${IMGUI_DIR})
 find_package(Vulkan REQUIRED)
 target_link_libraries(ImGui glfw Vulkan::Vulkan)
-# Compile as static library
-# file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp)
-# add_library(ImGui STATIC ${IMGUI_SOURCES})
-# target_include_directories(ImGui PUBLIC ${IMGUI_PATH})
+target_include_directories(ImGui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)
