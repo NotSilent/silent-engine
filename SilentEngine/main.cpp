@@ -46,8 +46,8 @@ int main() {
         uint32_t totalNumberOfPrimitives(0);
         uint32_t compatiblePrimitives(0);
         if (result) {
-            for (auto &mesh : model.meshes) {
-                for (auto &primitive : mesh.primitives) {
+            for (auto &mesh: model.meshes) {
+                for (auto &primitive: mesh.primitives) {
                     totalNumberOfPrimitives++;
                     // TODO: Variable number of attributes
                     if (primitive.attributes.size() == 4) {
@@ -56,7 +56,7 @@ int main() {
                         std::vector<VertexAttributeDescription> attributeDescriptions{4};
                         std::vector<VertexAttribute> attributes{4};
 
-                        for (auto &attribute : primitive.attributes) {
+                        for (auto &attribute: primitive.attributes) {
                             tinygltf::Accessor accessor = model.accessors[attribute.second];
                             tinygltf::BufferView bufferView = model.bufferViews[accessor.bufferView];
                             tinygltf::Buffer buffer = model.buffers[bufferView.buffer];
@@ -196,7 +196,7 @@ int main() {
     while (!window->shouldClose() && inputManager->getKeyState(Key::Escape) != KeyState::Press) {
         engineStatics->update();
 
-        for (auto entity : entities) {
+        for (auto entity: entities) {
             entity->update(timeManager->getDeltaTime());
         }
 
@@ -206,7 +206,7 @@ int main() {
         //drawData.addDrawCall(meshComponent1->getMesh(), meshComponent1->getTexture(), entityWithMesh1->getModel());
         //drawData.addDrawCall(meshComponent2->getMesh(), meshComponent2->getTexture(), entityWithMesh2->getModel());
 
-        for (auto &meshComponent : meshComponents) {
+        for (auto &meshComponent: meshComponents) {
             drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getMaterial(), meshComponent->getModel());
         }
 

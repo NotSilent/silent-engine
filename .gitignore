@@ -2,12 +2,6 @@
 *imgui.ini
 *vma_log.csv
 glTF-Sample-Models/*
-imgui/*
-glfw/*
-glm/*
-tinygltf/*
-vk-bootstrap/*
-VulkanMemoryAllocator/*
 cmake-build-debug/*
 cmake-build-release/*
 .idea/*

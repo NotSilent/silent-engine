@@ -4,7 +4,7 @@
 
 #include <tiny_gltf.h>
 
-//#define VMA_RECORDING_ENABLED
+#define VMA_RECORDING_ENABLED 1
 #define VMA_IMPLEMENTATION
 
 #include <vk_mem_alloc.h>
