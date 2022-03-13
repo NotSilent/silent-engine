@@ -41,3 +41,17 @@ FetchContent_Declare(
         GIT_TAG 98e8cebec97df8168c5f4019ae504ea536387a81
 )
 add_subdirectory(vma)
+
+FetchContent_Declare(
+        imgui-file-dialog
+        GIT_REPOSITORY https://github.com/aiekick/ImGuiFileDialog
+        GIT_TAG e22441e00b8595617b55d89dee8a7b5b6f1b87ae
+)
+add_subdirectory(imgui-file-dialog)
+
+FetchContent_Declare(
+        simple-ini
+        GIT_REPOSITORY https://github.com/brofield/simpleini
+        GIT_TAG cfb8820b4fa133b5bdc8c2f423be18bf4873687b
+)
+add_subdirectory(simple-ini)

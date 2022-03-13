@@ -1,7 +1,4 @@
 *.spv
-*imgui.ini
-*vma_log.csv
-glTF-Sample-Models/*
 cmake-build-debug/*
 cmake-build-release/*
 .idea/*
