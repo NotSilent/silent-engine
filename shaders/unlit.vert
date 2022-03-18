@@ -18,7 +18,7 @@ layout (location = 1) out vec2 texCoord0;
 layout (location = 2) out vec3 normal;
 layout (location = 3) out vec4 tangent;
 
-void main() {    
+void main() {
     position = vec3(push.model * vec4(inPosition, 1.0));
     normal = mat3(transpose(inverse(push.model))) * inNormal;
     texCoord0 = inTexCoord0;

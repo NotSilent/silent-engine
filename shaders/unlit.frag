@@ -21,17 +21,17 @@ layout(set = 0, binding = 1) uniform sampler2D normalSampler;
 vec3 getNormal() {
     vec3 tangentNormal = texture(normalSampler, texCoord0).xyz;
 
-	vec3 q1 = dFdx(position);
-	vec3 q2 = dFdy(position);
-	vec2 st1 = dFdx(texCoord0);
-	vec2 st2 = dFdy(texCoord0);
+    vec3 q1 = dFdx(position);
+    vec3 q2 = dFdy(position);
+    vec2 st1 = dFdx(texCoord0);
+    vec2 st2 = dFdy(texCoord0);
 
-	vec3 N = normalize(normal);
-	vec3 T = normalize(q1 * st2.t - q2 * st1.t);
-	vec3 B = -normalize(cross(N, T));
-	mat3 TBN = mat3(T, B, N);
+    vec3 N = normalize(normal);
+    vec3 T = normalize(q1 * st2.t - q2 * st1.t);
+    vec3 B = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
 
-	return normalize(TBN * tangentNormal);
+    return normalize(TBN * tangentNormal);
 }
 
 void main() {
@@ -41,7 +41,7 @@ void main() {
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
     vec4 objectColor = texture(colorSampler, texCoord0);
 
-    if(objectColor.w < 0.1) {
+    if (objectColor.w < 0.1) {
         discard;
     }
 
