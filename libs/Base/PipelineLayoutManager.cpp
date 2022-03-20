@@ -20,7 +20,7 @@ std::shared_ptr<PipelineLayout> PipelineLayoutManager::getLayout(const std::vect
 
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayout = _descriptorSetLayoutManager->getLayout(types);
 
-    auto layout = std::make_shared<PipelineLayout>(_device, sizeof(PushData), descriptorSetLayout);
+    auto layout = std::make_shared<PipelineLayout>(_device, static_cast<uint32_t>(sizeof(PushData)), descriptorSetLayout);
     _layouts.push_back(layout);
 
     return layout;

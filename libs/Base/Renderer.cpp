@@ -7,6 +7,7 @@
 #include "VkInit.h"
 
 #include "vk_mem_alloc.h"
+#include <limits>
 
 Renderer::Renderer(const std::shared_ptr<Window> &window) {
     _window = window;
@@ -24,7 +25,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
 
     vkb::PhysicalDeviceSelector selector{_instance};
 
-    auto physicalDeviceResult = selector.set_surface(_surface).set_desired_version(1, 1).select();
+    auto physicalDeviceResult = selector.set_surface(_surface).set_minimum_version(1, 2).select();
     if (!physicalDeviceResult) {
         throw std::runtime_error(physicalDeviceResult.error().message());
     }
@@ -48,8 +49,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
         throw std::runtime_error(swapchainResult.error().message());
     }
 
-    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_1,
-                                         _swapchain.image_count);
+    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_2);
 
     _swapchain = swapchainResult.value();
     _swapchainImages = _swapchain.get_images().value();
@@ -88,8 +88,6 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
                                                          static_cast<float>(window->getHeight()), _renderPass,
                                                          _pipelineLayoutManager);
     _materialManager = MaterialManager(_device, _pipelineManager, _descriptorSetManager);
-
-    _currentTime = glfwGetTime();
 }
 
 Renderer::~Renderer() {
@@ -188,7 +186,7 @@ void Renderer::draw(const DrawData &drawData) {
     auto acquireSemaphore = VkInit::createSemaphore(_device);
     uint32_t imageIndex;
 
-    if (vkAcquireNextImageKHR(_device.device, _swapchain.swapchain, std::numeric_limits<uint32_t>::max(),
+    if (vkAcquireNextImageKHR(_device.device, _swapchain.swapchain, (std::numeric_limits<uint64_t>::max)(),
                               acquireSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
         throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
@@ -232,7 +230,7 @@ void Renderer::draw(const DrawData &drawData) {
 
     vkQueuePresentKHR(_device.get_queue(vkb::QueueType::graphics).value(), &presentInfo);
 
-    vkWaitForFences(_device.device, 1, &queueFence, true, std::numeric_limits<uint64_t>::max());
+    vkWaitForFences(_device.device, 1, &queueFence, true, (std::numeric_limits<uint64_t>::max)());
 
     vkFreeCommandBuffers(_device.device, _commandPool, 1, &cmd);
     vkDestroyFence(_device.device, queueFence, nullptr);

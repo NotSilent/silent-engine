@@ -66,7 +66,6 @@ private:
     std::shared_ptr<Window> _window;
 
     uint64_t _currentFrame = 0;
-    double _currentTime{0.0};
 
     vkb::Instance _instance;
     vkb::PhysicalDevice _physicalDevice;

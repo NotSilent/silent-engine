@@ -8,7 +8,7 @@
 namespace VkInit {
     VmaAllocator
     createAllocator(const vkb::Instance &instance, const vkb::PhysicalDevice &physicalDevice, const vkb::Device &device,
-                    uint32_t vulkanApiVersion, const uint32_t frameInUseCount);
+                    uint32_t vulkanApiVersion);
 
     VkSemaphore createSemaphore(const vkb::Device &device);
 
