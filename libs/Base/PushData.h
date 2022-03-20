@@ -1,5 +1,5 @@
 #pragma once
-#include "glm\glm.hpp"
+#include <glm/glm.hpp>
 
 struct PushData {
     glm::mat4 model;

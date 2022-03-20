@@ -13,8 +13,8 @@
 
 const std::string ENGINE_NAME = "Silent Engine";
 
-const uint32_t WIDTH = 1920;
-const uint32_t HEIGHT = 1080;
+const uint32_t WIDTH = 2560;
+const uint32_t HEIGHT = 1440;
 
 void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer> &renderer,
                     std::vector<std::shared_ptr<Entity>> &entities,

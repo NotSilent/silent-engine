@@ -12,7 +12,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
     _window = window;
     vkb::InstanceBuilder builder;
     auto instanceResult = builder.set_app_name(_window->getName().c_str()).request_validation_layers(
-            true).use_default_debug_messenger().require_api_version(1, 2, 0).build();
+            true).use_default_debug_messenger().desire_api_version(1, 0, 0).build();
 
     if (!instanceResult) {
         throw std::runtime_error(instanceResult.error().message());
@@ -48,7 +48,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
         throw std::runtime_error(swapchainResult.error().message());
     }
 
-    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_1,
+    _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_0,
                                          _swapchain.image_count);
 
     _swapchain = swapchainResult.value();

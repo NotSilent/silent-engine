@@ -2,7 +2,9 @@
 
 #include "Buffer.h"
 #include "tiny_gltf.h"
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
+#include <memory>
+#include <compare>
 
 enum class VertexAttributeType {
     Position,

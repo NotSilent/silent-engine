@@ -2,7 +2,7 @@
 #include "VkBootstrap.h"
 #include <memory>
 #include <vector>
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 
 class Material;
 class PipelineManager;

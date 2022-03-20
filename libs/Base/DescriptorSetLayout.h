@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 #include "VkBootstrap.h"
 
 class DescriptorSetLayout {

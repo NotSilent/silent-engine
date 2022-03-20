@@ -75,11 +75,11 @@ public:
             bool shouldRenderFPSCounter = true;
             ImGui::Begin("Frame Data", &shouldRenderFPSCounter,
                          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMouseInputs);
-            ImGui::Text("Current Frame: %.llu", _frameData.currentFrame);
+            ImGui::Text("Current Frame: %.lu", _frameData.currentFrame);
             ImGui::Text("Current Time:  %.2f s", _frameData.currentTime);
             ImGui::Text("Frame Time:    %.4f ms", _frameData.frameTime);
             ImGui::Text("FPS:           %.2f", _frameData.fps);
-            ImGui::Text("", _frameData.fps);
+            ImGui::Text("%.0f", _frameData.fps);
             ImGui::Text("Camera position: %s", glm::to_string(_cameraPosition).c_str());
             ImGui::End();
         }
@@ -104,20 +104,6 @@ public:
                     ImGui::EndMenu();
                 }
                 ImGui::EndMainMenuBar();
-            }
-
-            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
-                if (ImGuiFileDialog::Instance()->IsOk()) {
-                    defaultFilePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-                    if (rc == SI_OK) {
-                        ini.SetValue("DEFAULT", "FilePathName", defaultFilePathName.c_str());
-                        ini.SaveFile("sengine.ini");
-                    }
-
-                    onFileSelected(defaultFilePathName);
-                }
-
-                ImGuiFileDialog::Instance()->Close();
             }
         }
 

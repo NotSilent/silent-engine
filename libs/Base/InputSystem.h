@@ -1,13 +1,13 @@
 #pragma once
 
 #include <memory>
-#include "../Base/Window.h"
+#include "Window.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_LEFT_HANDED
 
-#include "glm\glm.hpp"
+#include <glm/glm.hpp>
 
 enum class Key {
     A = GLFW_KEY_A,

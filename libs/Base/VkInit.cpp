@@ -1,12 +1,9 @@
 #include "VkInit.h"
+#include "vk_mem_alloc.h"
 
 VmaAllocator VkInit::createAllocator(const vkb::Instance &instance, const vkb::PhysicalDevice &physicalDevice,
                                      const vkb::Device &device, uint32_t vulkanApiVersion,
                                      const uint32_t frameInUseCount) {
-    VmaRecordSettings recordSettings{
-            .flags = {},
-            .pFilePath = "vma_log.csv",
-    };
 
     VmaAllocatorCreateInfo createInfo{
             .flags = {},
@@ -15,10 +12,8 @@ VmaAllocator VkInit::createAllocator(const vkb::Instance &instance, const vkb::P
             .preferredLargeHeapBlockSize = 0,
             .pAllocationCallbacks = nullptr,
             .pDeviceMemoryCallbacks = nullptr,
-            .frameInUseCount = frameInUseCount,
             .pHeapSizeLimit = nullptr,
             .pVulkanFunctions = nullptr,
-            .pRecordSettings = &recordSettings,
             .instance = instance.instance,
             .vulkanApiVersion = vulkanApiVersion,
     };

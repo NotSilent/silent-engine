@@ -36,11 +36,11 @@ FetchContent_Declare(
 add_subdirectory(vk-bootstrap)
 
 FetchContent_Declare(
-        vma
+        VulkanMemoryAllocator
         GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-        GIT_TAG 98e8cebec97df8168c5f4019ae504ea536387a81
+        GIT_TAG 05a61447182a00e479b361e4e363d5d9b54b818a
 )
-add_subdirectory(vma)
+add_subdirectory(VulkanMemoryAllocator)
 
 FetchContent_Declare(
         imgui-file-dialog

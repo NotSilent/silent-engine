@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VkBootstrap.h"
-#include "vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 #include "VkResource.h"
 
 class Buffer {
