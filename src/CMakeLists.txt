@@ -6,6 +6,10 @@ add_executable(sengine main.cpp)
 target_link_libraries(sengine base)
 set_target_properties(sengine PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build)
 
+if (MSVC)
+    target_link_options(sengine PRIVATE $<$<CONFIG:RELWITHDEBINFO>:/PROFILE>)
+endif ()
+
 # TODO: compile shaders at runtime
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/build/shaders/)
 find_package(Vulkan)

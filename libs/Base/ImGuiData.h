@@ -4,7 +4,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
 #include "GLFW/glfw3.h"
-#include <utility>
+#include <functional>
 #include "glm/vec3.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include <vulkan/vulkan.h>
@@ -12,8 +12,8 @@
 
 #include "VkResource.h"
 #include "vk_mem_alloc.h"
-#include "ImGuiFileDialog.h"
 #include "SimpleIni.h"
+#include "nfd.hpp"
 
 struct ImGuiFrameData {
     uint64_t currentFrame;
@@ -59,6 +59,7 @@ public:
         ImGui_ImplVulkan_CreateFontsTexture(cmd);
 
         endSingleTimeCommands(cmd, graphicsQueue, commandPool);
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     }
 
     void destroy(VkDevice device, VmaAllocator allocator) {
@@ -85,39 +86,35 @@ public:
         }
 
         // TODO: Build better config class
-
-        std::string defaultFilePathName = ".";
-
-        CSimpleIniA ini;
-        SI_Error rc = ini.LoadFile("sengine.ini");
-        if (rc == SI_OK) {
-            defaultFilePathName = ini.GetValue("DEFAULT", "FilePathName", defaultFilePathName.c_str());
-        }
-
         if (!drawEditor) {
             if (ImGui::BeginMainMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
                     if (ImGui::MenuItem("Open", "Ctrl+O")) {
-                        ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf",
-                                                                defaultFilePathName);
+
+                        CSimpleIniA ini;
+                        SI_Error rc = ini.LoadFile("sengine.ini");
+                        if (rc == SI_OK) {
+                            std::string defaultFilePathName = ".";
+                            defaultFilePathName = ini.GetValue("DEFAULT", "FilePathName", defaultFilePathName.c_str());
+
+                            NFD_Init();
+                            nfdchar_t *filePath;
+                            nfdfilteritem_t filterItem{"GLTF", "gltf"};
+                            nfdresult_t result = NFD::OpenDialog(filePath, &filterItem, 1, defaultFilePathName.c_str());
+                            if (result == NFD_OKAY) {
+                                ini.SetValue("DEFAULT", "FilePathName", filePath);
+                                ini.SaveFile("sengine.ini");
+
+                                onFileSelected(filePath);
+                                NFD::FreePath(filePath);
+                            }
+
+                            NFD::Quit();
+                        }
                     }
                     ImGui::EndMenu();
                 }
                 ImGui::EndMainMenuBar();
-            }
-
-            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
-                if (ImGuiFileDialog::Instance()->IsOk()) {
-                    defaultFilePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-                    if (rc == SI_OK) {
-                        ini.SetValue("DEFAULT", "FilePathName", defaultFilePathName.c_str());
-                        ini.SaveFile("sengine.ini");
-                    }
-
-                    onFileSelected(defaultFilePathName);
-                }
-
-                ImGuiFileDialog::Instance()->Close();
             }
         }
 

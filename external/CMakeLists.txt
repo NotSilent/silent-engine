@@ -22,11 +22,11 @@ FetchContent_Declare(
 add_subdirectory(imgui)
 
 FetchContent_Declare(
-        imgui-file-dialog
-        GIT_REPOSITORY https://github.com/aiekick/ImGuiFileDialog
-        GIT_TAG e22441e00b8595617b55d89dee8a7b5b6f1b87ae
+        nativefiledialog-extended
+        GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended
+        GIT_TAG 28ade5a5cc5d17cea8fe4034572cac8fd54eb53f
 )
-add_subdirectory(imgui-file-dialog)
+add_subdirectory(nativefiledialog-extended)
 
 FetchContent_Declare(
         simple-ini

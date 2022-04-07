@@ -61,12 +61,16 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
 
     _depthStencilImages = std::vector<std::unique_ptr<Image>>(_swapchain.image_count);
     _framebuffers = std::vector<VkFramebuffer>(_swapchain.image_count);
+    _frameDatas = std::vector<FrameData>(_swapchain.image_count);
+    _frameCommandPools = std::vector<VkCommandPool>(_swapchain.image_count);
     for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
         _depthStencilImages[i] = std::make_unique<Image>(_device, _allocator, _window->getWidth(),
                                                          _window->getHeight());
         _framebuffers[i] = VkInit::createFramebuffer(_device, _renderPass, _swapchainImageViews[i],
                                                      _depthStencilImages[i]->getImageView(), _window->getWidth(),
                                                      _window->getHeight());
+        _frameDatas[i] = FrameData(_device.device);
+        _frameCommandPools[i] = VkInit::createCommandPool(_device);
     }
 
     _commandPool = VkInit::createCommandPool(_device);
@@ -91,6 +95,11 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
 }
 
 Renderer::~Renderer() {
+    for (auto &frameData: _frameDatas) {
+        frameData.wait();
+        frameData.reset();
+    }
+
     _bufferManager.destroy();
     _imageManager.destroy();
     _samplerManager.destroy();
@@ -114,6 +123,9 @@ Renderer::~Renderer() {
 
     vkDestroyRenderPass(_device.device, _renderPass, nullptr);
 
+    for(auto& commandPool : _frameCommandPools) {
+        vkDestroyCommandPool(_device.device, commandPool, nullptr);
+    }
     vkDestroyCommandPool(_device.device, _commandPool, nullptr);
 
     _swapchain.destroy_image_views(_swapchainImageViews);
@@ -132,10 +144,16 @@ Renderer::update(const DrawData &drawData, float currentTime, float deltaTime, b
                  std::function<void(const std::string &, const std::shared_ptr<Renderer> &,
                                     std::vector<std::shared_ptr<Entity>> &,
                                     std::vector<std::shared_ptr<MeshComponent>> &)> onFileSelected) {
-    float frameTime = deltaTime * 1000.0f;
-    float fps = 1000.0f / frameTime;
 
-    _imGuiData.setFrameData(_currentFrame, currentTime, frameTime, fps);
+    _currentAccumulatedTime += deltaTime;
+    _currentAccumulatedFrames++;
+    if (_currentAccumulatedTime > 1) {
+        _currentAverageFPS = _currentAccumulatedFrames / _currentAccumulatedTime;
+
+        _currentAccumulatedFrames = 0;
+        _currentAccumulatedTime = 0.0f;
+    }
+    _imGuiData.setFrameData(_currentFrame, currentTime, deltaTime * 1000.0f, _currentAverageFPS);
     _imGuiData.setCameraPosition(drawData.getCamera()->getPosition());
     _imGuiData.render(drawEditor, [&](const std::string &filePath) {
         onFileSelected(filePath, renderer, entities, meshComponents);
@@ -184,25 +202,30 @@ std::shared_ptr<Material> Renderer::getMaterial(const std::vector<VertexAttribut
 
 void Renderer::draw(const DrawData &drawData) {
     auto acquireSemaphore = VkInit::createSemaphore(_device);
+    auto submitSemaphore = VkInit::createSemaphore(_device);
+    auto queueFence = VkInit::createFence(_device, {});
     uint32_t imageIndex;
 
-    if (vkAcquireNextImageKHR(_device.device, _swapchain.swapchain, (std::numeric_limits<uint64_t>::max)(),
+    if (vkAcquireNextImageKHR(_device.device, _swapchain.swapchain, (std::numeric_limits<uint64_t>::max)() / 2,
                               acquireSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
         throw std::runtime_error("Error: vkAcquireNextImageKHR");
     }
 
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, drawData, _renderPass,
-                                                      _framebuffers[imageIndex],
-                                                      VkRect2D{{0,                   0},
-                                                               {_window->getWidth(), _window->getHeight()}},
+    FrameData &_frameData = _frameDatas[imageIndex];
+    _frameData.wait();
+    _frameData.reset();
+    _frameData.addFence(queueFence);
+    _frameData.addSemaphore(acquireSemaphore);
+    _frameData.addSemaphore(submitSemaphore);
+
+    VkQueue graphicsQueue = _device.get_queue(vkb::QueueType::graphics).value();
+
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _frameCommandPools[imageIndex], drawData, _renderPass,
+                                                      _framebuffers[imageIndex], VkRect2D{{0,                   0},
+                                                                                          {_window->getWidth(), _window->getHeight()}},
                                                       _imGuiData);
 
-    auto queueFence = VkInit::createFence(_device, {});
-
     VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    auto submitSemaphore = VkInit::createSemaphore(_device);
-
     VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .pNext = nullptr,
@@ -215,7 +238,7 @@ void Renderer::draw(const DrawData &drawData) {
             .pSignalSemaphores = &submitSemaphore,
     };
 
-    vkQueueSubmit(_device.get_queue(vkb::QueueType::graphics).value(), 1, &submitInfo, queueFence);
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, queueFence);
 
     VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -228,12 +251,7 @@ void Renderer::draw(const DrawData &drawData) {
             .pResults = nullptr,
     };
 
-    vkQueuePresentKHR(_device.get_queue(vkb::QueueType::graphics).value(), &presentInfo);
+    vkQueuePresentKHR(graphicsQueue, &presentInfo);
 
-    vkWaitForFences(_device.device, 1, &queueFence, true, (std::numeric_limits<uint64_t>::max)());
-
-    vkFreeCommandBuffers(_device.device, _commandPool, 1, &cmd);
-    vkDestroyFence(_device.device, queueFence, nullptr);
-    vkDestroySemaphore(_device.device, acquireSemaphore, nullptr);
-    vkDestroySemaphore(_device.device, submitSemaphore, nullptr);
+    _frameData.addCommand(_frameCommandPools[imageIndex], cmd);
 }

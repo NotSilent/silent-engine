@@ -1,6 +1,5 @@
 *.spv
-cmake-build-debug/*
-cmake-build-release/*
+cmake-build-*
 .idea/*
 
 ## Ignore Visual Studio temporary files, build results, and

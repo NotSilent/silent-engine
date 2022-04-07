@@ -23,6 +23,7 @@
 #include "Image.h"
 #include "Entity.h"
 #include "MeshComponent.h"
+#include "FrameData.h"
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
@@ -67,6 +68,10 @@ private:
 
     uint64_t _currentFrame = 0;
 
+    float _currentAverageFPS = 0.0f;
+    float _currentAccumulatedTime = 0.0f;
+    uint64_t _currentAccumulatedFrames = 0;
+
     vkb::Instance _instance;
     vkb::PhysicalDevice _physicalDevice;
     vkb::Device _device;
@@ -81,7 +86,12 @@ private:
 
     std::vector<VkFramebuffer> _framebuffers;
 
+    std::vector<FrameData> _frameDatas;
+
+    std::vector<VkCommandPool> _frameCommandPools;
+
     VkCommandPool _commandPool;
+
     VkRenderPass _renderPass;
 
     VmaAllocator _allocator;

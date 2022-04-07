@@ -7,6 +7,7 @@ set(BASE_SOURCES
         DescriptorSet.h DescriptorSet.cpp
         DescriptorSetLayout.h DescriptorSetLayout.cpp
         DrawData.h DrawData.cpp
+        FrameData.h FrameData.cpp
         Image.h
         ImGuiData.h
         Implementations.cpp
@@ -53,7 +54,7 @@ target_link_libraries(base Vulkan::Vulkan)
 
 target_link_libraries(base glm)
 target_link_libraries(base imgui)
-target_link_libraries(base imgui-file-dialog)
+target_link_libraries(base nfd)
 target_link_libraries(base simple-ini)
 target_link_libraries(base tinygltf)
 target_link_libraries(base vk-bootstrap)
