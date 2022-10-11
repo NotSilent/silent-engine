@@ -9,8 +9,8 @@ public:
     PipelineLayout(const vkb::Device& device, uint32_t pushSize, std::shared_ptr<DescriptorSetLayout> decriptorSetLayout);
     ~PipelineLayout();
 
-    VkPipelineLayout getPipelineLayout() const;
-    std::shared_ptr<DescriptorSetLayout> getDescriptorSetLayout() const;
+    [[nodiscard]] VkPipelineLayout getPipelineLayout() const;
+    [[nodiscard]] std::shared_ptr<DescriptorSetLayout> getDescriptorSetLayout() const;
 
 private:
     vkb::Device _device;

@@ -16,7 +16,7 @@ public:
                          std::shared_ptr<DescriptorSetLayoutManager> descriptorSetLayoutManager);
 
     std::shared_ptr<DescriptorSet>
-    getDescriptorSet(const std::vector<VkDescriptorType> types, std::vector<std::shared_ptr<Texture>> &textures);
+    getDescriptorSet(const std::vector<VkDescriptorType>& types, std::vector<std::shared_ptr<Texture>> &textures);
 
     // TODO: Remove all destroys
     void destroy();

@@ -31,12 +31,12 @@ DescriptorSetManager::DescriptorSetManager(const vkb::Device &device,
     }
 }
 
-std::shared_ptr<DescriptorSet> DescriptorSetManager::getDescriptorSet(const std::vector<VkDescriptorType> types,
+std::shared_ptr<DescriptorSet> DescriptorSetManager::getDescriptorSet(const std::vector<VkDescriptorType>& types,
                                                                       std::vector<std::shared_ptr<Texture>> &textures) {
     auto layout = _descriptorSetLayoutManager->getLayout(types);
 
     auto found = std::find_if(_descriptorSets.begin(), _descriptorSets.end(),
-                              [&](std::shared_ptr<DescriptorSet> descriptorSet) {
+                              [&](const std::shared_ptr<DescriptorSet> &descriptorSet) {
                                   return descriptorSet->isCompatible(layout, textures);
                               });
 

@@ -13,21 +13,24 @@ class Pipeline {
 public:
     Pipeline(const vkb::Device &device, float width, float height, VkRenderPass renderPass,
              const std::vector<VertexAttributeDescription> &attributeDescriptions,
-             std::shared_ptr<PipelineLayout> layout);
+             std::shared_ptr<PipelineLayout> layout, const std::string &shaderName, uint32_t subpassIndex);
 
     ~Pipeline();
 
-    VkPipeline getPipeline() const;
+    [[nodiscard]] VkPipeline getPipeline() const;
 
-    VkPipelineLayout getPipelineLayout() const;
+    [[nodiscard]] VkPipelineLayout getPipelineLayout() const;
 
     bool isCompatible(const std::vector<VertexAttributeDescription> &attributeDescriptions,
-                      std::shared_ptr<PipelineLayout> layout);
+                      const std::shared_ptr<PipelineLayout> &layout, const std::string &shaderName, uint32_t subpassIndex);
 
 private:
     vkb::Device _device;
 
     VkPipeline _pipeline;
+
+    std::string _shaderName;
+    uint32_t _subpassIndex;
 
     std::vector<VertexAttributeDescription> _attributeDescriptions;
     std::shared_ptr<PipelineLayout> _layout;
@@ -38,5 +41,5 @@ private:
     VkShaderModule createShaderModule(const vkb::Device &device, const std::string &shaderFilename);
 
     VkPipelineShaderStageCreateInfo
-    createPipelineShaderStageCreateinfo(const VkShaderStageFlagBits shaderStage, const VkShaderModule module);
+    createPipelineShaderStageCreateinfo(VkShaderStageFlagBits shaderStage, VkShaderModule module);
 };

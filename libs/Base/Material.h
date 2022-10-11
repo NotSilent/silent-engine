@@ -13,9 +13,9 @@ public:
 
     bool isCompatible(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<DescriptorSet> descriptor);
 
-    VkDescriptorSet getDescriptorSet() const;
-    VkPipeline getPipeline() const;
-    VkPipelineLayout getPipelineLayout() const;
+    [[nodiscard]] VkDescriptorSet getDescriptorSet() const;
+    [[nodiscard]] VkPipeline getPipeline() const;
+    [[nodiscard]] VkPipelineLayout getPipelineLayout() const;
 
 private:
     std::shared_ptr<Pipeline> _pipeline;

@@ -1,6 +1,6 @@
 #include "Texture.h"
 
-Texture::Texture(const vkb::Device& device, VmaAllocator allocator, VkCommandPool commandPool, std::shared_ptr<Sampler> sampler, std::shared_ptr<Image> image)
+Texture::Texture(const std::shared_ptr<Sampler>& sampler, const std::shared_ptr<Image>& image)
 {
     _sampler = sampler;
     _image = image;

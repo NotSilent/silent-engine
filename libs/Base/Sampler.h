@@ -1,19 +1,23 @@
 #pragma once
+
 #include <vulkan\vulkan.h>
 #include "VkBootstrap.h"
 #include "VkResource.h"
 
 class Sampler : VkResource<Sampler> {
 public:
-	Sampler(const vkb::Device& device);
-	~Sampler();
+    Sampler() = default;
 
-	VkSampler getSampler() const;
+    Sampler(const vkb::Device &device);
 
-	void destroy(VkDevice device, VmaAllocator allocator);
+    ~Sampler();
+
+    VkSampler getSampler() const;
+
+    void destroy(VkDevice device, VmaAllocator allocator);
 
 private:
-	vkb::Device _device;
+    vkb::Device _device;
 
-	VkSampler _sampler;
+    VkSampler _sampler;
 };

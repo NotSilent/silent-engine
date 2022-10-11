@@ -9,14 +9,13 @@ class Texture : public VkResource<Texture> {
 public:
     Texture() = default;
 
-    Texture(const vkb::Device &device, VmaAllocator allocator, VkCommandPool commandPool,
-            std::shared_ptr<Sampler> sampler, std::shared_ptr<Image> image);
+    Texture(const std::shared_ptr<Sampler>& sampler, const std::shared_ptr<Image>& image);
 
     void destroy(VkDevice device, VmaAllocator allocator);
 
-    VkImageView getImageView() const;
+    [[nodiscard]] VkImageView getImageView() const;
 
-    VkSampler getSampler() const;
+    [[nodiscard]] VkSampler getSampler() const;
 
 private:
     std::shared_ptr<Sampler> _sampler;

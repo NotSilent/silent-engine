@@ -9,18 +9,20 @@ PipelineManager::PipelineManager(const vkb::Device &device, float width, float h
 }
 
 std::shared_ptr<Pipeline> PipelineManager::getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
-                                                       const std::vector<VkDescriptorType> &types) {
+                                                       const std::vector<VkDescriptorType> &types,
+                                                       const std::string &shaderName, uint32_t subpassIndex) {
     auto pipelineLayout = _pipelineLayoutManager->getLayout(types);
 
-    auto found = std::find_if(_pipelines.begin(), _pipelines.end(), [&](std::shared_ptr<Pipeline> pipeline) {
-        return pipeline->isCompatible(descriptions, pipelineLayout);
+    auto found = std::find_if(_pipelines.begin(), _pipelines.end(), [&](std::shared_ptr<Pipeline> &pipeline) {
+        return pipeline->isCompatible(descriptions, pipelineLayout, shaderName, subpassIndex);
     });
 
     if (found != _pipelines.end()) {
         return *found;
     }
 
-    auto pipeline = std::make_shared<Pipeline>(_device, _width, _height, _renderPass, descriptions, pipelineLayout);
+    auto pipeline = std::make_shared<Pipeline>(_device, _width, _height, _renderPass, descriptions, pipelineLayout,
+                                               shaderName, subpassIndex);
     _pipelines.push_back(pipeline);
 
     return pipeline;

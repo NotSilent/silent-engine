@@ -57,29 +57,15 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
 
     //
 
-    _renderPass = VkInit::createRenderPass(_device, _swapchain);
-
-    _depthStencilImages = std::vector<std::unique_ptr<Image>>(_swapchain.image_count);
-    _framebuffers = std::vector<VkFramebuffer>(_swapchain.image_count);
-    _frameDatas = std::vector<FrameData>(_swapchain.image_count);
-    _frameCommandPools = std::vector<VkCommandPool>(_swapchain.image_count);
-    for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
-        _depthStencilImages[i] = std::make_unique<Image>(_device, _allocator, _window->getWidth(),
-                                                         _window->getHeight());
-        _framebuffers[i] = VkInit::createFramebuffer(_device, _renderPass, _swapchainImageViews[i],
-                                                     _depthStencilImages[i]->getImageView(), _window->getWidth(),
-                                                     _window->getHeight());
-        _frameDatas[i] = FrameData(_device.device);
-        _frameCommandPools[i] = VkInit::createCommandPool(_device);
-    }
+    _renderPass = VkInit::createRenderPass(_device.device, _swapchain.image_format);
 
     _commandPool = VkInit::createCommandPool(_device);
 
-    _imGuiData = ImGuiData(_window->getInternalWindow(), _instance.instance, _physicalDevice.physical_device,
-                           _device.device,
-                           _device.get_queue_index(vkb::QueueType::graphics).value(),
-                           _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass,
-                           _commandPool);
+//    _imGuiData = ImGuiData(_window->getInternalWindow(), _instance.instance, _physicalDevice.physical_device,
+//                           _device.device,
+//                           _device.get_queue_index(vkb::QueueType::graphics).value(),
+//                           _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass,
+//                           _commandPool);
 
     _textureManager = TextureManager(_device, _allocator, _commandPool);
     _bufferManager = BufferManager(_device, _allocator, _commandPool);
@@ -92,13 +78,23 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
                                                          static_cast<float>(window->getHeight()), _renderPass,
                                                          _pipelineLayoutManager);
     _materialManager = MaterialManager(_device, _pipelineManager, _descriptorSetManager);
+
+    _frameDatas = std::vector<FrameData>();
+    _frameCommandPools = std::vector<VkCommandPool>(_swapchain.image_count);
+    for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
+        _frameDatas.emplace_back(
+                FrameData(_device.device, _allocator, _window->getWidth(), _window->getHeight(), _renderPass,
+                          _swapchainImageViews[i], _pipelineManager, _descriptorSetManager));
+        _frameCommandPools[i] = VkInit::createCommandPool(_device);
+    }
 }
 
 Renderer::~Renderer() {
-    for (auto &frameData: _frameDatas) {
+    for (FrameData &frameData: _frameDatas) {
         frameData.wait();
         frameData.reset();
     }
+    _frameDatas.clear();
 
     _bufferManager.destroy();
     _imageManager.destroy();
@@ -110,20 +106,13 @@ Renderer::~Renderer() {
     _pipelineLayoutManager->destroy();
     _descriptorSetLayoutManager->destroy();
 
-    for (auto &image: _depthStencilImages) {
-        image->destroy(_device.device, _allocator);
-    }
-    _imGuiData.destroy(_device.device, _allocator);
+    //_imGuiData.destroy(_device.device, _allocator);
 
     vmaDestroyAllocator(_allocator);
 
-    for (auto &framebuffer: _framebuffers) {
-        vkDestroyFramebuffer(_device.device, framebuffer, nullptr);
-    }
-
     vkDestroyRenderPass(_device.device, _renderPass, nullptr);
 
-    for(auto& commandPool : _frameCommandPools) {
+    for (auto &commandPool: _frameCommandPools) {
         vkDestroyCommandPool(_device.device, commandPool, nullptr);
     }
     vkDestroyCommandPool(_device.device, _commandPool, nullptr);
@@ -153,11 +142,11 @@ Renderer::update(const DrawData &drawData, float currentTime, float deltaTime, b
         _currentAccumulatedFrames = 0;
         _currentAccumulatedTime = 0.0f;
     }
-    _imGuiData.setFrameData(_currentFrame, currentTime, deltaTime * 1000.0f, _currentAverageFPS);
-    _imGuiData.setCameraPosition(drawData.getCamera()->getPosition());
-    _imGuiData.render(drawEditor, [&](const std::string &filePath) {
-        onFileSelected(filePath, renderer, entities, meshComponents);
-    });
+    //_imGuiData.setFrameData(_currentFrame, currentTime, deltaTime * 1000.0f, _currentAverageFPS);
+    //_imGuiData.setCameraPosition(drawData.getCamera()->getPosition());
+    //_imGuiData.render(drawEditor, [&](const std::string &filePath) {
+    //onFileSelected(filePath, renderer, entities, meshComponents);
+    //});
 
     draw(drawData);
 }
@@ -221,9 +210,10 @@ void Renderer::draw(const DrawData &drawData) {
     VkQueue graphicsQueue = _device.get_queue(vkb::QueueType::graphics).value();
 
     VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _frameCommandPools[imageIndex], drawData, _renderPass,
-                                                      _framebuffers[imageIndex], VkRect2D{{0,                   0},
-                                                                                          {_window->getWidth(), _window->getHeight()}},
-                                                      _imGuiData);
+                                                      _frameData.getGBuffer(), VkRect2D{{0,                   0},
+                                                                                        {_window->getWidth(), _window->getHeight()}},
+            /*_imGuiData,*/ _frameData._compositePipeline,
+                                                      _frameData._compositeDescriptorSet);
 
     VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submitInfo{

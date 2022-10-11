@@ -15,7 +15,7 @@ public:
                     std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager);
 
     std::shared_ptr<Pipeline> getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
-                                          const std::vector<VkDescriptorType> &types);
+                                          const std::vector<VkDescriptorType> &types, const std::string &shaderName, uint32_t subpassIndex);
 
     // TODO: Remove all destroys
     void destroy();

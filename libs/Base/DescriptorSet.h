@@ -16,7 +16,7 @@ public:
 
     ~DescriptorSet();
 
-    VkDescriptorSet getDescriptorSet() const;
+    [[nodiscard]] VkDescriptorSet getDescriptorSet() const;
 
     bool
     isCompatible(std::shared_ptr<DescriptorSetLayout> layout, const std::vector<std::shared_ptr<Texture>> &textures);

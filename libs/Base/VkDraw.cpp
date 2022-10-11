@@ -2,15 +2,22 @@
 #include "VkInit.h"
 #include "Material.h"
 #include "PushData.h"
+#include "DescriptorSet.h"
 
+// TODO: part of gbuffer?
 VkClearValue clearValues[]{
         {0.75f, 0.75f, 0.75f},
+        {0.0f,  0.0f,  0.0f},
+        {0.0f,  0.0f,  0.0f},
+        {0.0f,  0.0f,  0.0f},
         {1.0f,  0},
 };
 
 VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool commandPool, const DrawData &drawData,
                                             VkRenderPass renderPass, VkFramebuffer framebuffer,
-                                            const VkRect2D &renderArea, const ImGuiData &imGuiData) {
+                                            const VkRect2D &renderArea/*, const ImGuiData &imGuiData*/,
+                                            const std::shared_ptr<Pipeline> &compositePipeline,
+                                            const std::shared_ptr<DescriptorSet> &compositeDescriptorSet) {
     VkRenderPassBeginInfo beginInfo{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
             .pNext = nullptr,
@@ -86,7 +93,15 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
         vkCmdDrawIndexed(cmd, drawCall.mesh->getIndexCount(), 1, 0, 0, 0);
     }
 
-    ImGuiData::appendDrawToCommandBuffer(cmd);
+    vkCmdNextSubpass(cmd, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositePipeline->getPipeline());
+    VkDescriptorSet set = compositeDescriptorSet->getDescriptorSet();
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositePipeline->getPipelineLayout(), 0, 1,
+                            &set, 0, nullptr);
+    vkCmdDraw(cmd, 3, 1, 0, 0);
+
+    //ImGuiData::appendDrawToCommandBuffer(cmd);
 
     vkCmdEndRenderPass(cmd);
 

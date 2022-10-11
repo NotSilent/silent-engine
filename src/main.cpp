@@ -42,6 +42,9 @@ int main() {
         entities.push_back(entityWithCamera);
     }
 
+    const std::string SPONZA_FILE_PATH = "C:\\Users\\SILENT\\Desktop\\glTF-Sample-Models\\2.0\\Sponza\\glTF\\Sponza.gltf";
+    OnFileSelected(SPONZA_FILE_PATH, renderer, entities, meshComponents);
+
     // TODO: move exit on escape to some component
     while (!window->shouldClose() && inputManager->getKeyState(Key::Escape) != KeyState::Press) {
         engineStatics->update();

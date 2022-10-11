@@ -15,7 +15,7 @@ void TextureManager::addTexture(const std::string& name, std::shared_ptr<Sampler
         return;
     }
 
-    _textures[name] = std::make_shared<Texture>(_device, _allocator, _commandPool, sampler, image);
+    _textures[name] = std::make_shared<Texture>(sampler, image);
 }
 
 std::shared_ptr<Texture> TextureManager::getTexture(const std::string& name)

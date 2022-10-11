@@ -10,7 +10,7 @@ PipelineLayoutManager::PipelineLayoutManager(const vkb::Device &device,
 }
 
 std::shared_ptr<PipelineLayout> PipelineLayoutManager::getLayout(const std::vector<VkDescriptorType> &types) {
-    auto found = std::find_if(_layouts.begin(), _layouts.end(), [&](std::shared_ptr<PipelineLayout> layout) {
+    auto found = std::find_if(_layouts.begin(), _layouts.end(), [&](const std::shared_ptr<PipelineLayout> &layout) {
         return layout->getDescriptorSetLayout()->isCompatible(types);
     });
 
@@ -20,7 +20,8 @@ std::shared_ptr<PipelineLayout> PipelineLayoutManager::getLayout(const std::vect
 
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayout = _descriptorSetLayoutManager->getLayout(types);
 
-    auto layout = std::make_shared<PipelineLayout>(_device, static_cast<uint32_t>(sizeof(PushData)), descriptorSetLayout);
+    auto layout = std::make_shared<PipelineLayout>(_device, static_cast<uint32_t>(sizeof(PushData)),
+                                                   descriptorSetLayout);
     _layouts.push_back(layout);
 
     return layout;

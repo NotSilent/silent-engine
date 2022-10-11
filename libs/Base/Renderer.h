@@ -24,6 +24,7 @@
 #include "Entity.h"
 #include "MeshComponent.h"
 #include "FrameData.h"
+#include "DescriptorSet.h"
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
@@ -82,10 +83,6 @@ private:
     std::vector<VkImage> _swapchainImages;
     std::vector<VkImageView> _swapchainImageViews;
 
-    std::vector<std::unique_ptr<Image>> _depthStencilImages;
-
-    std::vector<VkFramebuffer> _framebuffers;
-
     std::vector<FrameData> _frameDatas;
 
     std::vector<VkCommandPool> _frameCommandPools;
@@ -96,7 +93,7 @@ private:
 
     VmaAllocator _allocator;
 
-    ImGuiData _imGuiData;
+    //ImGuiData _imGuiData;
 
     BufferManager _bufferManager;
     ImageManager _imageManager;

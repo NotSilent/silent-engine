@@ -31,6 +31,7 @@ public:
               uint32_t queueFamily, VkQueue graphicsQueue, uint32_t imageCount, VkRenderPass renderPass,
               VkCommandPool commandPool)
             : _device(device) {
+        return;
         _descriptorPool = createDescriptorPool(device);
 
         ImGui_ImplVulkan_InitInfo initInfo{
@@ -68,6 +69,7 @@ public:
     }
 
     void render(bool drawEditor, std::function<void(const std::string &)> onFileSelected) {
+        return;
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();

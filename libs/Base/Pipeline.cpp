@@ -5,12 +5,13 @@
 
 Pipeline::Pipeline(const vkb::Device &device, float width, float height, VkRenderPass renderPass,
                    const std::vector<VertexAttributeDescription> &attributeDescriptions,
-                   std::shared_ptr<PipelineLayout> layout)
-        : _device(device), _attributeDescriptions(attributeDescriptions), _layout(layout) {
+                   std::shared_ptr<PipelineLayout> layout, const std::string &shaderName, uint32_t subpassIndex)
+        : _device(device), _shaderName(shaderName), _subpassIndex(subpassIndex),
+          _attributeDescriptions(attributeDescriptions), _layout(layout) {
     static const uint32_t SHADER_STAGES = 2;
 
-    const auto vertexModule = createShaderModule(device, "unlit.vert.spv");
-    const auto fragmentModule = createShaderModule(device, "unlit.frag.spv");
+    const auto vertexModule = createShaderModule(device, shaderName + ".vert.spv");
+    const auto fragmentModule = createShaderModule(device, shaderName + ".frag.spv");
 
     const VkPipelineShaderStageCreateInfo shaderStageCreateInfos[SHADER_STAGES]{
             createPipelineShaderStageCreateinfo(VK_SHADER_STAGE_VERTEX_BIT, vertexModule),
@@ -124,17 +125,59 @@ Pipeline::Pipeline(const vkb::Device &device, float width, float height, VkRende
             .maxDepthBounds = 1.0f,
     };
 
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{
-            .blendEnable = VK_FALSE,
-            .srcColorBlendFactor = {},
-            .dstColorBlendFactor = {},
-            .colorBlendOp = {},
-            .srcAlphaBlendFactor = {},
-            .dstAlphaBlendFactor = {},
-            .alphaBlendOp = {},
-            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-                              VK_COLOR_COMPONENT_A_BIT,
-    };
+
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+    if (subpassIndex == 0) {
+        colorBlendAttachments.push_back({
+                                                .blendEnable = VK_FALSE,
+                                                .srcColorBlendFactor = {},
+                                                .dstColorBlendFactor = {},
+                                                .colorBlendOp = {},
+                                                .srcAlphaBlendFactor = {},
+                                                .dstAlphaBlendFactor = {},
+                                                .alphaBlendOp = {},
+                                                .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                                                  VK_COLOR_COMPONENT_B_BIT |
+                                                                  VK_COLOR_COMPONENT_A_BIT,
+                                        });
+        colorBlendAttachments.push_back({
+                                                .blendEnable = VK_FALSE,
+                                                .srcColorBlendFactor = {},
+                                                .dstColorBlendFactor = {},
+                                                .colorBlendOp = {},
+                                                .srcAlphaBlendFactor = {},
+                                                .dstAlphaBlendFactor = {},
+                                                .alphaBlendOp = {},
+                                                .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                                                  VK_COLOR_COMPONENT_B_BIT |
+                                                                  VK_COLOR_COMPONENT_A_BIT,
+                                        });
+        colorBlendAttachments.push_back({
+                                                .blendEnable = VK_FALSE,
+                                                .srcColorBlendFactor = {},
+                                                .dstColorBlendFactor = {},
+                                                .colorBlendOp = {},
+                                                .srcAlphaBlendFactor = {},
+                                                .dstAlphaBlendFactor = {},
+                                                .alphaBlendOp = {},
+                                                .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                                                  VK_COLOR_COMPONENT_B_BIT |
+                                                                  VK_COLOR_COMPONENT_A_BIT,
+                                        });
+    } else {
+        colorBlendAttachments.push_back({
+                                                .blendEnable = VK_FALSE,
+                                                .srcColorBlendFactor = {},
+                                                .dstColorBlendFactor = {},
+                                                .colorBlendOp = {},
+                                                .srcAlphaBlendFactor = {},
+                                                .dstAlphaBlendFactor = {},
+                                                .alphaBlendOp = {},
+                                                .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                                                  VK_COLOR_COMPONENT_B_BIT |
+                                                                  VK_COLOR_COMPONENT_A_BIT,
+                                        });
+    }
 
     const VkPipelineColorBlendStateCreateInfo colorBlendState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
@@ -142,8 +185,8 @@ Pipeline::Pipeline(const vkb::Device &device, float width, float height, VkRende
             .flags = {},
             .logicOpEnable = VK_FALSE,
             .logicOp = {},
-            .attachmentCount = 1,
-            .pAttachments = &colorBlendAttachment,
+            .attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size()),
+            .pAttachments = colorBlendAttachments.data(),
             .blendConstants = {},
     };
 
@@ -172,7 +215,7 @@ Pipeline::Pipeline(const vkb::Device &device, float width, float height, VkRende
             .pDynamicState = &dynamicState,
             .layout = _layout->getPipelineLayout(),
             .renderPass = renderPass,
-            .subpass = 0,
+            .subpass = _subpassIndex,
             .basePipelineHandle = VK_NULL_HANDLE,
             .basePipelineIndex = 0,
     };
@@ -198,8 +241,17 @@ VkPipelineLayout Pipeline::getPipelineLayout() const {
 }
 
 bool Pipeline::isCompatible(const std::vector<VertexAttributeDescription> &attributeDescriptions,
-                            std::shared_ptr<PipelineLayout> layout) {
+                            const std::shared_ptr<PipelineLayout> &layout, const std::string &shaderName,
+                            uint32_t subpassIndex) {
     if (_layout != layout) {
+        return false;
+    }
+
+    if (_shaderName != shaderName) {
+        return false;
+    }
+
+    if (_subpassIndex != subpassIndex) {
         return false;
     }
 
@@ -251,7 +303,7 @@ VkShaderModule Pipeline::createShaderModule(const vkb::Device &device, const std
 }
 
 VkPipelineShaderStageCreateInfo
-Pipeline::createPipelineShaderStageCreateinfo(const VkShaderStageFlagBits shaderStage, const VkShaderModule module) {
+Pipeline::createPipelineShaderStageCreateinfo(VkShaderStageFlagBits shaderStage, VkShaderModule module) {
     return {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,

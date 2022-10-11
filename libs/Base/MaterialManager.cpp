@@ -14,7 +14,7 @@ MaterialManager::~MaterialManager() {
 std::shared_ptr<Material> MaterialManager::getMaterial(const std::vector<VertexAttributeDescription> &descriptions,
                                                        const std::vector<VkDescriptorType> &types,
                                                        std::vector<std::shared_ptr<Texture>> &textures) {
-    auto pipeline = _pipelineManager->getPipeline(descriptions, types);
+    auto pipeline = _pipelineManager->getPipeline(descriptions, types, "deferred", 0);
     auto descriptorSet = _descriptorSetManager->getDescriptorSet(types, textures);
 
     auto found = std::find_if(_materials.begin(), _materials.end(), [&](std::shared_ptr<Material> material) {

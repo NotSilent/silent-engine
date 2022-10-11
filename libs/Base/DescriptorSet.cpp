@@ -22,15 +22,16 @@ DescriptorSet::DescriptorSet(const vkb::Device &device, VkDescriptorPool descrip
 
     std::vector<VkWriteDescriptorSet> writes;
     std::vector<VkDescriptorImageInfo> imageInfos;
-    for (uint32_t i = 0; i < _textures.size(); ++i) {
+    const std::vector<VkDescriptorType> &types = _layout->getDescriptorTypes();
+    for (uint32_t i = 0; i < types.size(); ++i) {
         imageInfos.push_back({
-                                     .sampler = _textures[i]->getSampler(),
+                                     .sampler = types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                                                ? _textures[i]->getSampler() : VK_NULL_HANDLE,
                                      .imageView = _textures[i]->getImageView(),
                                      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                              });
     }
-
-    for (uint32_t i = 0; i < _textures.size(); ++i) {
+    for (uint32_t i = 0; i < types.size(); ++i) {
         writes.push_back({
                                  .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                                  .pNext = nullptr,
@@ -38,14 +39,17 @@ DescriptorSet::DescriptorSet(const vkb::Device &device, VkDescriptorPool descrip
                                  .dstBinding = i,
                                  .dstArrayElement = 0,
                                  .descriptorCount = 1,
-                                 .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                 .descriptorType = types[i],
                                  .pImageInfo = &imageInfos[i],
                                  .pBufferInfo = nullptr,
                                  .pTexelBufferView = nullptr,
                          });
     }
 
-    vkUpdateDescriptorSets(device.device, writes.size(), writes.data(), 0, nullptr);
+
+    if (!textures.empty()) {
+        vkUpdateDescriptorSets(device.device, writes.size(), writes.data(), 0, nullptr);
+    }
 }
 
 DescriptorSet::~DescriptorSet() {

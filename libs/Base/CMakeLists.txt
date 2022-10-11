@@ -61,3 +61,4 @@ target_link_libraries(base vk-bootstrap)
 target_link_libraries(base VulkanMemoryAllocator)
 
 target_include_directories(base PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(base PUBLIC Vulkan::Headers)

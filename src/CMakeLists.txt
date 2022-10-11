@@ -12,10 +12,17 @@ endif ()
 
 # TODO: compile shaders at runtime
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/build/shaders/)
-find_package(Vulkan)
+# find_package(Vulkan)
 add_custom_target(vert COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${PROJECT_SOURCE_DIR}/shaders/unlit.vert -o ${CMAKE_BINARY_DIR}/build/shaders/unlit.vert.spv)
 add_custom_target(frag COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${PROJECT_SOURCE_DIR}/shaders/unlit.frag -o ${CMAKE_BINARY_DIR}/build/shaders/unlit.frag.spv)
-add_dependencies(sengine vert frag)
+
+add_custom_target(deferredvert COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${PROJECT_SOURCE_DIR}/shaders/deferred.vert -o ${CMAKE_BINARY_DIR}/build/shaders/deferred.vert.spv)
+add_custom_target(deferredfrag COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${PROJECT_SOURCE_DIR}/shaders/deferred.frag -o ${CMAKE_BINARY_DIR}/build/shaders/deferred.frag.spv)
+
+add_custom_target(compositevert COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${PROJECT_SOURCE_DIR}/shaders/composite.vert -o ${CMAKE_BINARY_DIR}/build/shaders/composite.vert.spv)
+add_custom_target(compositefrag COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${PROJECT_SOURCE_DIR}/shaders/composite.frag -o ${CMAKE_BINARY_DIR}/build/shaders/composite.frag.spv)
+
+add_dependencies(sengine vert frag deferredvert deferredfrag compositevert compositefrag)
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/build/sengine.ini)
     file(WRITE ${CMAKE_BINARY_DIR}/build/sengine.ini)
