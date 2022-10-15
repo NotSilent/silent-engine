@@ -16,17 +16,14 @@ FrameData::FrameData(VkDevice device, VmaAllocator allocator, uint32_t width, ui
                   descriptorSetManager);
 }
 
-FrameData::~FrameData() {
+void FrameData::destroy(VkDevice device, VmaAllocator allocator) {
     reset();
 
-    _compositeDescriptorSetLayout.reset();
-    _compositeDescriptorSet.reset();
-    _compositePipeline.reset();
-
-    _gBufferResources.color.reset();
-    _gBufferResources.position.reset();
-    _gBufferResources.normal.reset();
-    _gBufferResources.depth.reset();
+    vkDestroyFramebuffer(device, _gBuffer, nullptr);
+    _gBufferResources.color->destroy(device, allocator);
+    _gBufferResources.position->destroy(device, allocator);
+    _gBufferResources.normal->destroy(device, allocator);
+    _gBufferResources.depth->destroy(device, allocator);
 }
 
 void FrameData::addFence(VkFence fence) {

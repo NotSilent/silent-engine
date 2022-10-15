@@ -92,7 +92,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
 Renderer::~Renderer() {
     for (FrameData &frameData: _frameDatas) {
         frameData.wait();
-        frameData.reset();
+        frameData.destroy(_device, _allocator);
     }
     _frameDatas.clear();
 

@@ -22,7 +22,7 @@ class DescriptorSet;
 
 class Pipeline;
 
-class FrameData {
+class FrameData : public VkResource<FrameData> {
     struct Command {
         VkCommandPool _pool;
         VkCommandBuffer _buffer;
@@ -35,7 +35,7 @@ public:
               const std::shared_ptr<PipelineManager> &pipelineManager,
               const std::shared_ptr<DescriptorSetManager>& descriptorSetManager);
 
-    ~FrameData();
+    void destroy(VkDevice device, VmaAllocator allocator);
 
     void addFence(VkFence fence);
 
