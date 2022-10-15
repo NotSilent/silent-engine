@@ -94,9 +94,9 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
                     std::vector<VertexAttribute> attributes{4};
 
                     for (auto &attribute: primitive.attributes) {
-                        tinygltf::Accessor accessor = model.accessors[attribute.second];
-                        tinygltf::BufferView bufferView = model.bufferViews[accessor.bufferView];
-                        tinygltf::Buffer buffer = model.buffers[bufferView.buffer];
+                        tinygltf::Accessor &accessor = model.accessors[attribute.second];
+                        tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
+                        tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
 
                         VertexAttributeType type = VertexAttribute::getType(attribute.first);
                         VkFormat format = VertexAttribute::getFormat(accessor.type, accessor.componentType);
@@ -132,9 +132,9 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
                                 .buffer = renderer->getBuffer(bufferName)
                         };
                     }
-                    tinygltf::Accessor accessor = model.accessors[primitive.indices];
-                    tinygltf::BufferView bufferView = model.bufferViews[accessor.bufferView];
-                    tinygltf::Buffer buffer = model.buffers[bufferView.buffer];
+                    tinygltf::Accessor &accessor = model.accessors[primitive.indices];
+                    tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
+                    tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
 
                     std::string bufferName = buffer.uri + ".index." + std::to_string(accessor.bufferView);
 
@@ -147,13 +147,13 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
                             renderer->getBuffer(bufferName),
                             attributes);
 
-                    tinygltf::Material gltfMaterial = model.materials[primitive.material];
-                    tinygltf::Texture gltfColorTexture = model.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
-                    tinygltf::Texture gltfNormalTexture = model.textures[gltfMaterial.normalTexture.index];
-                    tinygltf::Sampler gltfColorSampler = model.samplers[gltfColorTexture.sampler];
-                    tinygltf::Sampler gltfNormalSampler = model.samplers[gltfNormalTexture.sampler];
-                    tinygltf::Image gltfColorImage = model.images[gltfColorTexture.source];
-                    tinygltf::Image gltfNormalImage = model.images[gltfNormalTexture.source];
+                    tinygltf::Material &gltfMaterial = model.materials[primitive.material];
+                    tinygltf::Texture &gltfColorTexture = model.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
+                    tinygltf::Texture &gltfNormalTexture = model.textures[gltfMaterial.normalTexture.index];
+                    tinygltf::Sampler &gltfColorSampler = model.samplers[gltfColorTexture.sampler];
+                    tinygltf::Sampler &gltfNormalSampler = model.samplers[gltfNormalTexture.sampler];
+                    tinygltf::Image &gltfColorImage = model.images[gltfColorTexture.source];
+                    tinygltf::Image &gltfNormalImage = model.images[gltfNormalTexture.source];
 
                     std::string colorSamplerName =
                             buffer.uri + ".sampler." + std::to_string(gltfColorTexture.sampler);
