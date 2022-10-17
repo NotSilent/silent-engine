@@ -13,14 +13,19 @@ layout(push_constant) uniform Push {
 } push;
 
 layout (location = 0) out vec2 outTextCoord0;
-layout (location = 1) out vec3 outNormal;
+layout (location = 1) out vec3 outPosition;
+layout (location = 2) out vec3 outNormal;
+layout (location = 3) out vec4 outTangent;
 
 // TODO: Try to save and extract depth from color.a as fragcolor.z
 
 void main()
 {
-    gl_Position = push.projection * push.view * push.model * vec4(inPosition, 1.0);
+    vec4 worldPosition = push.model * vec4(inPosition, 1.0);
+    gl_Position = push.projection * push.view * worldPosition;
 
     outTextCoord0 = inTexCoord0;
+    outPosition = worldPosition.rgb;
     outNormal = inNormal;
+    outTangent = inTangent;
 }

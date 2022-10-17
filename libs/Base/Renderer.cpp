@@ -44,7 +44,9 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
     vkb::SwapchainBuilder swapchainBuilder{_device};
 
     auto swapchainResult = swapchainBuilder.use_default_format_selection().set_desired_present_mode(
-            VK_PRESENT_MODE_IMMEDIATE_KHR).set_desired_extent(_window->getWidth(), _window->getHeight()).build();
+            VK_PRESENT_MODE_IMMEDIATE_KHR).set_desired_format(
+            {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}).set_desired_extent(_window->getWidth(),
+                                                                                              _window->getHeight()).build();
     if (!swapchainResult) {
         throw std::runtime_error(swapchainResult.error().message());
     }

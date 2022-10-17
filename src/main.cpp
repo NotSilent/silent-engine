@@ -136,9 +136,10 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
                     tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
                     tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
 
-                    std::string bufferName = buffer.uri + ".index." + std::to_string(accessor.bufferView);
+                    std::string bufferName = buffer.uri + ".index." + std::to_string(accessor.bufferView) + "." +
+                                             std::to_string(accessor.byteOffset);
 
-                    uint32_t offset = static_cast<uint32_t>(model.bufferViews[accessor.bufferView].byteOffset);
+                    uint32_t offset = static_cast<uint32_t>(accessor.byteOffset);
                     unsigned char *bytes = buffer.data.data() + offset;
                     renderer->addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), bytes);
 
