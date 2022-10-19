@@ -102,7 +102,7 @@ VkRenderPass VkInit::createRenderPass(VkDevice device, VkFormat swapchainImageFo
                     {
                             // position
                             .flags = {},
-                            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
                             .samples = VK_SAMPLE_COUNT_1_BIT,
                             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -114,7 +114,7 @@ VkRenderPass VkInit::createRenderPass(VkDevice device, VkFormat swapchainImageFo
                     {
                             // normal
                             .flags = {},
-                            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
                             .samples = VK_SAMPLE_COUNT_1_BIT,
                             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,

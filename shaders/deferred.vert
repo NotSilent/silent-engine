@@ -22,10 +22,10 @@ layout (location = 3) out vec4 outTangent;
 void main()
 {
     vec4 worldPosition = push.model * vec4(inPosition, 1.0);
-    gl_Position = push.projection * push.view * worldPosition;
-
+    gl_Position = push.projection * push.view * push.model * vec4(inPosition, 1.0);
+    mat3 mNormal = transpose(inverse(mat3(push.model)));
     outTextCoord0 = inTexCoord0;
-    outPosition = worldPosition.rgb;
-    outNormal = inNormal;
-    outTangent = inTangent;
+    outPosition = worldPosition.xyz;
+    outNormal = mNormal * normalize(inNormal);
+    outTangent = vec4(mat3(mNormal) * normalize(inTangent.xyz), inTangent.w);
 }

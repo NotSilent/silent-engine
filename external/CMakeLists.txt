@@ -45,7 +45,7 @@ add_subdirectory(simple-ini)
 FetchContent_Declare(
         tinygltf
         GIT_REPOSITORY https://github.com/syoyo/tinygltf
-        GIT_TAG 1a7c7d20013465b5c2a1285872b52a43ab62c1b3
+        GIT_TAG e0b625561c66d185b606097b5b3e70460cc43431
         FETCHCONTENT_UPDATES_DISCONNECTED
 )
 add_subdirectory(tinygltf)

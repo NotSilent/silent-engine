@@ -20,9 +20,9 @@ void main()
 
     vec3 color = subpassLoad(inputColor).rgb;
     vec3 position = subpassLoad(inputPosition).rgb;
-    vec3 normal = subpassLoad(inputNormal).rgb;
+    vec3 normal = normalize(normalize(subpassLoad(inputNormal).rgb));
 
-    float ambientValue = 0.01;
+    float ambientValue = 0.1;
 
     float diffuseValue = max(0.0, dot(normal, -lightDirection));
 

@@ -80,7 +80,7 @@ void FrameData::createGBuffer(VkDevice device, VmaAllocator allocator, uint32_t 
     ImageCreateInfo positionImageInfo{
             .extent = {width, height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -90,7 +90,7 @@ void FrameData::createGBuffer(VkDevice device, VmaAllocator allocator, uint32_t 
     ImageCreateInfo normalImageInfo{
             .extent = {width, height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

@@ -8,6 +8,7 @@
 
 #include "vk_mem_alloc.h"
 #include <limits>
+#include <iostream>
 
 Renderer::Renderer(const std::shared_ptr<Window> &window) {
     _window = window;
@@ -143,7 +144,10 @@ Renderer::update(const DrawData &drawData, float currentTime, float deltaTime, b
 
         _currentAccumulatedFrames = 0;
         _currentAccumulatedTime = 0.0f;
+        std::cout << "Average fps: " << _currentAverageFPS << '\n';
     }
+
+
     //_imGuiData.setFrameData(_currentFrame, currentTime, deltaTime * 1000.0f, _currentAverageFPS);
     //_imGuiData.setCameraPosition(drawData.getCamera()->getPosition());
     //_imGuiData.render(drawEditor, [&](const std::string &filePath) {
