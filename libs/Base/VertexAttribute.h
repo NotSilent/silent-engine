@@ -20,8 +20,10 @@ struct VertexAttributeDescription {
 };
 
 struct VertexAttribute {
+
     VertexAttributeDescription description{};
     std::shared_ptr<Buffer> buffer;
+    VkDeviceSize bufferOffset;
 
     static VertexAttributeType getType(const std::string &name) {
         if (name == "POSITION") {

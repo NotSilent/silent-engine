@@ -100,11 +100,13 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
 
                         VertexAttributeType type = VertexAttribute::getType(attribute.first);
                         VkFormat format = VertexAttribute::getFormat(accessor.type, accessor.componentType);
-                        uint32_t offset = static_cast<uint32_t>(model.bufferViews[accessor.bufferView].byteOffset);
+                        VkDeviceSize offset =
+                                model.bufferViews[accessor.bufferView].byteOffset;
                         uint32_t stride = VertexAttribute::getFormatSize(format);
-                        std::string bufferName = buffer.uri + ".vertex." + std::to_string(accessor.bufferView);
-                        unsigned char *bytes = buffer.data.data() + offset;
-                        renderer->addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), bytes);
+                        //std::string bufferName = buffer.uri + ".vertex." + std::to_string(accessor.bufferView);
+                        std::string bufferName = buffer.uri;
+                        renderer->addBuffer(bufferName, buffer.data.size(),
+                                            buffer.data.data());
 
                         uint32_t index = 0;
 
@@ -129,22 +131,22 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
 
                         attributes[index] = {
                                 .description = attributeDescriptions[index],
-                                .buffer = renderer->getBuffer(bufferName)
+                                .buffer = renderer->getBuffer(bufferName),
+                                .bufferOffset = offset,
                         };
                     }
                     tinygltf::Accessor &accessor = model.accessors[primitive.indices];
                     tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
                     tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
 
-                    std::string bufferName = buffer.uri + ".index." + std::to_string(accessor.bufferView) + "." +
-                                             std::to_string(accessor.byteOffset);
+                    std::string bufferName = buffer.uri;
 
-                    uint32_t offset = static_cast<uint32_t>(accessor.byteOffset);
-                    unsigned char *bytes = buffer.data.data() + offset;
-                    renderer->addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), bytes);
+                    renderer->addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), buffer.data.data());
 
                     std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(
                             static_cast<uint32_t>(model.accessors[primitive.indices].count),
+                            accessor.byteOffset,
+                            sizeof(unsigned short),
                             renderer->getBuffer(bufferName),
                             attributes);
 

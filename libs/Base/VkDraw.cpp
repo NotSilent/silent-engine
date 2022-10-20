@@ -56,6 +56,8 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
     auto projection = drawData.getCamera()->getProjectionMatrix();
     auto viewPosition = drawData.getCamera()->getPosition();
 
+    bool bound = false;
+
     VkPipeline currentPipeline = VK_NULL_HANDLE;
     for (auto &drawCall: drawData.getDrawCalls()) {
         vertexBuffers.clear();
@@ -70,7 +72,7 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
 
         for (auto &attribute: drawCall.mesh->getAttributes()) {
             vertexBuffers.push_back(attribute.buffer->getBuffer());
-            offsets.push_back(0);
+            offsets.push_back(attribute.bufferOffset);
         }
 
         std::shared_ptr<Material> material = drawCall.material;
@@ -83,14 +85,22 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
         }
 
         vkCmdPushConstants(cmd, material->getPipelineLayout(),
-                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData), &pushData);
+                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData),
+                           &pushData);
+
         vkCmdBindVertexBuffers(cmd, 0, static_cast<uint32_t>(vertexBuffers.size()), vertexBuffers.data(),
                                offsets.data());
-        vkCmdBindIndexBuffer(cmd, drawCall.mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+
+        if (!bound) {
+            bound = true;
+            vkCmdBindIndexBuffer(cmd, drawCall.mesh->getIndexBuffer(), 0,
+                                 VK_INDEX_TYPE_UINT16);
+        }
+
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->getPipelineLayout(), 0, 1,
                                 &descriptorSet, 0, nullptr);
 
-        vkCmdDrawIndexed(cmd, drawCall.mesh->getIndexCount(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(cmd, drawCall.mesh->getIndexCount(), 1, drawCall.mesh->getFirstIndex(), 0, 0);
     }
 
     vkCmdNextSubpass(cmd, VK_SUBPASS_CONTENTS_INLINE);
