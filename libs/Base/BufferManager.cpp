@@ -1,26 +1,20 @@
 #include "BufferManager.h"
 
-BufferManager::BufferManager(const vkb::Device& device, const VmaAllocator allocator, const VkCommandPool commandPool)
-    : _device(device)
-    , _allocator(allocator)
-    , _commandPool(commandPool)
-{
+BufferManager::BufferManager(const vkb::Device &device, VmaAllocator allocator, VkCommandPool commandPool)
+        : _device(device), _allocator(allocator), _commandPool(commandPool) {
 }
 
-std::shared_ptr<Buffer> BufferManager::getBuffer(const std::string& name)
-{
+std::shared_ptr<Buffer> BufferManager::getBuffer(const std::string &name) {
     // TODO: Error checking
     return _buffers[name];
 }
 
-void BufferManager::destroy()
-{
+void BufferManager::destroy() {
     _buffers.clear();
 }
 
-void BufferManager::addBuffer(const std::string& name, uint32_t sizeBytes, const void* data)
-{
-    if(_buffers.contains(name)) {
+void BufferManager::addBuffer(const std::string &name, uint32_t sizeBytes, const void *data) {
+    if (_buffers.contains(name)) {
         // TODO: Make less-error prone
         return;
     }

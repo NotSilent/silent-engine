@@ -50,57 +50,39 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
 
     vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    std::vector<VkBuffer> vertexBuffers;
-    std::vector<VkDeviceSize> offsets;
-    auto view = drawData.getCamera()->getViewMatrix();
-    auto projection = drawData.getCamera()->getProjectionMatrix();
-    auto viewPosition = drawData.getCamera()->getPosition();
-
     bool bound = false;
 
     VkPipeline currentPipeline = VK_NULL_HANDLE;
     for (auto &drawCall: drawData.getDrawCalls()) {
-        vertexBuffers.clear();
-        offsets.clear();
-
         PushData pushData{
                 .model = drawCall.model,
-                .view = view,
-                .projection = projection,
-                .viewPosition = viewPosition,
+                .view = drawData.view,
+                .projection = drawData.projection,
+                .viewPosition = drawData.position,
         };
 
-        for (auto &attribute: drawCall.mesh->getAttributes()) {
-            vertexBuffers.push_back(attribute.buffer->getBuffer());
-            offsets.push_back(attribute.bufferOffset);
-        }
-
-        std::shared_ptr<Material> material = drawCall.material;
-        VkDescriptorSet descriptorSet = material->getDescriptorSet();
-
-        VkPipeline pipeline = material->getPipeline();
+        VkPipeline pipeline = drawCall.pipeline;
         if (currentPipeline != pipeline) {
-            currentPipeline = material->getPipeline();
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->getPipeline());
+            currentPipeline = drawCall.pipeline;
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);
         }
 
-        vkCmdPushConstants(cmd, material->getPipelineLayout(),
-                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushData),
+        vkCmdPushConstants(cmd, drawCall.pipelineLayout,
+                           VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData),
                            &pushData);
 
-        vkCmdBindVertexBuffers(cmd, 0, static_cast<uint32_t>(vertexBuffers.size()), vertexBuffers.data(),
-                               offsets.data());
+        vkCmdBindVertexBuffers(cmd, 0, 4, drawCall.buffers.data(), drawCall.offsets.data());
 
         if (!bound) {
             bound = true;
-            vkCmdBindIndexBuffer(cmd, drawCall.mesh->getIndexBuffer(), 0,
+            vkCmdBindIndexBuffer(cmd, drawCall.indexBuffer, 0,
                                  VK_INDEX_TYPE_UINT16);
         }
 
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->getPipelineLayout(), 0, 1,
-                                &descriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipelineLayout, 0, 1,
+                                &drawCall.descriptorSet, 0, nullptr);
 
-        vkCmdDrawIndexed(cmd, drawCall.mesh->getIndexCount(), 1, drawCall.mesh->getFirstIndex(), 0, 0);
+        vkCmdDrawIndexed(cmd, drawCall.indexCount, 1, drawCall.firstIndex, 0, 0);
     }
 
     vkCmdNextSubpass(cmd, VK_SUBPASS_CONTENTS_INLINE);

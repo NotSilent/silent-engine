@@ -1,9 +1,9 @@
 #pragma once
 
 #include <memory>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
-#include "ImGuiData.h"
+//#include "ImGuiData.h"
 #include "Mesh.h"
 #include "Texture.h"
 #include "VkBootstrap.h"
@@ -18,6 +18,6 @@ namespace VkDraw {
     VkCommandBuffer recordCommandBuffer(vkb::Device &device, VkCommandPool commandPool, const DrawData &drawData,
                                         VkRenderPass renderPass,
                                         VkFramebuffer framebuffer, const VkRect2D &renderArea,
-                                        /*const ImGuiData &imGuiData, */const std::shared_ptr<Pipeline> &compositePipeline,
+            /*const ImGuiData &imGuiData, */const std::shared_ptr<Pipeline> &compositePipeline,
                                         const std::shared_ptr<DescriptorSet> &compositeDescriptorSet);
 }

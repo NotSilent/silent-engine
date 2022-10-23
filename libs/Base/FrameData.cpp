@@ -35,7 +35,6 @@ void FrameData::addSemaphore(VkSemaphore semaphore) {
 }
 
 void FrameData::wait() {
-
     if (!_fences.empty()) {
         vkWaitForFences(_device, _fences.size(), _fences.data(), VK_TRUE, std::numeric_limits<uint64_t>::max());
     }

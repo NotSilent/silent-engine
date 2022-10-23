@@ -1,7 +1,5 @@
 #include "InputSystem.h"
 
-#define GLFW_INCLUDE_VULKAN
-
 #include "GLFW/glfw3.h"
 
 #include <utility>
@@ -29,9 +27,10 @@ void InputSystem::update() {
         // TODO: Normalize return value
         double xPos, yPos;
         glfwGetCursorPos(_window->getInternalWindow(), &xPos, &yPos);
-        glfwSetCursorPos(_window->getInternalWindow(), 0.0, 0.0);
 
-        _cursorDisplacement = {xPos, yPos};
+        _cursorDisplacement = {-_previousPosition.x + xPos, -_previousPosition.y + yPos};
+        _previousPosition.x = static_cast<float>(xPos);
+        _previousPosition.y = static_cast<float>(yPos);
     }
 
     _previousTabKeyState = tabKeyState;

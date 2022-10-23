@@ -45,7 +45,7 @@ set(BASE_SOURCES
         EngineStatics.h EngineStatics.cpp
         InputSystem.h InputSystem.cpp
         TimeSystem.h TimeSystem.cpp
-        )
+        RenderQueue.cpp RenderQueue.h)
 
 add_library(base STATIC ${BASE_SOURCES})
 

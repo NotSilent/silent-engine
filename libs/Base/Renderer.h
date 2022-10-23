@@ -2,7 +2,7 @@
 
 #include "VkBootstrap.h"
 
-#include "ImGuiData.h"
+//#include "ImGuiData.h"
 #include "Mesh.h"
 
 #include "BufferManager.h"
@@ -25,6 +25,7 @@
 #include "MeshComponent.h"
 #include "FrameData.h"
 #include "DescriptorSet.h"
+#include "RenderQueue.h"
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
@@ -94,6 +95,8 @@ private:
     VmaAllocator _allocator;
 
     //ImGuiData _imGuiData;
+
+    RenderQueue _renderQueue;
 
     BufferManager _bufferManager;
     ImageManager _imageManager;

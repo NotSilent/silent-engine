@@ -5,7 +5,7 @@ layout (location = 1) in vec2 inTexCoord0;
 layout (location = 2) in vec3 inNormal;
 layout (location = 3) in vec4 inTangent;
 
-layout(push_constant) uniform Push {
+layout (push_constant) uniform Push {
     mat4 model;
     mat4 view;
     mat4 projection;
@@ -26,6 +26,6 @@ void main()
     mat3 mNormal = transpose(inverse(mat3(push.model)));
     outTextCoord0 = inTexCoord0;
     outPosition = worldPosition.xyz;
-    outNormal = mNormal * normalize(inNormal);
-    outTangent = vec4(mat3(mNormal) * normalize(inTangent.xyz), inTangent.w);
+    outNormal = mNormal * inNormal;
+    outTangent = vec4(mat3(mNormal) * inTangent.xyz, inTangent.w);
 }

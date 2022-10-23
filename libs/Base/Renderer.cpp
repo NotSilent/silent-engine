@@ -13,8 +13,8 @@
 Renderer::Renderer(const std::shared_ptr<Window> &window) {
     _window = window;
     vkb::InstanceBuilder builder;
-    auto instanceResult = builder.set_app_name(_window->getName().c_str()).request_validation_layers(
-            true).use_default_debug_messenger().require_api_version(1, 2, 0).build();
+    auto instanceResult = builder.set_app_name(_window->getName().c_str())./*request_validation_layers(
+            true).use_default_debug_messenger().*/require_api_version(1, 2, 0).build();
 
     if (!instanceResult) {
         throw std::runtime_error(instanceResult.error().message());
@@ -93,6 +93,8 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
 }
 
 Renderer::~Renderer() {
+    _renderQueue.signalToStop();
+
     for (FrameData &frameData: _frameDatas) {
         frameData.wait();
         frameData.destroy(_device, _allocator);
@@ -196,20 +198,22 @@ std::shared_ptr<Material> Renderer::getMaterial(const std::vector<VertexAttribut
 }
 
 void Renderer::draw(const DrawData &drawData) {
+    // TODO: Remove multiple copies of semaphores
+
     auto acquireSemaphore = VkInit::createSemaphore(_device);
     auto submitSemaphore = VkInit::createSemaphore(_device);
-    auto queueFence = VkInit::createFence(_device, {});
+    //auto queueFence = VkInit::createFence(_device, {});
+
     uint32_t imageIndex;
 
-    if (vkAcquireNextImageKHR(_device.device, _swapchain.swapchain, (std::numeric_limits<uint64_t>::max)() / 2,
-                              acquireSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkAcquireNextImageKHR");
-    }
+    VkResult result = VK_TIMEOUT;
+    do {
+        result = vkAcquireNextImageKHR(_device.device, _swapchain.swapchain, (std::numeric_limits<uint64_t>::max)(),
+                                       acquireSemaphore, VK_NULL_HANDLE, &imageIndex);
+    } while (result != VK_SUCCESS);
 
     FrameData &_frameData = _frameDatas[imageIndex];
-    _frameData.wait();
-    _frameData.reset();
-    _frameData.addFence(queueFence);
+    //_frameData.addFence(queueFence);
     _frameData.addSemaphore(acquireSemaphore);
     _frameData.addSemaphore(submitSemaphore);
 
@@ -221,33 +225,15 @@ void Renderer::draw(const DrawData &drawData) {
             /*_imGuiData,*/ _frameData._compositePipeline,
                                                       _frameData._compositeDescriptorSet);
 
-    VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkSubmitInfo submitInfo{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .pNext = nullptr,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &acquireSemaphore,
-            .pWaitDstStageMask = &waitDstStageMask,
-            .commandBufferCount = 1,
-            .pCommandBuffers = &cmd,
-            .signalSemaphoreCount = 1,
-            .pSignalSemaphores = &submitSemaphore,
-    };
-
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, queueFence);
-
-    VkPresentInfoKHR presentInfo{
-            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .pNext = nullptr,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &submitSemaphore,
-            .swapchainCount = 1,
-            .pSwapchains = &_swapchain.swapchain,
-            .pImageIndices = &imageIndex,
-            .pResults = nullptr,
-    };
-
-    vkQueuePresentKHR(graphicsQueue, &presentInfo);
-
-    _frameData.addCommand(_frameCommandPools[imageIndex], cmd);
+    _renderQueue.addWork({
+                                 .device = _device.device,
+                                 .imageIndex = imageIndex,
+                                 .graphicsQueue = graphicsQueue,
+                                 .swapchain = _swapchain,
+                                 .imageAcquiredSemaphore = acquireSemaphore,
+                                 .submitSemaphore = submitSemaphore,
+                                 .queueSubmitFence = VK_NULL_HANDLE,
+                                 .cmdPool = _frameCommandPools[imageIndex],
+                                 .cmd = cmd,
+                         });
 }

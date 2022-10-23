@@ -4,12 +4,19 @@
 #include "Mesh.h"
 #include "Texture.h"
 #include <vector>
-
-class Material;
+#include "Material.h"
 
 struct DrawCall {
-    std::shared_ptr<Mesh> mesh;
-    std::shared_ptr<Material> material;
+    std::array<VkBuffer, 4> buffers;
+    std::array<VkDeviceSize, 4> offsets;
+    VkBuffer indexBuffer;
+    uint32_t indexCount;
+    uint32_t firstIndex;
+
+    VkDescriptorSet descriptorSet;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline;
+
     glm::mat4 model;
 };
 
@@ -21,11 +28,14 @@ public:
 
     void addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, const glm::mat4 &model);
 
-    std::shared_ptr<Camera> getCamera() const;
+    //std::shared_ptr<Camera> getCamera() const;
 
     std::vector<DrawCall> const &getDrawCalls() const;
 
+    glm::mat4 view;
+    glm::mat4 projection;
+    glm::vec3 position;
+
 private:
-    std::shared_ptr<Camera> _camera;
     std::vector<DrawCall> _drawCalls;
 };

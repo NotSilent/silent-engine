@@ -4,8 +4,6 @@
 #include "../Base/Window.h"
 
 #define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_LEFT_HANDED
 
 #include "glm\glm.hpp"
 
@@ -40,6 +38,7 @@ public:
 
 private:
     std::shared_ptr<Window> _window;
+    glm::vec2 _previousPosition = glm::vec2{};
     glm::vec2 _cursorDisplacement = glm::vec2{};
 
     KeyState _previousTabKeyState = KeyState::Release;

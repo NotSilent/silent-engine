@@ -7,7 +7,7 @@
 #include <functional>
 #include "glm/vec3.hpp"
 #include "glm/gtx/string_cast.hpp"
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 #include <stdexcept>
 
 #include "VkResource.h"

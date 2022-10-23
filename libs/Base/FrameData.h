@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 #include <vector>
 #include "Image.h"
 #include <memory>
@@ -33,7 +33,7 @@ public:
     FrameData(VkDevice device, VmaAllocator allocator, uint32_t width, uint32_t height,
               VkRenderPass compatibleRenderPass, VkImageView swapchainImageView,
               const std::shared_ptr<PipelineManager> &pipelineManager,
-              const std::shared_ptr<DescriptorSetManager>& descriptorSetManager);
+              const std::shared_ptr<DescriptorSetManager> &descriptorSetManager);
 
     void destroy(VkDevice device, VmaAllocator allocator);
 

@@ -103,7 +103,6 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
                         VkDeviceSize offset =
                                 model.bufferViews[accessor.bufferView].byteOffset;
                         uint32_t stride = VertexAttribute::getFormatSize(format);
-                        //std::string bufferName = buffer.uri + ".vertex." + std::to_string(accessor.bufferView);
                         std::string bufferName = buffer.uri;
                         renderer->addBuffer(bufferName, buffer.data.size(),
                                             buffer.data.data());
@@ -142,13 +141,6 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
                     std::string bufferName = buffer.uri;
 
                     renderer->addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), buffer.data.data());
-
-                    std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(
-                            static_cast<uint32_t>(model.accessors[primitive.indices].count),
-                            accessor.byteOffset,
-                            sizeof(unsigned short),
-                            renderer->getBuffer(bufferName),
-                            attributes);
 
                     tinygltf::Material &gltfMaterial = model.materials[primitive.material];
                     tinygltf::Texture &gltfColorTexture = model.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
@@ -202,9 +194,16 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
 
                     auto material = renderer->getMaterial(attributeDescriptions, types, textures);
 
+                    std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(
+                            static_cast<uint32_t>(model.accessors[primitive.indices].count),
+                            static_cast<uint32_t>(accessor.byteOffset),
+                            static_cast<uint32_t>(sizeof(unsigned short)),
+                            renderer->getBuffer(bufferName),
+                            attributes);
+
                     // TODO: Recreate MeshManager
                     std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
-                    meshComponent->setMesh(mesh);
+                    meshComponent->setMesh(newMesh);
                     meshComponent->setMaterial(material);
 
                     std::shared_ptr<Entity> entity = std::make_shared<Entity>();
@@ -212,6 +211,8 @@ void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer>
 
                     entities.push_back(entity);
                     meshComponents.push_back(meshComponent);
+                } else {
+                    std::cout << "Incopatible primitive with indices: " << primitive.indices << "\n";
                 }
             }
         }
