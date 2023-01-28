@@ -2,10 +2,10 @@
 
 #include <utility>
 
-Mesh::Mesh(uint32_t indexCount, uint32_t byteOffset, uint32_t indexByteSize, std::shared_ptr<Buffer> indexBuffer,
+Mesh::Mesh(uint32_t indexCount, uint32_t byteOffset, uint32_t indexByteSize, VkBuffer indexBuffer,
            std::vector<VertexAttribute> attributes)
         : _indexCount(indexCount), _firstIndex(byteOffset / indexByteSize),
-          _indexBuffer(std::move(indexBuffer)),
+          _indexBuffer(indexBuffer),
           _attributes(std::move(attributes)) {
 }
 
@@ -19,7 +19,7 @@ uint32_t Mesh::getIndexCount() const {
 }
 
 VkBuffer Mesh::getIndexBuffer() const {
-    return _indexBuffer->getBuffer();
+    return _indexBuffer;
 }
 
 std::vector<VertexAttribute> const &Mesh::getAttributes() const {

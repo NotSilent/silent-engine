@@ -113,12 +113,20 @@ public:
         vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAlloc);
     }
 
-    ~Buffer() {
-        vmaDestroyBuffer(_allocator, _buffer, _allocation);
+    Buffer(const Buffer &other) = delete;
+
+    Buffer operator=(const Buffer &other) = delete;
+
+    Buffer(Buffer &&other) = default;
+
+    Buffer &operator=(Buffer &&other) = default;
+
+    [[nodiscard]] VkBuffer getBuffer() const {
+        return _buffer;
     }
 
-    VkBuffer getBuffer() const {
-        return _buffer;
+    void destroy(const VkDevice device, const VmaAllocator &allocator) {
+        vmaDestroyBuffer(_allocator, _buffer, _allocation);
     }
 
 private:

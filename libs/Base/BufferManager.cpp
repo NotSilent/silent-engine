@@ -4,12 +4,16 @@ BufferManager::BufferManager(const vkb::Device &device, VmaAllocator allocator, 
         : _device(device), _allocator(allocator), _commandPool(commandPool) {
 }
 
-std::shared_ptr<Buffer> BufferManager::getBuffer(const std::string &name) {
+VkBuffer BufferManager::getBuffer(const std::string &name) {
     // TODO: Error checking
-    return _buffers[name];
+    return _buffers[name].getBuffer();
 }
 
 void BufferManager::destroy() {
+    for (auto &[_, buffer]: _buffers) {
+        buffer.destroy(_device, _allocator);
+    }
+
     _buffers.clear();
 }
 
@@ -19,6 +23,7 @@ void BufferManager::addBuffer(const std::string &name, uint32_t sizeBytes, const
         return;
     }
 
+    // TODO: Usage
     VkBufferUsageFlags flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    _buffers[name] = std::make_shared<Buffer>(_device, _allocator, _commandPool, flags, sizeBytes, data);
+    _buffers[name] = Buffer(_device, _allocator, _commandPool, flags, sizeBytes, data);
 }

@@ -171,7 +171,7 @@ void Renderer::addBuffer(const std::string &name, uint32_t size, const void *dat
     _bufferManager.addBuffer(name, size, data);
 }
 
-std::shared_ptr<Buffer> Renderer::getBuffer(const std::string &name) {
+VkBuffer Renderer::getBuffer(const std::string &name) {
     return _bufferManager.getBuffer(name);
 }
 

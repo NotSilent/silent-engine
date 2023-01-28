@@ -2,7 +2,6 @@
 
 #include <string>
 #include <unordered_map>
-#include <memory>
 #include "../Base/Buffer.h"
 
 class BufferManager {
@@ -13,7 +12,7 @@ public:
 
     void addBuffer(const std::string &name, uint32_t sizeBytes, const void *data);
 
-    std::shared_ptr<Buffer> getBuffer(const std::string &name);
+    VkBuffer getBuffer(const std::string &name);
 
     void destroy();
 
@@ -22,5 +21,5 @@ private:
     VmaAllocator _allocator = VK_NULL_HANDLE;
     VkCommandPool _commandPool = VK_NULL_HANDLE;
 
-    std::unordered_map<std::string, std::shared_ptr<Buffer>> _buffers;
+    std::unordered_map<std::string, Buffer> _buffers;
 };

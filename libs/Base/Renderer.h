@@ -49,7 +49,7 @@ public:
 
     void addBuffer(const std::string &name, uint32_t size, const void *data);
 
-    std::shared_ptr<Buffer> getBuffer(const std::string &name);
+    VkBuffer getBuffer(const std::string &name);
 
     void addImage(const std::string &name, uint32_t width, uint32_t height, uint32_t size, const void *data);
 

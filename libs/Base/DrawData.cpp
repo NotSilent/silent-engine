@@ -14,7 +14,7 @@ void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material>
     DrawCall drawCall;
     for (size_t i = 0; i < mesh->getAttributes().size(); ++i) {
         const VertexAttribute &attrib = mesh->getAttributes()[i];
-        drawCall.buffers[i] = attrib.buffer->getBuffer();
+        drawCall.buffers[i] = attrib.buffer;
         drawCall.offsets[i] = attrib.bufferOffset;
     }
 
