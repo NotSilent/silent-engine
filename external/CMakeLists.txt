@@ -1,4 +1,5 @@
 include(FetchContent)
+set(FETCHCONTENT_QUIET off)
 
 FetchContent_Declare(
         glfw
@@ -17,41 +18,41 @@ add_subdirectory(glm)
 FetchContent_Declare(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui
-        GIT_TAG c71a50deb5ddf1ea386b91e60fa2e4a26d080074
+        GIT_TAG d7c8516a4b848c0291e3d75b627c0843f515f591
 )
 add_subdirectory(imgui)
 
 FetchContent_Declare(
         nativefiledialog-extended
         GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended
-        GIT_TAG 28ade5a5cc5d17cea8fe4034572cac8fd54eb53f
+        GIT_TAG 6efc824070c79afd42a3a9e08da8f867d0ca2a97
 )
 add_subdirectory(nativefiledialog-extended)
 
 FetchContent_Declare(
         simple-ini
         GIT_REPOSITORY https://github.com/brofield/simpleini
-        GIT_TAG cfb8820b4fa133b5bdc8c2f423be18bf4873687b
+        GIT_TAG 9b3ed7ec815997bc8c5b9edf140d6bde653e1458
 )
 add_subdirectory(simple-ini)
 
 FetchContent_Declare(
         tinygltf
         GIT_REPOSITORY https://github.com/syoyo/tinygltf
-        GIT_TAG e0b625561c66d185b606097b5b3e70460cc43431
+        GIT_TAG 98adbb3fb32850bb4918cc147a2d2428b011ad91
 )
 add_subdirectory(tinygltf)
 
 FetchContent_Declare(
         vk-bootstrap
         GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-        GIT_TAG 6bf383778bfadb0eb173e6f25a9a39e7e9def1cf
+        GIT_TAG 8e61b2d81c3f5f84339735085ff5651f71bbe1e7
 )
 add_subdirectory(vk-bootstrap)
 
 FetchContent_Declare(
         VulkanMemoryAllocator
         GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-        GIT_TAG 05a61447182a00e479b361e4e363d5d9b54b818a
+        GIT_TAG a6bfc237255a6bac1513f7c1ebde6d8aed6b5191
 )
 add_subdirectory(VulkanMemoryAllocator)

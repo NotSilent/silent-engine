@@ -4,6 +4,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 
 struct RenderResources {
     VkDevice device;
