@@ -2,10 +2,9 @@
 
 #include <utility>
 
-Mesh::Mesh(uint32_t indexCount, uint32_t byteOffset, uint32_t indexByteSize, VkBuffer indexBuffer,
+Mesh::Mesh(uint32_t indexCount, VkBuffer vertexBuffer, VkBuffer indexBuffer,
            std::vector<VertexAttribute> attributes)
-        : _indexCount(indexCount), _firstIndex(byteOffset / indexByteSize),
-          _indexBuffer(indexBuffer),
+        : _indexCount(indexCount), _vertexBuffer(vertexBuffer), _indexBuffer(indexBuffer),
           _attributes(std::move(attributes)) {
 }
 
@@ -18,14 +17,15 @@ uint32_t Mesh::getIndexCount() const {
     return _indexCount;
 }
 
+VkBuffer Mesh::getVertexBuffer() const {
+    return _vertexBuffer;
+}
+
+
 VkBuffer Mesh::getIndexBuffer() const {
     return _indexBuffer;
 }
 
 std::vector<VertexAttribute> const &Mesh::getAttributes() const {
     return _attributes;
-}
-
-uint32_t Mesh::getFirstIndex() const {
-    return _firstIndex;
 }

@@ -2,7 +2,6 @@
 #include "MeshComponent.h"
 #include "ProfillerTimer.h"
 #include "Renderer.h"
-#include "tiny_gltf.h"
 #include "DrawData.h"
 #include "CameraComponent.h"
 #include "EngineStatics.h"
@@ -16,7 +15,16 @@ const std::string ENGINE_NAME = "Silent Engine";
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
-void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer> &renderer,
+Vertex meshVertices[]{
+        Vertex(-0.5f, 0.0f, 0.5f),
+        Vertex(-0.5f, 0.0f, -0.5f),
+        Vertex(0.5f, 0.0f, 0.5f),
+        Vertex(0.5f, 0.0f, -0.5f),
+};
+
+uint32_t meshIndices[]{0, 1, 2, 2, 1, 3};
+
+void OnFileSelected(const std::shared_ptr<Renderer> &renderer,
                     std::vector<std::shared_ptr<Entity>> &entities,
                     std::vector<std::shared_ptr<MeshComponent>> &meshComponents);
 
@@ -42,8 +50,7 @@ int main() {
         entities.push_back(entityWithCamera);
     }
 
-    const std::string SPONZA_FILE_PATH = "C:\\Users\\SILENT\\Desktop\\glTF-Sample-Models\\2.0\\Sponza\\glTF\\Sponza.gltf";
-    OnFileSelected(SPONZA_FILE_PATH, renderer, entities, meshComponents);
+    OnFileSelected(renderer, entities, meshComponents);
 
     // TODO: move exit on escape to some component
     while (!window->shouldClose() && inputManager->getKeyState(Key::Escape) != KeyState::Press) {
@@ -65,161 +72,42 @@ int main() {
     return 0;
 }
 
-void OnFileSelected(const std::string &filePath, const std::shared_ptr<Renderer> &renderer,
+void OnFileSelected(const std::shared_ptr<Renderer> &renderer,
                     std::vector<std::shared_ptr<Entity>> &entities,
                     std::vector<std::shared_ptr<MeshComponent>> &meshComponents) {
-    tinygltf::Model model;
-    tinygltf::TinyGLTF loader;
-    std::string err;
-    std::string warn;
+    std::vector<VertexAttributeDescription> attributeDescriptions;
+    attributeDescriptions.push_back(VertexAttributeDescription{
+            .type = VertexAttributeType::Position,
+            .format = VK_FORMAT_R32G32B32_SFLOAT,
+            .stride = sizeof(Vertex),
+    });
 
-    ProfillerTimer loadGLTFFile;
-    bool result = loader.LoadASCIIFromFile(&model, &err, &warn, filePath);
-    float loadGLTFduration = loadGLTFFile.end();
-    std::cout << "Loading gltf file took: " << loadGLTFduration << "\n";
+    std::vector<VertexAttribute> attributes;
+    attributes.push_back(VertexAttribute{
+            .description = attributeDescriptions[0],
+            .buffer = VK_NULL_HANDLE,
+            .bufferOffset = 0,
+    });
 
-    ProfillerTimer createBuffers;
+    renderer->addBuffer("meshVertices", sizeof(meshVertices), meshVertices);
+    renderer->addBuffer("meshIndices", sizeof(meshIndices), meshIndices);
 
-    uint32_t totalNumberOfPrimitives(0);
-    uint32_t compatiblePrimitives(0);
-    if (result) {
-        for (auto &mesh: model.meshes) {
-            for (auto &primitive: mesh.primitives) {
-                totalNumberOfPrimitives++;
-                // TODO: Variable number of attributes
-                if (primitive.attributes.size() == 4) {
-                    compatiblePrimitives++;
+    std::vector<std::shared_ptr<Texture>> textures;
+    auto material = renderer->getMaterial(attributeDescriptions, {}, textures);
 
-                    std::vector<VertexAttributeDescription> attributeDescriptions{4};
-                    std::vector<VertexAttribute> attributes{4};
+    std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(6,
+                                                           renderer->getBuffer("meshVertices"),
+                                                           renderer->getBuffer("meshIndices"),
+                                                           attributes);
 
-                    for (auto &attribute: primitive.attributes) {
-                        tinygltf::Accessor &accessor = model.accessors[attribute.second];
-                        tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
-                        tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
+    // TODO: Recreate MeshManager
+    std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
+    meshComponent->setMesh(newMesh);
+    meshComponent->setMaterial(material);
 
-                        VertexAttributeType type = VertexAttribute::getType(attribute.first);
-                        VkFormat format = VertexAttribute::getFormat(accessor.type, accessor.componentType);
-                        VkDeviceSize offset =
-                                model.bufferViews[accessor.bufferView].byteOffset;
-                        uint32_t stride = VertexAttribute::getFormatSize(format);
-                        std::string bufferName = buffer.uri;
-                        renderer->addBuffer(bufferName, buffer.data.size(),
-                                            buffer.data.data());
+    std::shared_ptr<Entity> entity = std::make_shared<Entity>();
+    Entity::addComponent(entity, meshComponent);
 
-                        uint32_t index = 0;
-
-                        if (type == VertexAttributeType::Position) {
-                            index = 0;
-                        }
-                        if (type == VertexAttributeType::TexCoord0) {
-                            index = 1;
-                        }
-                        if (type == VertexAttributeType::Normal) {
-                            index = 2;
-                        }
-                        if (type == VertexAttributeType::Tangent) {
-                            index = 3;
-                        }
-
-                        attributeDescriptions[index] = {
-                                .type = type,
-                                .format = format,
-                                .stride = stride,
-                        };
-
-                        attributes[index] = {
-                                .description = attributeDescriptions[index],
-                                .buffer = renderer->getBuffer(bufferName),
-                                .bufferOffset = offset,
-                        };
-                    }
-                    tinygltf::Accessor &accessor = model.accessors[primitive.indices];
-                    tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
-                    tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
-
-                    std::string bufferName = buffer.uri;
-
-                    renderer->addBuffer(bufferName, static_cast<uint32_t>(bufferView.byteLength), buffer.data.data());
-
-                    tinygltf::Material &gltfMaterial = model.materials[primitive.material];
-                    tinygltf::Texture &gltfColorTexture = model.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
-                    tinygltf::Texture &gltfNormalTexture = model.textures[gltfMaterial.normalTexture.index];
-                    tinygltf::Sampler &gltfColorSampler = model.samplers[gltfColorTexture.sampler];
-                    tinygltf::Sampler &gltfNormalSampler = model.samplers[gltfNormalTexture.sampler];
-                    tinygltf::Image &gltfColorImage = model.images[gltfColorTexture.source];
-                    tinygltf::Image &gltfNormalImage = model.images[gltfNormalTexture.source];
-
-                    std::string colorSamplerName =
-                            buffer.uri + ".sampler." + std::to_string(gltfColorTexture.sampler);
-                    renderer->addSampler(colorSamplerName);
-
-                    std::string colorImageName = buffer.uri + ".image." + std::to_string(gltfColorTexture.source);
-                    renderer->addImage(colorImageName, static_cast<uint32_t>(gltfColorImage.width),
-                                       static_cast<uint32_t>(gltfColorImage.height),
-                                       static_cast<uint32_t>(gltfColorImage.image.size()) * sizeof(unsigned char),
-                                       gltfColorImage.image.data());
-
-                    std::string colorTextureName =
-                            buffer.uri + ".texture.color." + std::to_string(primitive.material);
-                    std::shared_ptr<Sampler> colorSampler = renderer->getSampler(colorSamplerName);
-                    std::shared_ptr<Image> colorImage = renderer->getImage(colorImageName);
-                    renderer->addTexture(colorTextureName, colorSampler, colorImage);
-                    std::shared_ptr<Texture> colorTexture = renderer->getTexture(colorTextureName);
-
-                    //
-
-                    std::string normalSamplerName =
-                            buffer.uri + ".sampler." + std::to_string(gltfNormalTexture.sampler);
-                    renderer->addSampler(normalSamplerName);
-
-                    std::string normalImageName = buffer.uri + ".image." + std::to_string(gltfNormalTexture.source);
-                    renderer->addImage(normalImageName, static_cast<uint32_t>(gltfNormalImage.width),
-                                       static_cast<uint32_t>(gltfNormalImage.height),
-                                       static_cast<uint32_t>(gltfNormalImage.image.size()) * sizeof(unsigned char),
-                                       gltfNormalImage.image.data());
-
-                    std::string normalTextureName =
-                            buffer.uri + ".texture.normal" + std::to_string(primitive.material);
-                    std::shared_ptr<Sampler> normalSampler = renderer->getSampler(normalSamplerName);
-                    std::shared_ptr<Image> normalImage = renderer->getImage(normalImageName);
-                    renderer->addTexture(normalTextureName, normalSampler, normalImage);
-                    std::shared_ptr<Texture> normalTexture = renderer->getTexture(normalTextureName);
-
-                    // Should be somehow related
-                    std::vector<VkDescriptorType> types{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
-                    std::vector<std::shared_ptr<Texture>> textures{colorTexture, normalTexture};
-                    // ~Should be somehow related
-
-                    auto material = renderer->getMaterial(attributeDescriptions, types, textures);
-
-                    std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(
-                            static_cast<uint32_t>(model.accessors[primitive.indices].count),
-                            static_cast<uint32_t>(accessor.byteOffset),
-                            static_cast<uint32_t>(sizeof(unsigned short)),
-                            renderer->getBuffer(bufferName),
-                            attributes);
-
-                    // TODO: Recreate MeshManager
-                    std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
-                    meshComponent->setMesh(newMesh);
-                    meshComponent->setMaterial(material);
-
-                    std::shared_ptr<Entity> entity = std::make_shared<Entity>();
-                    Entity::addComponent(entity, meshComponent);
-
-                    entities.push_back(entity);
-                    meshComponents.push_back(meshComponent);
-                } else {
-                    std::cout << "Incopatible primitive with indices: " << primitive.indices << "\n";
-                }
-            }
-        }
-    }
-
-    float creatingBuffersDuration = createBuffers.end();
-    std::cout << "Creating buffers took: " << creatingBuffersDuration << "\n";
-    std::cout << "Number of primitives:  " << totalNumberOfPrimitives << "\n";
-    std::cout << "Compatible primitives: " << compatiblePrimitives << "\n";
+    entities.push_back(entity);
+    meshComponents.push_back(meshComponent);
 }

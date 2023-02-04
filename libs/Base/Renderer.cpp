@@ -13,8 +13,8 @@
 Renderer::Renderer(const std::shared_ptr<Window> &window) {
     _window = window;
     vkb::InstanceBuilder builder;
-    auto instanceResult = builder.set_app_name(_window->getName().c_str())./*request_validation_layers(
-            true).use_default_debug_messenger().*/require_api_version(1, 2, 0).build();
+    auto instanceResult = builder.set_app_name(_window->getName().c_str()).request_validation_layers(
+            true).use_default_debug_messenger().require_api_version(1, 3, 0).build();
 
     if (!instanceResult) {
         throw std::runtime_error(instanceResult.error().message());
@@ -33,9 +33,29 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
 
     _physicalDevice = physicalDeviceResult.value();
 
+    VkPhysicalDeviceVulkan13Features vulkan13Features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+            .pNext = nullptr,
+            .robustImageAccess = VK_FALSE,
+            .inlineUniformBlock = VK_FALSE,
+            .descriptorBindingInlineUniformBlockUpdateAfterBind = VK_FALSE,
+            .pipelineCreationCacheControl = VK_FALSE,
+            .privateData = VK_FALSE,
+            .shaderDemoteToHelperInvocation = VK_FALSE,
+            .shaderTerminateInvocation = VK_FALSE,
+            .subgroupSizeControl = VK_FALSE,
+            .computeFullSubgroups = VK_FALSE,
+            .synchronization2 = VK_FALSE,
+            .textureCompressionASTC_HDR = VK_FALSE,
+            .shaderZeroInitializeWorkgroupMemory = VK_FALSE,
+            .dynamicRendering = VK_TRUE,
+            .shaderIntegerDotProduct = VK_FALSE,
+            .maintenance4 = VK_FALSE,
+    };
+
     vkb::DeviceBuilder deviceBuilder{_physicalDevice};
 
-    auto deviceResult = deviceBuilder.build();
+    auto deviceResult = deviceBuilder.add_pNext(&vulkan13Features).build();
     if (!deviceResult) {
         throw std::runtime_error(deviceResult.error().message());
     }
@@ -58,17 +78,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
     _swapchainImages = _swapchain.get_images().value();
     _swapchainImageViews = _swapchain.get_image_views().value();
 
-    //
-
-    _renderPass = VkInit::createRenderPass(_device.device, _swapchain.image_format);
-
     _commandPool = VkInit::createCommandPool(_device);
-
-//    _imGuiData = ImGuiData(_window->getInternalWindow(), _instance.instance, _physicalDevice.physical_device,
-//                           _device.device,
-//                           _device.get_queue_index(vkb::QueueType::graphics).value(),
-//                           _device.get_queue(vkb::QueueType::graphics).value(), _swapchain.image_count, _renderPass,
-//                           _commandPool);
 
     _textureManager = TextureManager(_device, _allocator, _commandPool);
     _bufferManager = BufferManager(_device, _allocator, _commandPool);
@@ -78,29 +88,12 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
     _descriptorSetManager = std::make_shared<DescriptorSetManager>(_device, _descriptorSetLayoutManager);
     _pipelineLayoutManager = std::make_shared<PipelineLayoutManager>(_device, _descriptorSetLayoutManager);
     _pipelineManager = std::make_shared<PipelineManager>(_device, static_cast<float>(window->getWidth()),
-                                                         static_cast<float>(window->getHeight()), _renderPass,
+                                                         static_cast<float>(window->getHeight()),
                                                          _pipelineLayoutManager);
     _materialManager = MaterialManager(_device, _pipelineManager, _descriptorSetManager);
-
-    _frameDatas = std::vector<FrameData>();
-    _frameCommandPools = std::vector<VkCommandPool>(_swapchain.image_count);
-    for (uint32_t i = 0; i < _swapchain.image_count; ++i) {
-        _frameDatas.emplace_back(
-                FrameData(_device.device, _allocator, _window->getWidth(), _window->getHeight(), _renderPass,
-                          _swapchainImageViews[i], _pipelineManager, _descriptorSetManager));
-        _frameCommandPools[i] = VkInit::createCommandPool(_device);
-    }
 }
 
 Renderer::~Renderer() {
-    _renderQueue.signalToStop();
-
-    for (FrameData &frameData: _frameDatas) {
-        frameData.wait();
-        frameData.destroy(_device, _allocator);
-    }
-    _frameDatas.clear();
-
     _bufferManager.destroy();
     _imageManager.destroy();
     _samplerManager.destroy();
@@ -111,15 +104,8 @@ Renderer::~Renderer() {
     _pipelineLayoutManager->destroy();
     _descriptorSetLayoutManager->destroy();
 
-    //_imGuiData.destroy(_device.device, _allocator);
-
     vmaDestroyAllocator(_allocator);
 
-    vkDestroyRenderPass(_device.device, _renderPass, nullptr);
-
-    for (auto &commandPool: _frameCommandPools) {
-        vkDestroyCommandPool(_device.device, commandPool, nullptr);
-    }
     vkDestroyCommandPool(_device.device, _commandPool, nullptr);
 
     _swapchain.destroy_image_views(_swapchainImageViews);
@@ -135,7 +121,7 @@ void
 Renderer::update(const DrawData &drawData, float currentTime, float deltaTime, bool drawEditor,
                  const std::shared_ptr<Renderer> &renderer, std::vector<std::shared_ptr<Entity>> &entities,
                  std::vector<std::shared_ptr<MeshComponent>> &meshComponents,
-                 std::function<void(const std::string &, const std::shared_ptr<Renderer> &,
+                 std::function<void(const std::shared_ptr<Renderer> &,
                                     std::vector<std::shared_ptr<Entity>> &,
                                     std::vector<std::shared_ptr<MeshComponent>> &)> onFileSelected) {
 
@@ -148,13 +134,6 @@ Renderer::update(const DrawData &drawData, float currentTime, float deltaTime, b
         _currentAccumulatedTime = 0.0f;
         std::cout << "Average fps: " << _currentAverageFPS << '\n';
     }
-
-
-    //_imGuiData.setFrameData(_currentFrame, currentTime, deltaTime * 1000.0f, _currentAverageFPS);
-    //_imGuiData.setCameraPosition(drawData.getCamera()->getPosition());
-    //_imGuiData.render(drawEditor, [&](const std::string &filePath) {
-    //onFileSelected(filePath, renderer, entities, meshComponents);
-    //});
 
     draw(drawData);
 }
@@ -202,7 +181,7 @@ void Renderer::draw(const DrawData &drawData) {
 
     auto acquireSemaphore = VkInit::createSemaphore(_device);
     auto submitSemaphore = VkInit::createSemaphore(_device);
-    //auto queueFence = VkInit::createFence(_device, {});
+    auto queueFence = VkInit::createFence(_device, {});
 
     uint32_t imageIndex;
 
@@ -212,28 +191,47 @@ void Renderer::draw(const DrawData &drawData) {
                                        acquireSemaphore, VK_NULL_HANDLE, &imageIndex);
     } while (result != VK_SUCCESS);
 
-    FrameData &_frameData = _frameDatas[imageIndex];
-    //_frameData.addFence(queueFence);
-    _frameData.addSemaphore(acquireSemaphore);
-    _frameData.addSemaphore(submitSemaphore);
-
     VkQueue graphicsQueue = _device.get_queue(vkb::QueueType::graphics).value();
 
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _frameCommandPools[imageIndex], drawData, _renderPass,
-                                                      _frameData.getGBuffer(), VkRect2D{{0,                   0},
-                                                                                        {_window->getWidth(), _window->getHeight()}},
-            /*_imGuiData,*/ _frameData._compositePipeline,
-                                                      _frameData._compositeDescriptorSet);
+    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, drawData,
+                                                      _swapchainImages[imageIndex],
+                                                      _swapchainImageViews[imageIndex],
+                                                      _device.get_queue_index(vkb::QueueType::graphics).value(),
+                                                      VkRect2D{{0,                   0},
+                                                               {_window->getWidth(), _window->getHeight()}});
 
-    _renderQueue.addWork({
-                                 .device = _device.device,
-                                 .imageIndex = imageIndex,
-                                 .graphicsQueue = graphicsQueue,
-                                 .swapchain = _swapchain,
-                                 .imageAcquiredSemaphore = acquireSemaphore,
-                                 .submitSemaphore = submitSemaphore,
-                                 .queueSubmitFence = VK_NULL_HANDLE,
-                                 .cmdPool = _frameCommandPools[imageIndex],
-                                 .cmd = cmd,
-                         });
+    VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &acquireSemaphore,
+            .pWaitDstStageMask = &waitDstStageMask,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &cmd,
+            .signalSemaphoreCount = 1,
+            .pSignalSemaphores = &submitSemaphore,
+    };
+
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, queueFence);
+
+    VkPresentInfoKHR presentInfo{
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &submitSemaphore,
+            .swapchainCount = 1,
+            .pSwapchains = &_swapchain.swapchain,
+            .pImageIndices = &imageIndex,
+            .pResults = nullptr,
+    };
+
+    vkQueuePresentKHR(graphicsQueue, &presentInfo);
+
+    vkWaitForFences(_device.device, 1, &queueFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
+
+    vkDestroySemaphore(_device.device, acquireSemaphore, nullptr);
+    vkDestroySemaphore(_device.device, submitSemaphore, nullptr);
+    vkDestroyFence(_device.device, queueFence, nullptr);
 }

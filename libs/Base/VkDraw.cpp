@@ -3,6 +3,8 @@
 #include "Material.h"
 #include "PushData.h"
 #include "DescriptorSet.h"
+#include "CommandBuffer.h"
+#include <numbers>
 
 // TODO: part of gbuffer?
 VkClearValue clearValues[]{
@@ -14,28 +16,11 @@ VkClearValue clearValues[]{
 };
 
 VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool commandPool, const DrawData &drawData,
-                                            VkRenderPass renderPass, VkFramebuffer framebuffer,
-                                            const VkRect2D &renderArea/*, const ImGuiData &imGuiData*/,
-                                            const std::shared_ptr<Pipeline> &compositePipeline,
-                                            const std::shared_ptr<DescriptorSet> &compositeDescriptorSet) {
-    VkRenderPassBeginInfo beginInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-            .pNext = nullptr,
-            .renderPass = renderPass,
-            .framebuffer = framebuffer,
-            .renderArea = renderArea,
-            .clearValueCount = static_cast<uint32_t>(std::size(clearValues)),
-            .pClearValues = clearValues,
-    };
-
-    VkCommandBufferBeginInfo cmdBeginInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-            .pNext = nullptr,
-            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-            .pInheritanceInfo = nullptr,
-    };
-
-    VkCommandBufferAllocateInfo allocateInfo{
+                                            VkImage swapchainImage,
+                                            VkImageView swapchainImageView,
+                                            uint32_t graphicsFamilyIndex,
+                                            const VkRect2D &renderArea) {
+    VkCommandBufferAllocateInfo allocateInfo = VkCommandBufferAllocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
             .commandPool = commandPool,
@@ -44,58 +29,78 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
     };
 
     VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(device.device, &allocateInfo, &cmd);
+    vkAllocateCommandBuffers(device, &allocateInfo, &cmd);
 
-    vkBeginCommandBuffer(cmd, &cmdBeginInfo);
+    VkClearValue clearValue{1.0f, 0.0f, 1.0f, 1.0f};
 
-    vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    VkRenderingAttachmentInfo colorAttachment{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .pNext = nullptr,
+            .imageView = swapchainImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            .resolveMode = VK_RESOLVE_MODE_NONE,
+            .resolveImageView = VK_NULL_HANDLE,
+            .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = clearValue,
+    };
 
-    bool bound = false;
+    VkCommandBufferBeginInfo beginInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .pNext = nullptr,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            .pInheritanceInfo = nullptr,
+    };
 
-    VkPipeline currentPipeline = VK_NULL_HANDLE;
-    for (auto &drawCall: drawData.getDrawCalls()) {
-        PushData pushData{
-                .model = drawCall.model,
-                .view = drawData.view,
-                .projection = drawData.projection,
-                .viewPosition = drawData.position,
-        };
+    vkBeginCommandBuffer(cmd, &beginInfo);
 
-        VkPipeline pipeline = drawCall.pipeline;
-        if (currentPipeline != pipeline) {
-            currentPipeline = drawCall.pipeline;
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);
-        }
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_NONE,
+                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   graphicsFamilyIndex, graphicsFamilyIndex, swapchainImage,
+                                   VK_IMAGE_ASPECT_COLOR_BIT);
 
-        vkCmdPushConstants(cmd, drawCall.pipelineLayout,
-                           VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData),
-                           &pushData);
+    VkRenderingInfo renderingInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+            .pNext = nullptr,
+            .flags = {},
+            .renderArea = renderArea,
+            .layerCount = 1,
+            .viewMask = 0,
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &colorAttachment,
+            .pDepthAttachment = nullptr,
+            .pStencilAttachment = nullptr,
+    };
 
-        vkCmdBindVertexBuffers(cmd, 0, 4, drawCall.buffers.data(), drawCall.offsets.data());
+    vkCmdBeginRendering(cmd, &renderingInfo);
 
-        if (!bound) {
-            bound = true;
-            vkCmdBindIndexBuffer(cmd, drawCall.indexBuffer, 0,
-                                 VK_INDEX_TYPE_UINT16);
-        }
+    PushData pushData(16.0f, 9.0f, std::numbers::pi / 2.0f, 0.1f, 100.0f);
 
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipelineLayout, 0, 1,
-                                &drawCall.descriptorSet, 0, nullptr);
+    for (const DrawCall drawCall: drawData.getDrawCalls()) {
+        vkCmdPushConstants(cmd, drawCall.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData), &pushData);
 
-        vkCmdDrawIndexed(cmd, drawCall.indexCount, 1, drawCall.firstIndex, 0, 0);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);
+
+        VkDeviceSize offset = 0;
+        VkBuffer vertexBuffer = drawCall._mesh->getVertexBuffer();
+        vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, &offset);
+
+        vkCmdBindIndexBuffer(cmd, drawCall._mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(cmd, drawCall._mesh->getIndexCount(), 1, 0, 0, 0);
     }
 
-    vkCmdNextSubpass(cmd, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdEndRendering(cmd);
 
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositePipeline->getPipeline());
-    VkDescriptorSet set = compositeDescriptorSet->getDescriptorSet();
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositePipeline->getPipelineLayout(), 0, 1,
-                            &set, 0, nullptr);
-    vkCmdDraw(cmd, 3, 1, 0, 0);
-
-    //ImGuiData::appendDrawToCommandBuffer(cmd);
-
-    vkCmdEndRenderPass(cmd);
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                   VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                   VK_ACCESS_NONE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                   graphicsFamilyIndex, graphicsFamilyIndex, swapchainImage,
+                                   VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkEndCommandBuffer(cmd);
 

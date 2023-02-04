@@ -10,14 +10,15 @@
 
 class Mesh {
 public:
-    Mesh(uint32_t indexCount, uint32_t byteOffset, uint32_t indexByteSize, VkBuffer indexBuffer,
+    // TODO: One vertex/index, use offset for evertything
+    Mesh(uint32_t indexCount, VkBuffer vertexBuffer, VkBuffer indexBuffer,
          std::vector<VertexAttribute> attributes);
 
     void destroy(VkDevice device, VmaAllocator allocator);
 
     [[nodiscard]] uint32_t getIndexCount() const;
 
-    [[nodiscard]] uint32_t getFirstIndex() const;
+    [[nodiscard]] VkBuffer getVertexBuffer() const;
 
     [[nodiscard]] VkBuffer getIndexBuffer() const;
 
@@ -25,7 +26,7 @@ public:
 
 private:
     uint32_t _indexCount;
-    uint32_t _firstIndex;
+    VkBuffer _vertexBuffer;
     VkBuffer _indexBuffer;
 
     std::vector<VertexAttribute> _attributes;

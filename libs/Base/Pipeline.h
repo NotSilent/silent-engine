@@ -11,9 +11,9 @@ struct VertexAttributeDescription;
 // TODO: Add shader dependency
 class Pipeline {
 public:
-    Pipeline(const vkb::Device &device, float width, float height, VkRenderPass renderPass,
+    Pipeline(const vkb::Device &device, float width, float height,
              const std::vector<VertexAttributeDescription> &attributeDescriptions,
-             std::shared_ptr<PipelineLayout> layout, const std::string &shaderName, uint32_t subpassIndex);
+             std::shared_ptr<PipelineLayout> layout, const std::string &shaderName);
 
     ~Pipeline();
 
@@ -22,7 +22,7 @@ public:
     [[nodiscard]] VkPipelineLayout getPipelineLayout() const;
 
     bool isCompatible(const std::vector<VertexAttributeDescription> &attributeDescriptions,
-                      const std::shared_ptr<PipelineLayout> &layout, const std::string &shaderName, uint32_t subpassIndex);
+                      const std::shared_ptr<PipelineLayout> &layout, const std::string &shaderName);
 
 private:
     vkb::Device _device;
@@ -30,7 +30,6 @@ private:
     VkPipeline _pipeline;
 
     std::string _shaderName;
-    uint32_t _subpassIndex;
 
     std::vector<VertexAttributeDescription> _attributeDescriptions;
     std::shared_ptr<PipelineLayout> _layout;

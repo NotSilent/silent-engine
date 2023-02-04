@@ -2,7 +2,6 @@
 
 #include "VkBootstrap.h"
 
-//#include "ImGuiData.h"
 #include "Mesh.h"
 
 #include "BufferManager.h"
@@ -23,9 +22,8 @@
 #include "Image.h"
 #include "Entity.h"
 #include "MeshComponent.h"
-#include "FrameData.h"
 #include "DescriptorSet.h"
-#include "RenderQueue.h"
+#include <functional>
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
@@ -39,7 +37,7 @@ public:
     void update(const DrawData &drawData, float currentTime, float deltaTime, bool drawEditor,
                 const std::shared_ptr<Renderer> &renderer, std::vector<std::shared_ptr<Entity>> &entities,
                 std::vector<std::shared_ptr<MeshComponent>> &meshComponents,
-                std::function<void(const std::string &, const std::shared_ptr<Renderer> &,
+                std::function<void(const std::shared_ptr<Renderer> &,
                                    std::vector<std::shared_ptr<Entity>> &,
                                    std::vector<std::shared_ptr<MeshComponent>> &)> onFileSelected);
 
@@ -84,19 +82,9 @@ private:
     std::vector<VkImage> _swapchainImages;
     std::vector<VkImageView> _swapchainImageViews;
 
-    std::vector<FrameData> _frameDatas;
-
-    std::vector<VkCommandPool> _frameCommandPools;
-
     VkCommandPool _commandPool;
 
-    VkRenderPass _renderPass;
-
     VmaAllocator _allocator;
-
-    //ImGuiData _imGuiData;
-
-    RenderQueue _renderQueue;
 
     BufferManager _bufferManager;
     ImageManager _imageManager;

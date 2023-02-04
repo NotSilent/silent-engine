@@ -15,6 +15,4 @@ namespace VkInit {
     VkFence createFence(const vkb::Device &device, VkFenceCreateFlags flags);
 
     VkCommandPool createCommandPool(const vkb::Device &device);
-
-    VkRenderPass createRenderPass(VkDevice device, VkFormat swapchainImageFormat);
 }

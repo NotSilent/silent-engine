@@ -8,7 +8,7 @@
 #include "VkResource.h"
 #include "stb_image.h"
 
-struct ImageCreateInfo{
+struct ImageCreateInfo {
     VkExtent3D extent;
 
     VkImageType imageType;
@@ -23,7 +23,7 @@ class Image : public VkResource<Image> {
 public:
     Image() = default;
 
-    Image(const vkb::Device& device, VmaAllocator allocator, VkCommandPool commandPool, uint32_t width, uint32_t height,
+    Image(const vkb::Device &device, VmaAllocator allocator, VkCommandPool commandPool, uint32_t width, uint32_t height,
           VkFormat format, uint32_t size, const void *data)
             : _image{}, _allocation{} {
         VkExtent3D extent{width, height, 1};
@@ -213,7 +213,7 @@ public:
         }
     }
 
-    Image(VkDevice device, VmaAllocator allocator, const ImageCreateInfo& imageCreateInfo) {
+    Image(VkDevice device, VmaAllocator allocator, const ImageCreateInfo &imageCreateInfo) {
         VkImageCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                 .pNext = nullptr,
@@ -283,6 +283,10 @@ public:
 
     [[nodiscard]] VkImageView getImageView() const {
         return _imageView;
+    }
+
+    [[nodiscard]] VkImage getImage() const {
+        return _image;
     }
 
 private:

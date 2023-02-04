@@ -7,9 +7,7 @@ set(BASE_SOURCES
         DescriptorSet.h DescriptorSet.cpp
         DescriptorSetLayout.h DescriptorSetLayout.cpp
         DrawData.h DrawData.cpp
-        FrameData.h FrameData.cpp
         Image.h
-        ImGuiData.h
         Implementations.cpp
         Material.h Material.cpp
         Mesh.h Mesh.cpp
@@ -45,7 +43,7 @@ set(BASE_SOURCES
         EngineStatics.h EngineStatics.cpp
         InputSystem.h InputSystem.cpp
         TimeSystem.h TimeSystem.cpp
-        RenderQueue.cpp RenderQueue.h)
+        CommandBuffer.cpp CommandBuffer.h stb_image.h)
 
 add_library(base STATIC ${BASE_SOURCES})
 
@@ -56,7 +54,6 @@ target_link_libraries(base glm)
 target_link_libraries(base imgui)
 target_link_libraries(base nfd)
 target_link_libraries(base simple-ini)
-target_link_libraries(base tinygltf)
 target_link_libraries(base vk-bootstrap)
 target_link_libraries(base VulkanMemoryAllocator)
 

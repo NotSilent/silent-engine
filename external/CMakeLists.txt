@@ -37,13 +37,6 @@ FetchContent_Declare(
 add_subdirectory(simple-ini)
 
 FetchContent_Declare(
-        tinygltf
-        GIT_REPOSITORY https://github.com/syoyo/tinygltf
-        GIT_TAG 98adbb3fb32850bb4918cc147a2d2428b011ad91
-)
-add_subdirectory(tinygltf)
-
-FetchContent_Declare(
         vk-bootstrap
         GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
         GIT_TAG 8e61b2d81c3f5f84339735085ff5651f71bbe1e7

@@ -11,11 +11,11 @@ struct VertexAttributeDescription;
 
 class PipelineManager {
 public:
-    PipelineManager(const vkb::Device &device, float width, float height, VkRenderPass renderPass,
+    PipelineManager(const vkb::Device &device, float width, float height,
                     std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager);
 
     std::shared_ptr<Pipeline> getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
-                                          const std::vector<VkDescriptorType> &types, const std::string &shaderName, uint32_t subpassIndex);
+                                          const std::vector<VkDescriptorType> &types, const std::string &shaderName);
 
     // TODO: Remove all destroys
     void destroy();
@@ -23,10 +23,8 @@ public:
 private:
     vkb::Device _device;
 
-    //TODO: RenderPass
     float _width;
     float _height;
-    VkRenderPass _renderPass;
 
     std::vector<std::shared_ptr<Pipeline>> _pipelines;
     std::shared_ptr<PipelineLayoutManager> _pipelineLayoutManager;
