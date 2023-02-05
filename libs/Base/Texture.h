@@ -1,15 +1,14 @@
 #pragma once
 
 #include "Image.h"
-#include "VkResource.h"
 #include <memory>
 #include "Sampler.h"
 
-class Texture : public VkResource<Texture> {
+class Texture {
 public:
     Texture() = default;
 
-    Texture(const std::shared_ptr<Sampler>& sampler, const std::shared_ptr<Image>& image);
+    Texture(const std::shared_ptr<Sampler> &sampler, const std::shared_ptr<Image> &image);
 
     void destroy(VkDevice device, VmaAllocator allocator);
 

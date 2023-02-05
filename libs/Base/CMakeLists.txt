@@ -2,12 +2,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(BASE_SOURCES
-        Buffer.h
+        Buffer.h Buffer.cpp
         Camera.h Camera.cpp
         DescriptorSet.h DescriptorSet.cpp
         DescriptorSetLayout.h DescriptorSetLayout.cpp
         DrawData.h DrawData.cpp
-        Image.h
+        Image.h Image.cpp
         Implementations.cpp
         Material.h Material.cpp
         Mesh.h Mesh.cpp
@@ -22,7 +22,6 @@ set(BASE_SOURCES
         VertexAttribute.h VertexAttribute.cpp
         VkDraw.h VkDraw.cpp
         VkInit.h VkInit.cpp
-        VkResource.h
         Window.h Window.cpp
 
         CameraComponent.h CameraComponent.cpp
@@ -43,7 +42,9 @@ set(BASE_SOURCES
         EngineStatics.h EngineStatics.cpp
         InputSystem.h InputSystem.cpp
         TimeSystem.h TimeSystem.cpp
-        CommandBuffer.cpp CommandBuffer.h stb_image.h)
+        CommandBuffer.cpp CommandBuffer.h
+        stb_image.h
+        FrameResources.cpp FrameResources.h)
 
 add_library(base STATIC ${BASE_SOURCES})
 

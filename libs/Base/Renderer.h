@@ -23,13 +23,14 @@
 #include "Entity.h"
 #include "MeshComponent.h"
 #include "DescriptorSet.h"
+#include "FrameResources.h"
 #include <functional>
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
 class Renderer {
 public:
-    explicit Renderer(const std::shared_ptr<Window> &window);
+    explicit Renderer(const std::shared_ptr<Window> window);
 
     ~Renderer();
 
@@ -62,9 +63,11 @@ public:
                 std::vector<std::shared_ptr<Texture>> &textures);
 
 private:
-    void draw(const DrawData &drawData);
+    void draw(const DrawData &drawData, const VkRect2D renderArea);
 
     std::shared_ptr<Window> _window;
+
+    VkRect2D _renderArea;
 
     uint64_t _currentFrame = 0;
 
@@ -72,6 +75,7 @@ private:
     float _currentAccumulatedTime = 0.0f;
     uint64_t _currentAccumulatedFrames = 0;
 
+    // Remove vkb?
     vkb::Instance _instance;
     vkb::PhysicalDevice _physicalDevice;
     vkb::Device _device;
@@ -79,12 +83,13 @@ private:
 
     VkSurfaceKHR _surface;
 
-    std::vector<VkImage> _swapchainImages;
-    std::vector<VkImageView> _swapchainImageViews;
-
     VkCommandPool _commandPool;
 
     VmaAllocator _allocator;
+
+    // TODO: Remove?
+    std::vector<VkImageView> _swapchainImageViews;
+    std::vector<FrameResources> _frameResource;
 
     BufferManager _bufferManager;
     ImageManager _imageManager;

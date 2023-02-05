@@ -10,8 +10,12 @@
 #include <limits>
 #include <iostream>
 
-Renderer::Renderer(const std::shared_ptr<Window> &window) {
-    _window = window;
+Renderer::Renderer(const std::shared_ptr<Window> window)
+        : _window(std::move(window)) {
+
+    _renderArea = VkRect2D{{0,                   0},
+                           {_window->getWidth(), _window->getHeight()}};
+
     vkb::InstanceBuilder builder;
     auto instanceResult = builder.set_app_name(_window->getName().c_str()).request_validation_layers(
             true).use_default_debug_messenger().require_api_version(1, 3, 0).build();
@@ -75,8 +79,14 @@ Renderer::Renderer(const std::shared_ptr<Window> &window) {
     _allocator = VkInit::createAllocator(_instance, _physicalDevice, _device, VK_API_VERSION_1_2);
 
     _swapchain = swapchainResult.value();
-    _swapchainImages = _swapchain.get_images().value();
+
+    std::vector<VkImage> swapchainImages = _swapchain.get_images().value();
     _swapchainImageViews = _swapchain.get_image_views().value();
+
+    for (size_t i = 0; i < _swapchain.image_count; ++i) {
+        _frameResource.emplace_back(
+                _device.device, _allocator, swapchainImages[i], _swapchainImageViews[i], _renderArea);
+    }
 
     _commandPool = VkInit::createCommandPool(_device);
 
@@ -103,6 +113,10 @@ Renderer::~Renderer() {
     _descriptorSetManager->destroy();
     _pipelineLayoutManager->destroy();
     _descriptorSetLayoutManager->destroy();
+
+    for (FrameResources &frameResources: _frameResource) {
+        frameResources.destroy(_device, _allocator);
+    }
 
     vmaDestroyAllocator(_allocator);
 
@@ -135,7 +149,7 @@ Renderer::update(const DrawData &drawData, float currentTime, float deltaTime, b
         std::cout << "Average fps: " << _currentAverageFPS << '\n';
     }
 
-    draw(drawData);
+    draw(drawData, _renderArea);
 }
 
 void Renderer::addSampler(const std::string &name) {
@@ -176,9 +190,7 @@ std::shared_ptr<Material> Renderer::getMaterial(const std::vector<VertexAttribut
     return _materialManager.getMaterial(descriptions, types, textures);
 }
 
-void Renderer::draw(const DrawData &drawData) {
-    // TODO: Remove multiple copies of semaphores
-
+void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {
     auto acquireSemaphore = VkInit::createSemaphore(_device);
     auto submitSemaphore = VkInit::createSemaphore(_device);
     auto queueFence = VkInit::createFence(_device, {});
@@ -193,12 +205,13 @@ void Renderer::draw(const DrawData &drawData) {
 
     VkQueue graphicsQueue = _device.get_queue(vkb::QueueType::graphics).value();
 
+    FrameResources &frameResources = _frameResource[imageIndex];
+
     VkCommandBuffer cmd = VkDraw::recordCommandBuffer(_device, _commandPool, drawData,
-                                                      _swapchainImages[imageIndex],
-                                                      _swapchainImageViews[imageIndex],
+                                                      frameResources.getSwapchainImage(),
+                                                      frameResources.getSwapchainImageView(),
                                                       _device.get_queue_index(vkb::QueueType::graphics).value(),
-                                                      VkRect2D{{0,                   0},
-                                                               {_window->getWidth(), _window->getHeight()}});
+                                                      renderArea);
 
     VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 

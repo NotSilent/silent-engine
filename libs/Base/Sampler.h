@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vulkan\vulkan.h>
+#include <vulkan\vulkan_core.h>
 #include "VkBootstrap.h"
-#include "VkResource.h"
+#include "vk_mem_alloc.h"
 
-class Sampler : VkResource<Sampler> {
+class Sampler {
 public:
     Sampler() = default;
 
