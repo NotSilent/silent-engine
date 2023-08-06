@@ -18,7 +18,7 @@ EngineStatics::EngineStatics(const std::shared_ptr<Window> &window) {
 
     _window = window;
 
-    _camera = std::make_shared<Camera>();
+    _camera = std::make_shared<Camera>(16.0f / 9.0f);
 
     _inputManager = std::make_shared<InputSystem>(window);
     _timeManager = std::make_shared<TimeManager>(window);

@@ -12,6 +12,7 @@ private:
     VkImageView _swapchainImageView;
 
     // Should be just a handle, from ImageManager
+    // Default move constructors after changing to handle
     std::shared_ptr<Image> _colorImage;
 
 public:
@@ -36,5 +37,5 @@ public:
 
     [[nodiscard]] VkImage getSwapchainImage() const;
 
-    [[nodiscard]] VkImage getSwapchainImageView() const;
+    [[nodiscard]] VkImageView getSwapchainImageView() const;
 };

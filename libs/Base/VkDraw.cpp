@@ -77,9 +77,9 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
 
     vkCmdBeginRendering(cmd, &renderingInfo);
 
-    PushData pushData(16.0f, 9.0f, std::numbers::pi / 2.0f, 0.1f, 100.0f);
-
     for (const DrawCall drawCall: drawData.getDrawCalls()) {
+        PushData pushData(glm::mat4(1.0f), drawData.view, drawData.projection);
+
         vkCmdPushConstants(cmd, drawCall.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData), &pushData);
 
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);

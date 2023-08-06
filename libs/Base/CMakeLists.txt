@@ -44,7 +44,7 @@ set(BASE_SOURCES
         TimeSystem.h TimeSystem.cpp
         CommandBuffer.cpp CommandBuffer.h
         stb_image.h
-        FrameResources.cpp FrameResources.h)
+        FrameResources.cpp FrameResources.h PushData.cpp)
 
 add_library(base STATIC ${BASE_SOURCES})
 

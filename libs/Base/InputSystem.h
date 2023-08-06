@@ -3,8 +3,6 @@
 #include <memory>
 #include "../Base/Window.h"
 
-#define GLM_FORCE_RADIANS
-
 #include "glm\glm.hpp"
 
 enum class Key {

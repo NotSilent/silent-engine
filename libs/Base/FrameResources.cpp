@@ -48,6 +48,6 @@ VkImage FrameResources::getSwapchainImage() const {
     return _swapchainImage;
 }
 
-VkImage FrameResources::getSwapchainImageView() const {
+VkImageView FrameResources::getSwapchainImageView() const {
     return _swapchainImageView;
 }
