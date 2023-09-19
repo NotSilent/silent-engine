@@ -1,8 +1,8 @@
 #include "EngineStatics.h"
-#include "../Base/Camera.h"
+#include "Camera.h"
 #include "InputSystem.h"
 #include "TimeSystem.h"
-#include "../Base/Window.h"
+#include "Window.h"
 #include <stdexcept>
 #include <utility>
 

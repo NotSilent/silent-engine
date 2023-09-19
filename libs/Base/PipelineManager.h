@@ -1,7 +1,9 @@
 #pragma once
 
 #include "VkBootstrap.h"
+#include "ShaderManager.h"
 #include <memory>
+#include <optional>
 
 class Pipeline;
 
@@ -11,21 +13,23 @@ struct VertexAttributeDescription;
 
 class PipelineManager {
 public:
-    PipelineManager(const vkb::Device &device, float width, float height,
+    PipelineManager(VkDevice device, float width, float height,
                     std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager);
 
-    std::shared_ptr<Pipeline> getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
+    std::optional<std::shared_ptr<Pipeline>> getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
                                           const std::vector<VkDescriptorType> &types, const std::string &shaderName);
 
     // TODO: Remove all destroys
     void destroy();
 
 private:
-    vkb::Device _device;
+    VkDevice device;
 
-    float _width;
-    float _height;
+    float width;
+    float height;
 
-    std::vector<std::shared_ptr<Pipeline>> _pipelines;
-    std::shared_ptr<PipelineLayoutManager> _pipelineLayoutManager;
+    std::vector<std::shared_ptr<Pipeline>> pipelines;
+    std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager;
+
+    ShaderManager shaderManager;
 };

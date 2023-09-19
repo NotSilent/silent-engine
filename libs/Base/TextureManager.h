@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Base/Texture.h"
+#include "Texture.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "../Base/Sampler.h"
+#include "Sampler.h"
 
 class TextureManager {
 public:

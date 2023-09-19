@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Buffer.h"
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 enum class VertexAttributeType {
     Position,

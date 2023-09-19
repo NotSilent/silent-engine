@@ -1,5 +1,5 @@
 #include "MeshComponent.h"
-#include "../Base/Material.h"
+#include "Material.h"
 
 void MeshComponent::setMesh(std::shared_ptr<Mesh> mesh) {
     _mesh = mesh;

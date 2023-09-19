@@ -44,17 +44,25 @@ set(BASE_SOURCES
         TimeSystem.h TimeSystem.cpp
         CommandBuffer.cpp CommandBuffer.h
         stb_image.h
-        FrameResources.cpp FrameResources.h PushData.cpp)
+        FrameResources.cpp FrameResources.h
+        PushData.cpp
+        Shader.h
+        ShaderManager.cpp
+        ShaderManager.h
+        SynchronizationManager.cpp
+        SynchronizationManager.h)
 
 add_library(base STATIC ${BASE_SOURCES})
 
-find_package(Vulkan)
+find_package(Vulkan COMPONENTS glslc glslang shaderc_combined SPIRV-Tools)
 target_link_libraries(base Vulkan::Vulkan)
+target_link_libraries(base Vulkan::glslang)
+target_link_libraries(base Vulkan::shaderc_combined)
+target_link_libraries(base SPIRV-Tools-opt)
+target_link_libraries(base SPIRV-Tools)
 
 target_link_libraries(base glm)
 target_link_libraries(base imgui)
-target_link_libraries(base nfd)
-target_link_libraries(base simple-ini)
 target_link_libraries(base vk-bootstrap)
 target_link_libraries(base VulkanMemoryAllocator)
 

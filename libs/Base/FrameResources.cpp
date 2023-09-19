@@ -1,13 +1,18 @@
 #include "FrameResources.h"
 
 #include "Image.h"
+#include "VkInit.h"
+#include <limits>
 
 FrameResources::FrameResources(VkDevice device,
                                VmaAllocator allocator,
                                VkImage swapchainImage,
                                VkImageView swapchainImageView,
                                const VkRect2D &renderArea)
-        : _swapchainImage(swapchainImage), _swapchainImageView(swapchainImageView) {
+        : device(device)
+        , frameFence(VkInit::createFence(device, VkFenceCreateFlagBits::VK_FENCE_CREATE_SIGNALED_BIT))
+        , _swapchainImage(swapchainImage)
+        , _swapchainImageView(swapchainImageView) {
     ImageCreateInfo colorImageCreateInfo{
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
@@ -21,6 +26,9 @@ FrameResources::FrameResources(VkDevice device,
 }
 
 FrameResources::FrameResources(FrameResources &&other) noexcept {
+    device = other.device;
+    frameFence = other.frameFence;
+
     _swapchainImage = other._swapchainImage;
     _swapchainImageView = other._swapchainImageView;
     // TODO: Move?
@@ -31,6 +39,9 @@ FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
     if (this == &other) {
         return *this;
     }
+
+    device = other.device;
+    frameFence = other.frameFence;
 
     _swapchainImage = other._swapchainImage;
     _swapchainImageView = other._swapchainImageView;
@@ -50,4 +61,13 @@ VkImage FrameResources::getSwapchainImage() const {
 
 VkImageView FrameResources::getSwapchainImageView() const {
     return _swapchainImageView;
+}
+
+void FrameResources::waitFence() {
+    vkWaitForFences(device, 1, &frameFence, true, std::numeric_limits<uint64_t>::max());
+    vkResetFences(device, 1, &frameFence);
+}
+
+VkFence FrameResources::getFrameFence() {
+    return frameFence;
 }

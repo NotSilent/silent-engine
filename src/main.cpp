@@ -65,8 +65,7 @@ int main() {
             drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getMaterial(), meshComponent->getModel());
         }
 
-        renderer->update(drawData, timeManager->getCurrentTime(), timeManager->getDeltaTime(),
-                         inputManager->HasControl(), renderer, entities, meshComponents, OnFileSelected);
+        renderer->update(drawData, timeManager->getCurrentTime(), timeManager->getDeltaTime());
     }
 
     return 0;
@@ -93,21 +92,23 @@ void OnFileSelected(const std::shared_ptr<Renderer> &renderer,
     renderer->addBuffer("meshIndices", sizeof(meshIndices), meshIndices);
 
     std::vector<std::shared_ptr<Texture>> textures;
-    auto material = renderer->getMaterial(attributeDescriptions, {}, textures);
+    std::optional<std::shared_ptr<Material>> material= renderer->getMaterial(attributeDescriptions, {}, textures);
+    if(material.has_value())
+    {
+        std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(6,
+                                                               renderer->getBuffer("meshVertices"),
+                                                               renderer->getBuffer("meshIndices"),
+                                                               attributes);
 
-    std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(6,
-                                                           renderer->getBuffer("meshVertices"),
-                                                           renderer->getBuffer("meshIndices"),
-                                                           attributes);
+        // TODO: Recreate MeshManager
+        std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
+        meshComponent->setMesh(newMesh);
+        meshComponent->setMaterial(material.value());
 
-    // TODO: Recreate MeshManager
-    std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
-    meshComponent->setMesh(newMesh);
-    meshComponent->setMaterial(material);
+        std::shared_ptr<Entity> entity = std::make_shared<Entity>();
+        Entity::addComponent(entity, meshComponent);
 
-    std::shared_ptr<Entity> entity = std::make_shared<Entity>();
-    Entity::addComponent(entity, meshComponent);
-
-    entities.push_back(entity);
-    meshComponents.push_back(meshComponent);
+        entities.push_back(entity);
+        meshComponents.push_back(meshComponent);
+    }
 }

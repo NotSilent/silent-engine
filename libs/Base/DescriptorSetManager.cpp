@@ -1,7 +1,8 @@
 #include "DescriptorSetManager.h"
-#include "../Base/DescriptorSet.h"
+#include "DescriptorSet.h"
 #include "DescriptorSetLayoutManager.h"
-#include "../Base/Texture.h"
+#include "Texture.h"
+#include <algorithm>
 
 DescriptorSetManager::DescriptorSetManager(const vkb::Device &device,
                                            std::shared_ptr<DescriptorSetLayoutManager> descriptorSetLayoutManager)

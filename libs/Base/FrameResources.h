@@ -8,6 +8,9 @@ class Image;
 
 class FrameResources {
 private:
+    VkDevice device;
+    VkFence frameFence;
+
     VkImage _swapchainImage;
     VkImageView _swapchainImageView;
 
@@ -38,4 +41,8 @@ public:
     [[nodiscard]] VkImage getSwapchainImage() const;
 
     [[nodiscard]] VkImageView getSwapchainImageView() const;
+
+    void waitFence();
+
+    [[nodiscard]] VkFence getFrameFence();
 };

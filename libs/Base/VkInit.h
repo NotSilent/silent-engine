@@ -10,9 +10,9 @@ namespace VkInit {
     createAllocator(const vkb::Instance &instance, const vkb::PhysicalDevice &physicalDevice, const vkb::Device &device,
                     uint32_t vulkanApiVersion);
 
-    VkSemaphore createSemaphore(const vkb::Device &device);
+    VkSemaphore createSemaphore(VkDevice device);
 
-    VkFence createFence(const vkb::Device &device, VkFenceCreateFlags flags);
+    VkFence createFence(VkDevice device, VkFenceCreateFlags flags);
 
-    VkCommandPool createCommandPool(const vkb::Device &device);
+    VkCommandPool createCommandPool(VkDevice device, uint32_t queueFamilyIndex);
 }

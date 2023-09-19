@@ -1,8 +1,9 @@
 #include "PipelineLayoutManager.h"
-#include "../Base/DescriptorSetLayout.h"
+#include "DescriptorSetLayout.h"
 #include "DescriptorSetLayoutManager.h"
-#include "../Base/PipelineLayout.h"
-#include "../Base/PushData.h"
+#include "PipelineLayout.h"
+#include "PushData.h"
+#include <algorithm>
 
 PipelineLayoutManager::PipelineLayoutManager(const vkb::Device &device,
                                              std::shared_ptr<DescriptorSetLayoutManager> descriptorSetLayoutManager)

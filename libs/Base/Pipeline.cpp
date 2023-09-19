@@ -3,19 +3,16 @@
 #include "VertexAttribute.h"
 #include <fstream>
 
-Pipeline::Pipeline(const vkb::Device &device, float width, float height,
+Pipeline::Pipeline(VkDevice device, float width, float height,
                    const std::vector<VertexAttributeDescription> &attributeDescriptions,
-                   std::shared_ptr<PipelineLayout> layout, const std::string &shaderName)
-        : _device(device), _shaderName(shaderName),
-          _attributeDescriptions(attributeDescriptions), _layout(layout) {
+                   const std::shared_ptr<PipelineLayout>& layout, const Shader &shader)
+        : device(device),
+          attributeDescriptions(attributeDescriptions), layout(layout) {
     static const uint32_t SHADER_STAGES = 2;
 
-    const auto vertexModule = createShaderModule(device, shaderName + ".vert.spv");
-    const auto fragmentModule = createShaderModule(device, shaderName + ".frag.spv");
-
     const VkPipelineShaderStageCreateInfo shaderStageCreateInfos[SHADER_STAGES]{
-            createPipelineShaderStageCreateinfo(VK_SHADER_STAGE_VERTEX_BIT, vertexModule),
-            createPipelineShaderStageCreateinfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule),
+            createPipelineShaderStageCreateinfo(VK_SHADER_STAGE_VERTEX_BIT, shader.vert),
+            createPipelineShaderStageCreateinfo(VK_SHADER_STAGE_FRAGMENT_BIT, shader.frag),
     };
 
     std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
@@ -173,49 +170,43 @@ Pipeline::Pipeline(const vkb::Device &device, float width, float height,
             .pDepthStencilState = &depthStencilState,
             .pColorBlendState = &colorBlendState,
             .pDynamicState = &dynamicState,
-            .layout = _layout->getPipelineLayout(),
+            .layout = layout->getPipelineLayout(),
             .renderPass = VK_NULL_HANDLE,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
             .basePipelineIndex = 0,
     };
 
-    if (vkCreateGraphicsPipelines(device.device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &_pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline) != VK_SUCCESS) {
         throw std::runtime_error("Couldn't create pipeline");
     }
-
-    vkDestroyShaderModule(device.device, vertexModule, nullptr);
-    vkDestroyShaderModule(device.device, fragmentModule, nullptr);
 }
 
 Pipeline::~Pipeline() {
-    vkDestroyPipeline(_device.device, _pipeline, nullptr);
+    vkDestroyPipeline(device, pipeline, nullptr);
 }
 
 VkPipeline Pipeline::getPipeline() const {
-    return _pipeline;
+    return pipeline;
 }
 
 VkPipelineLayout Pipeline::getPipelineLayout() const {
-    return _layout->getPipelineLayout();
+    return layout->getPipelineLayout();
 }
 
-bool Pipeline::isCompatible(const std::vector<VertexAttributeDescription> &attributeDescriptions,
-                            const std::shared_ptr<PipelineLayout> &layout, const std::string &shaderName) {
-    if (_layout != layout) {
+bool Pipeline::isCompatible(const std::vector<VertexAttributeDescription> &otherAttributeDescriptions,
+                            const std::shared_ptr<PipelineLayout> &otherLayout) {
+    // TODO: remove "this"
+    if (layout != otherLayout) {
         return false;
     }
 
-    if (_shaderName != shaderName) {
-        return false;
-    }
-
-    if (_attributeDescriptions.size() != attributeDescriptions.size()) {
+    if (attributeDescriptions.size() != otherAttributeDescriptions.size()) {
         return false;
     }
 
     for (uint32_t i = 0; i < attributeDescriptions.size(); ++i) {
-        if (_attributeDescriptions[i] != attributeDescriptions[i]) {
+        if (attributeDescriptions[i] != otherAttributeDescriptions[i]) {
             return false;
         }
     }
@@ -223,57 +214,15 @@ bool Pipeline::isCompatible(const std::vector<VertexAttributeDescription> &attri
     return true;
 }
 
-std::tuple<size_t, std::vector<char>> Pipeline::getShaderDataFromFile(const std::string &shaderPath) {
-    std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Couldn't find file:" + shaderPath);
-    }
-
-    const auto fileSize = static_cast<size_t>(file.tellg());
-    std::vector<char> buffer(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-
-    return {fileSize, buffer};
-}
-
-VkShaderModule Pipeline::createShaderModule(const vkb::Device &device, const std::string &shaderFilename) {
-    const auto shaderData = getShaderDataFromFile("shaders/" + shaderFilename);
-
-    const VkShaderModuleCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .codeSize = std::get<0>(shaderData),
-            .pCode = reinterpret_cast<const uint32_t *>(std::get<1>(shaderData).data()),
-    };
-
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device.device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        throw std::runtime_error("Couldn't create shader module");
-    }
-
-    return shaderModule;
-}
-
 VkPipelineShaderStageCreateInfo
-Pipeline::createPipelineShaderStageCreateinfo(VkShaderStageFlagBits shaderStage, VkShaderModule
-
-module) {
-return {
-.
-sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-.
-pNext = nullptr,
-.
-flags = {},
-.
-stage = shaderStage,
-.module = module,
-.
-pName = "main",
-.
-pSpecializationInfo = nullptr,
-};
+Pipeline::createPipelineShaderStageCreateinfo(VkShaderStageFlagBits shaderStage, VkShaderModule module) {
+    return {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = {},
+        .stage = shaderStage,
+        .module = module,
+        .pName = "main",
+        .pSpecializationInfo = nullptr,
+    };
 }

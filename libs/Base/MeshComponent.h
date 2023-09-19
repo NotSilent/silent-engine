@@ -3,7 +3,7 @@
 #include "Component.h"
 
 #include "Entity.h"
-#include "../Base/Mesh.h"
+#include "Mesh.h"
 #include <memory>
 #include <string>
 

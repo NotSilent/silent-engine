@@ -1,9 +1,9 @@
 #pragma once
 
 #include <memory>
-#include "../Base/Window.h"
+#include "Window.h"
 
-#include "glm\glm.hpp"
+#include "glm/glm.hpp"
 
 enum class Key {
     A = GLFW_KEY_A,

@@ -1,33 +1,47 @@
 #include "PipelineManager.h"
-#include "../Base/Pipeline.h"
+#include "Pipeline.h"
 #include "PipelineLayoutManager.h"
+#include <algorithm>
+#include <utility>
 
-PipelineManager::PipelineManager(const vkb::Device &device, float width, float height,
+PipelineManager::PipelineManager(VkDevice device, float width, float height,
                                  std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager)
-        : _device(device), _width(width), _height(height),
-          _pipelineLayoutManager(pipelineLayoutManager) {
+        : device(device)
+        , width(width)
+        , height(height)
+        , pipelineLayoutManager(std::move(pipelineLayoutManager))
+        , shaderManager(device){
 }
 
-std::shared_ptr<Pipeline> PipelineManager::getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
+std::optional<std::shared_ptr<Pipeline>> PipelineManager::getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
                                                        const std::vector<VkDescriptorType> &types,
                                                        const std::string &shaderName) {
-    auto pipelineLayout = _pipelineLayoutManager->getLayout(types);
+    auto pipelineLayout = pipelineLayoutManager->getLayout(types);
 
-    auto found = std::find_if(_pipelines.begin(), _pipelines.end(), [&](std::shared_ptr<Pipeline> &pipeline) {
-        return pipeline->isCompatible(descriptions, pipelineLayout, shaderName);
+    auto found = std::find_if(pipelines.begin(), pipelines.end(), [&](std::shared_ptr<Pipeline> &pipeline) {
+        return pipeline->isCompatible(descriptions, pipelineLayout);
     });
 
-    if (found != _pipelines.end()) {
+    if (found != pipelines.end()) {
         return *found;
     }
 
-    auto pipeline = std::make_shared<Pipeline>(_device, _width, _height, descriptions, pipelineLayout,
-                                               shaderName);
-    _pipelines.push_back(pipeline);
+    std::optional<Shader> shader = shaderManager.getShader(shaderName);
 
-    return pipeline;
+    if(shader.has_value())
+    {
+        auto pipeline = std::make_shared<Pipeline>(device, width, height, descriptions, pipelineLayout,
+                                                   shader.value());
+        pipelines.push_back(pipeline);
+
+        return pipeline;
+    }
+
+    return {};
 }
 
 void PipelineManager::destroy() {
-    _pipelines.clear();
+    pipelines.clear();
+
+    shaderManager.destroy();
 }

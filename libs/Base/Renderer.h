@@ -24,23 +24,18 @@
 #include "MeshComponent.h"
 #include "DescriptorSet.h"
 #include "FrameResources.h"
+#include "SynchronizationManager.h"
 #include <functional>
 
 // TODO: VkCommandPool and VkCommands creation manager;
 
 class Renderer {
 public:
-    explicit Renderer(const std::shared_ptr<Window> window);
+    explicit Renderer(const std::shared_ptr<Window>& window);
 
     ~Renderer();
 
-    // TODO: Reduce input to DrawData and EditorDrawData, separate editor
-    void update(const DrawData &drawData, float currentTime, float deltaTime, bool drawEditor,
-                const std::shared_ptr<Renderer> &renderer, std::vector<std::shared_ptr<Entity>> &entities,
-                std::vector<std::shared_ptr<MeshComponent>> &meshComponents,
-                std::function<void(const std::shared_ptr<Renderer> &,
-                                   std::vector<std::shared_ptr<Entity>> &,
-                                   std::vector<std::shared_ptr<MeshComponent>> &)> onFileSelected);
+    void update(const DrawData &drawData, float currentTime, float deltaTime);
 
     void addSampler(const std::string &name);
 
@@ -58,14 +53,14 @@ public:
 
     std::shared_ptr<Texture> getTexture(const std::string &name);
 
-    std::shared_ptr<Material>
+    std::optional<std::shared_ptr<Material>>
     getMaterial(const std::vector<VertexAttributeDescription> &descriptions, const std::vector<VkDescriptorType> &types,
                 std::vector<std::shared_ptr<Texture>> &textures);
 
 private:
-    void draw(const DrawData &drawData, const VkRect2D renderArea);
+    void draw(const DrawData &drawData, VkRect2D renderArea);
 
-    std::shared_ptr<Window> _window;
+    std::shared_ptr<Window> window;
 
     VkRect2D _renderArea;
 
@@ -76,12 +71,18 @@ private:
     uint64_t _currentAccumulatedFrames = 0;
 
     // Remove vkb?
-    vkb::Instance _instance;
-    vkb::PhysicalDevice _physicalDevice;
-    vkb::Device _device;
-    vkb::Swapchain _swapchain;
+    vkb::Instance instance;
+    VkSurfaceKHR surface;
+    vkb::PhysicalDevice physicalDevice;
+    vkb::Device device;
+    vkb::Swapchain swapchain;
 
-    VkSurfaceKHR _surface;
+
+    vkb::Instance createInstance();
+    VkSurfaceKHR createSurface();
+    vkb::PhysicalDevice selectPhysicalDevice();
+    vkb::Device createDevice();
+    vkb::Swapchain createSwapchain();
 
     VkCommandPool _commandPool;
 
@@ -91,6 +92,7 @@ private:
     std::vector<VkImageView> _swapchainImageViews;
     std::vector<FrameResources> _frameResource;
 
+    SynchronizationManager synchronizationManager;
     BufferManager _bufferManager;
     ImageManager _imageManager;
     TextureManager _textureManager;

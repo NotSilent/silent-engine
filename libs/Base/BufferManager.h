@@ -2,7 +2,7 @@
 
 #include <string>
 #include <unordered_map>
-#include "../Base/Buffer.h"
+#include "Buffer.h"
 
 class BufferManager {
 public:

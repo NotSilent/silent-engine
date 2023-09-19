@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Base/Image.h"
+#include "Image.h"
 #include <memory>
 #include <string>
 #include <unordered_map>

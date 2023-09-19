@@ -2,7 +2,7 @@
 
 #include "VkBootstrap.h"
 #include <memory>
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan_core.h>
 #include <vector>
 
 class Texture;

@@ -1,5 +1,6 @@
 #include "DescriptorSetLayoutManager.h"
-#include "../Base/DescriptorSetLayout.h"
+#include "DescriptorSetLayout.h"
+#include <algorithm>
 
 DescriptorSetLayoutManager::DescriptorSetLayoutManager(const vkb::Device &device)
         : _device(device) {

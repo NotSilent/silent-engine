@@ -1,10 +1,8 @@
 #include "VkDraw.h"
 #include "VkInit.h"
-#include "Material.h"
 #include "PushData.h"
 #include "DescriptorSet.h"
 #include "CommandBuffer.h"
-#include <numbers>
 
 // TODO: part of gbuffer?
 VkClearValue clearValues[]{
@@ -20,7 +18,7 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
                                             VkImageView swapchainImageView,
                                             uint32_t graphicsFamilyIndex,
                                             const VkRect2D &renderArea) {
-    VkCommandBufferAllocateInfo allocateInfo = VkCommandBufferAllocateInfo{
+    VkCommandBufferAllocateInfo allocateInfo {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
             .commandPool = commandPool,
@@ -77,7 +75,7 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
 
     vkCmdBeginRendering(cmd, &renderingInfo);
 
-    for (const DrawCall drawCall: drawData.getDrawCalls()) {
+    for (const DrawCall& drawCall: drawData.getDrawCalls()) {
         PushData pushData(glm::mat4(1.0f), drawData.view, drawData.projection);
 
         vkCmdPushConstants(cmd, drawCall.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData), &pushData);

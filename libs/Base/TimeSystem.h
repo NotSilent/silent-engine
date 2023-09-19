@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Base/Window.h"
+#include "Window.h"
 #include <memory>
 
 class TimeManager {
