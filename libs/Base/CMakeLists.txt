@@ -49,8 +49,7 @@ set(BASE_SOURCES
         Shader.h
         ShaderManager.cpp
         ShaderManager.h
-        SynchronizationManager.cpp
-        SynchronizationManager.h)
+)
 
 add_library(base STATIC ${BASE_SOURCES})
 

@@ -24,7 +24,6 @@
 #include "MeshComponent.h"
 #include "DescriptorSet.h"
 #include "FrameResources.h"
-#include "SynchronizationManager.h"
 #include <functional>
 
 // TODO: VkCommandPool and VkCommands creation manager;
@@ -88,11 +87,12 @@ private:
 
     VmaAllocator _allocator;
 
+    VkFence presentFence;
+
     // TODO: Remove?
     std::vector<VkImageView> _swapchainImageViews;
     std::vector<FrameResources> _frameResource;
 
-    SynchronizationManager synchronizationManager;
     BufferManager _bufferManager;
     ImageManager _imageManager;
     TextureManager _textureManager;

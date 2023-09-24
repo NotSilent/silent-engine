@@ -2,15 +2,33 @@
 
 #include "Image.h"
 #include "VkInit.h"
+#include "VkDraw.h"
 #include <limits>
+
+FrameSynchronization::FrameSynchronization(VkDevice device)
+    : queueFence(VkInit::createFence(device, VK_FENCE_CREATE_SIGNALED_BIT))
+    , imageAcquireSemaphore(nullptr)
+    , presentSemahore(nullptr) {
+}
+
+void FrameSynchronization::destroy(VkDevice device) {
+    vkWaitForFences(device, 1, &queueFence, true, std::numeric_limits<uint64_t>::max());
+    vkDestroyFence(device, queueFence, nullptr);
+    vkDestroySemaphore(device, imageAcquireSemaphore, nullptr);
+    vkDestroySemaphore(device, presentSemahore, nullptr);
+}
 
 FrameResources::FrameResources(VkDevice device,
                                VmaAllocator allocator,
+                               uint32_t queueFamilyIndex,
                                VkImage swapchainImage,
                                VkImageView swapchainImageView,
                                const VkRect2D &renderArea)
         : device(device)
-        , frameFence(VkInit::createFence(device, VkFenceCreateFlagBits::VK_FENCE_CREATE_SIGNALED_BIT))
+        , allocator(allocator)
+        , queueFamilyIndex(queueFamilyIndex)
+        , cmdPool(VkInit::createCommandPool(device, queueFamilyIndex))
+        , synchronization(device)
         , _swapchainImage(swapchainImage)
         , _swapchainImageView(swapchainImageView) {
     ImageCreateInfo colorImageCreateInfo{
@@ -23,11 +41,25 @@ FrameResources::FrameResources(VkDevice device,
     };
 
     _colorImage = std::make_shared<Image>(device, allocator, colorImageCreateInfo);
+
+    VkCommandBufferAllocateInfo allocateInfo {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .pNext = nullptr,
+            .commandPool = cmdPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1,
+    };
+    vkAllocateCommandBuffers(device, &allocateInfo, &cmd);
 }
 
-FrameResources::FrameResources(FrameResources &&other) noexcept {
+FrameResources::FrameResources(FrameResources &&other) noexcept
+    : synchronization(other.synchronization) {
     device = other.device;
-    frameFence = other.frameFence;
+    allocator = other.allocator;
+
+    queueFamilyIndex = other.queueFamilyIndex;
+    cmdPool = other.cmdPool;
+    cmd = other.cmd;
 
     _swapchainImage = other._swapchainImage;
     _swapchainImageView = other._swapchainImageView;
@@ -41,7 +73,13 @@ FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
     }
 
     device = other.device;
-    frameFence = other.frameFence;
+    allocator = other.allocator;
+
+    queueFamilyIndex = other.queueFamilyIndex;
+    cmdPool = other.cmdPool;
+    cmd = other.cmd;
+
+    synchronization = other.synchronization;
 
     _swapchainImage = other._swapchainImage;
     _swapchainImageView = other._swapchainImageView;
@@ -51,23 +89,68 @@ FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
     return *this;
 }
 
-void FrameResources::destroy(VkDevice device, VmaAllocator allocator) {
+void FrameResources::destroy() {
+    synchronization.destroy(device);
+
+    vkResetCommandPool(device, cmdPool, {});
+    vkDestroyCommandPool(device, cmdPool, nullptr);
+
     _colorImage->destroy(device, allocator);
 }
 
-VkImage FrameResources::getSwapchainImage() const {
-    return _swapchainImage;
-}
+void FrameResources::prepareNewFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea) {
+    vkWaitForFences(device, 1, &synchronization.queueFence, true, std::numeric_limits<uint64_t>::max());
+    vkResetFences(device, 1, &synchronization.queueFence);
 
-VkImageView FrameResources::getSwapchainImageView() const {
-    return _swapchainImageView;
-}
+    vkResetCommandPool(device, cmdPool, {});
 
-void FrameResources::waitFence() {
-    vkWaitForFences(device, 1, &frameFence, true, std::numeric_limits<uint64_t>::max());
-    vkResetFences(device, 1, &frameFence);
-}
+    vkDestroySemaphore(device, synchronization.imageAcquireSemaphore, nullptr);
+    vkDestroySemaphore(device, synchronization.presentSemahore, nullptr);
 
-VkFence FrameResources::getFrameFence() {
-    return frameFence;
+    synchronization.imageAcquireSemaphore = imageAcquireSemaphore;
+    synchronization.presentSemahore = VkInit::createSemaphore(device);
+
+    VkDraw::recordCommandBuffer(cmd, drawData, _swapchainImage, _swapchainImageView, queueFamilyIndex, renderArea);
+
+     VkSemaphoreSubmitInfo imageAcquireSemaphoreSubmitInfo {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+        .semaphore = imageAcquireSemaphore,
+        .stageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    };
+
+     VkCommandBufferSubmitInfo cmdBufferSubmitInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        .commandBuffer = cmd,
+    };
+
+    VkSemaphoreSubmitInfo presentSemaphoreSubmitInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .semaphore = synchronization.presentSemahore,
+            .stageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+    };
+
+    VkSubmitInfo2 submitInfo2 {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+        .waitSemaphoreInfoCount = 1,
+        .pWaitSemaphoreInfos = &imageAcquireSemaphoreSubmitInfo,
+        .commandBufferInfoCount = 1,
+        .pCommandBufferInfos = &cmdBufferSubmitInfo,
+        .signalSemaphoreInfoCount = 1,
+        .pSignalSemaphoreInfos = &presentSemaphoreSubmitInfo,
+    };
+
+    vkQueueSubmit2(graphicsQueue, 1, &submitInfo2, synchronization.queueFence);
+
+    VkPresentInfoKHR presentInfo{
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &synchronization.presentSemahore,
+            .swapchainCount = 1,
+            .pSwapchains = &swapchain,
+            .pImageIndices = &imageIndex,
+            .pResults = nullptr,
+    };
+
+    vkQueuePresentKHR(graphicsQueue, &presentInfo);
 }

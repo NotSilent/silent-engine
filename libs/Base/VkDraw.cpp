@@ -13,22 +13,11 @@ VkClearValue clearValues[]{
         {1.0f,  0},
 };
 
-VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool commandPool, const DrawData &drawData,
+void VkDraw::recordCommandBuffer(VkCommandBuffer cmd, const DrawData &drawData,
                                             VkImage swapchainImage,
                                             VkImageView swapchainImageView,
                                             uint32_t graphicsFamilyIndex,
                                             const VkRect2D &renderArea) {
-    VkCommandBufferAllocateInfo allocateInfo {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .pNext = nullptr,
-            .commandPool = commandPool,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = 1,
-    };
-
-    VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(device, &allocateInfo, &cmd);
-
     VkClearValue clearValue{1.0f, 0.0f, 1.0f, 1.0f};
 
     VkRenderingAttachmentInfo colorAttachment{
@@ -53,11 +42,15 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
 
     vkBeginCommandBuffer(cmd, &beginInfo);
 
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_NONE,
-                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                   VK_ACCESS_NONE,
+                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                   VK_IMAGE_LAYOUT_UNDEFINED,
                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                   graphicsFamilyIndex, graphicsFamilyIndex, swapchainImage,
+                                   graphicsFamilyIndex,
+                                   graphicsFamilyIndex,
+                                   swapchainImage,
                                    VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkRenderingInfo renderingInfo{
@@ -94,13 +87,15 @@ VkCommandBuffer VkDraw::recordCommandBuffer(vkb::Device &device, VkCommandPool c
     vkCmdEndRendering(cmd);
 
     CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                   VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                   VK_ACCESS_NONE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                   VK_ACCESS_NONE,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                                   graphicsFamilyIndex, graphicsFamilyIndex, swapchainImage,
+                                   graphicsFamilyIndex,
+                                   graphicsFamilyIndex,
+                                   swapchainImage,
                                    VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkEndCommandBuffer(cmd);
-
-    return cmd;
 }

@@ -13,7 +13,7 @@
 
 Renderer::Renderer(const std::shared_ptr<Window> &window)
         : window(window), instance(createInstance()), surface(createSurface()), physicalDevice(selectPhysicalDevice()),
-          device(createDevice()), swapchain(createSwapchain()), synchronizationManager(device.device),
+          device(createDevice()), swapchain(createSwapchain()),
           _renderArea(VkRect2D{{0,                  0},
                                {window->getWidth(), window->getHeight()}}) {
     _allocator = VkInit::createAllocator(instance, physicalDevice, device, VK_API_VERSION_1_3);
@@ -21,9 +21,11 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
     std::vector<VkImage> swapchainImages = swapchain.get_images().value();
     _swapchainImageViews = swapchain.get_image_views().value();
 
+    uint32_t queueFamilyIndex = device.get_queue_index(vkb::QueueType::graphics).value();;
+
     for (size_t i = 0; i < swapchain.image_count; ++i) {
         _frameResource.emplace_back(
-                device.device, _allocator, swapchainImages[i], _swapchainImageViews[i], _renderArea);
+                device.device, _allocator, queueFamilyIndex, swapchainImages[i], _swapchainImageViews[i], _renderArea);
     }
 
     _commandPool = VkInit::createCommandPool(device, device.get_queue_index(vkb::QueueType::graphics).value());
@@ -39,6 +41,8 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
                                                          static_cast<float>(window->getHeight()),
                                                          _pipelineLayoutManager);
     _materialManager = MaterialManager(device, _pipelineManager, _descriptorSetManager);
+
+    presentFence = VkInit::createFence(device, {});
 }
 
 vkb::Instance Renderer::createInstance() {
@@ -71,22 +75,8 @@ vkb::PhysicalDevice Renderer::selectPhysicalDevice() {
 vkb::Device Renderer::createDevice() {
     VkPhysicalDeviceVulkan13Features vulkan13Features{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
-            .pNext = nullptr,
-            .robustImageAccess = false,
-            .inlineUniformBlock = false,
-            .descriptorBindingInlineUniformBlockUpdateAfterBind = false,
-            .pipelineCreationCacheControl = false,
-            .privateData = false,
-            .shaderDemoteToHelperInvocation = false,
-            .shaderTerminateInvocation = false,
-            .subgroupSizeControl = false,
-            .computeFullSubgroups = false,
-            .synchronization2 = false,
-            .textureCompressionASTC_HDR = false,
-            .shaderZeroInitializeWorkgroupMemory = false,
+            .synchronization2 = true,
             .dynamicRendering = true,
-            .shaderIntegerDotProduct = false,
-            .maintenance4 = false,
     };
 
     vkb::DeviceBuilder deviceBuilder{physicalDevice};
@@ -115,7 +105,12 @@ vkb::Swapchain Renderer::createSwapchain() {
 }
 
 Renderer::~Renderer() {
-    synchronizationManager.destroy();
+    for (FrameResources &frameResources: _frameResource) {
+        frameResources.destroy();
+    }
+
+    vkDestroyFence(device, presentFence, nullptr);
+
     _bufferManager.destroy();
     _imageManager.destroy();
     _samplerManager.destroy();
@@ -125,10 +120,6 @@ Renderer::~Renderer() {
     _descriptorSetManager->destroy();
     _pipelineLayoutManager->destroy();
     _descriptorSetLayoutManager->destroy();
-
-    for (FrameResources &frameResources: _frameResource) {
-        frameResources.destroy(device, _allocator);
-    }
 
     vmaDestroyAllocator(_allocator);
 
@@ -199,68 +190,17 @@ Renderer::getMaterial(const std::vector<VertexAttributeDescription> &description
 }
 
 void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {
-    auto acquireSemaphore = VkInit::createSemaphore(device);
-    auto submitSemaphore = VkInit::createSemaphore(device);
-    VkFence queueFence = VkInit::createFence(device, {});
-
-    //VkFence presentationFinishedFence = VkInit::createFence(device, {});
+    VkSemaphore acquireSemaphore = VkInit::createSemaphore(device);
 
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device.device, swapchain.swapchain, std::numeric_limits<uint64_t>::max(),
-                          acquireSemaphore, nullptr /*presentationFinishedFence*/, &imageIndex);
+                          acquireSemaphore, presentFence, &imageIndex);
 
     VkQueue graphicsQueue = device.get_queue(vkb::QueueType::graphics).value();
 
     FrameResources &frameResources = _frameResource[imageIndex];
+    frameResources.prepareNewFrame(swapchain.swapchain, graphicsQueue, imageIndex, acquireSemaphore, drawData, renderArea);
 
-    VkCommandBuffer cmd = VkDraw::recordCommandBuffer(device, _commandPool, drawData,
-                                                      frameResources.getSwapchainImage(),
-                                                      frameResources.getSwapchainImageView(),
-                                                      device.get_queue_index(vkb::QueueType::graphics).value(),
-                                                      renderArea);
-
-    VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    VkSubmitInfo submitInfo{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .pNext = nullptr,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &acquireSemaphore,
-            .pWaitDstStageMask = &waitDstStageMask,
-            .commandBufferCount = 1,
-            .pCommandBuffers = &cmd,
-            .signalSemaphoreCount = 1,
-            .pSignalSemaphores = &submitSemaphore,
-    };
-
-    //frameResources.waitFence();
-
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, queueFence);
-
-    VkPresentInfoKHR presentInfo{
-            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .pNext = nullptr,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &submitSemaphore,
-            .swapchainCount = 1,
-            .pSwapchains = &swapchain.swapchain,
-            .pImageIndices = &imageIndex,
-            .pResults = nullptr,
-    };
-
-    vkQueuePresentKHR(graphicsQueue, &presentInfo);
-
-    vkWaitForFences(device, 1, &queueFence, true, std::numeric_limits<uint64_t>::max());
-    vkDestroyFence(device, queueFence, nullptr);
-
-    // TODO: build frame? wait for both queue and presentation? record time? reset command pool after wait for present
-
-//    synchronizationManager.enqueue([presentationFinishedFence, acquireSemaphore, submitSemaphore](VkDevice newdevice) {
-//        vkWaitForFences(newdevice, 1, &presentationFinishedFence, true, std::numeric_limits<uint64_t>::max());
-//
-//        vkDestroyFence(newdevice, presentationFinishedFence, nullptr);
-//
-//        vkDestroySemaphore(newdevice, acquireSemaphore, nullptr);
-//        vkDestroySemaphore(newdevice, submitSemaphore, nullptr);
-//    });
+    vkWaitForFences(device, 1, &presentFence, true, std::numeric_limits<uint64_t>::max());
+    vkResetFences(device, 1, &presentFence);
 }
