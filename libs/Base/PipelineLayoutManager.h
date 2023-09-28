@@ -6,12 +6,9 @@
 
 class PipelineLayout;
 
-class DescriptorSetLayoutManager;
-
 class PipelineLayoutManager {
 public:
-    PipelineLayoutManager(const vkb::Device &_device,
-                          std::shared_ptr<DescriptorSetLayoutManager> descriptorSetLayoutManager);
+    PipelineLayoutManager(VkDevice _device);
 
     std::shared_ptr<PipelineLayout> getLayout(const std::vector<VkDescriptorType> &types);
 
@@ -19,8 +16,7 @@ public:
     void destroy();
 
 private:
-    vkb::Device _device;
+    VkDevice device;
 
     std::vector<std::shared_ptr<PipelineLayout>> _layouts;
-    std::shared_ptr<DescriptorSetLayoutManager> _descriptorSetLayoutManager;
 };

@@ -34,13 +34,11 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
     _bufferManager = BufferManager(device, _allocator, _commandPool);
     _imageManager = ImageManager(device, _allocator, _commandPool);
     _samplerManager = SamplerManager(device, _allocator, _commandPool);
-    _descriptorSetLayoutManager = std::make_shared<DescriptorSetLayoutManager>(device);
-    _descriptorSetManager = std::make_shared<DescriptorSetManager>(device, _descriptorSetLayoutManager);
-    _pipelineLayoutManager = std::make_shared<PipelineLayoutManager>(device, _descriptorSetLayoutManager);
+    _pipelineLayoutManager = std::make_shared<PipelineLayoutManager>(device);
     _pipelineManager = std::make_shared<PipelineManager>(device, static_cast<float>(window->getWidth()),
                                                          static_cast<float>(window->getHeight()),
                                                          _pipelineLayoutManager);
-    _materialManager = MaterialManager(device, _pipelineManager, _descriptorSetManager);
+    _materialManager = MaterialManager(device, _pipelineManager);
 
     presentFence = VkInit::createFence(device, {});
 }
@@ -117,9 +115,7 @@ Renderer::~Renderer() {
     _textureManager.destroy();
     _materialManager.destroy();
     _pipelineManager->destroy();
-    _descriptorSetManager->destroy();
     _pipelineLayoutManager->destroy();
-    _descriptorSetLayoutManager->destroy();
 
     vmaDestroyAllocator(_allocator);
 

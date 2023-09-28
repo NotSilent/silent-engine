@@ -8,8 +8,6 @@
 #include "DrawData.h"
 #include "Pipeline.h"
 
-class DescriptorSet;
-
 namespace VkDraw {
     void recordCommandBuffer(VkCommandBuffer cmd, const DrawData &drawData,
                                         VkImage swapchainImage,

@@ -1,11 +1,9 @@
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(BASE_SOURCES
         Buffer.h Buffer.cpp
         Camera.h Camera.cpp
-        DescriptorSet.h DescriptorSet.cpp
-        DescriptorSetLayout.h DescriptorSetLayout.cpp
         DrawData.h DrawData.cpp
         Image.h Image.cpp
         Implementations.cpp
@@ -30,8 +28,6 @@ set(BASE_SOURCES
         MeshComponent.h MeshComponent.cpp
 
         BufferManager.h BufferManager.cpp
-        DescriptorSetLayoutManager.h DescriptorSetLayoutManager.cpp
-        DescriptorSetManager.h DescriptorSetManager.cpp
         ImageManager.h ImageManager.cpp
         MaterialManager.h MaterialManager.cpp
         PipelineLayoutManager.h PipelineLayoutManager.cpp

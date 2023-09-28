@@ -6,7 +6,7 @@
 
 Camera::Camera(float aspectRatio)
         : _projection{createProjection(aspectRatio, std::numbers::pi / 2.0f, 0.1f, 10000.0f)},
-          _displacement(glm::vec3(5.0f, -10.0f, 5.0f)) {
+          _displacement(glm::vec3(0.0f, -10.0f, 0.0f)) {
 }
 
 void Camera::update(glm::vec2 directionInput, glm::vec2 rotationInput) {

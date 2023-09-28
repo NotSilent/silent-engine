@@ -1,20 +1,14 @@
 #include "Material.h"
-#include "DescriptorSet.h"
+
+#include <utility>
 #include "Pipeline.h"
 
-Material::Material(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<DescriptorSet> descriptorSet)
-        : _pipeline(pipeline), _descriptorSet(descriptorSet) {
+Material::Material(std::shared_ptr<Pipeline> pipeline)
+        : _pipeline(std::move(pipeline)) {
 }
 
-Material::~Material() {
-}
-
-bool Material::isCompatible(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<DescriptorSet> descriptor) {
-    return _pipeline == pipeline && _descriptorSet == descriptor;
-}
-
-VkDescriptorSet Material::getDescriptorSet() const {
-    return _descriptorSet->getDescriptorSet();
+bool Material::isCompatible(const std::shared_ptr<Pipeline>& pipeline) {
+    return _pipeline == pipeline;
 }
 
 VkPipeline Material::getPipeline() const {

@@ -1,7 +1,6 @@
 #include "VkDraw.h"
 #include "VkInit.h"
 #include "PushData.h"
-#include "DescriptorSet.h"
 #include "CommandBuffer.h"
 
 // TODO: part of gbuffer?
@@ -42,7 +41,7 @@ void VkDraw::recordCommandBuffer(VkCommandBuffer cmd, const DrawData &drawData,
 
     vkBeginCommandBuffer(cmd, &beginInfo);
 
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                    VK_ACCESS_NONE,
                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -98,4 +97,27 @@ void VkDraw::recordCommandBuffer(VkCommandBuffer cmd, const DrawData &drawData,
                                    VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkEndCommandBuffer(cmd);
+
+    // Setup frame
+    // pipelineLayout
+    // vkCmdBindDescriptorSet(frameSet)
+
+    // Setup render pass
+    // pipelineLayout
+    // vkCmdBindDescriptorSet(renderPassSet)
+
+    // Setup pipeline
+    // vkCmdBindPipeline(pipeline)
+    // vkCmdBindDescriptorSet(pipelineSet)
+
+    // Setup material
+    // vkCmdBindDescriptorSet(materialSet)
+    // vkCmdBindPipeline(materialPipeline)
+
+    // Setup materialInstance?
+    // vkCmdBindDescriptorSet(materialInstanceSet)
+
+    // Setup object
+    // vkCmdBindVertexBuffer(objectBuffer)
+    // vkCmdBindIndexBuffer(objectBuffer)
 }

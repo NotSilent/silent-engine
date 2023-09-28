@@ -3,6 +3,8 @@
 #include "PipelineLayoutManager.h"
 #include <algorithm>
 #include <utility>
+#include <vector>
+#include <ranges>
 
 PipelineManager::PipelineManager(VkDevice device, float width, float height,
                                  std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager)

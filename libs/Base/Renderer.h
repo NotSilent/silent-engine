@@ -6,8 +6,6 @@
 
 #include "BufferManager.h"
 #include "Camera.h"
-#include "DescriptorSetLayoutManager.h"
-#include "DescriptorSetManager.h"
 #include "DrawData.h"
 #include "ImageManager.h"
 #include "PipelineLayoutManager.h"
@@ -22,7 +20,6 @@
 #include "Image.h"
 #include "Entity.h"
 #include "MeshComponent.h"
-#include "DescriptorSet.h"
 #include "FrameResources.h"
 #include <functional>
 
@@ -99,7 +96,5 @@ private:
     SamplerManager _samplerManager;
     MaterialManager _materialManager;
     std::shared_ptr<PipelineManager> _pipelineManager;
-    std::shared_ptr<DescriptorSetManager> _descriptorSetManager;
     std::shared_ptr<PipelineLayoutManager> _pipelineLayoutManager;
-    std::shared_ptr<DescriptorSetLayoutManager> _descriptorSetLayoutManager;
 };

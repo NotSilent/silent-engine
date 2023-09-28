@@ -24,10 +24,6 @@ Vertex meshVertices[]{
 
 uint32_t meshIndices[]{0, 1, 2, 2, 1, 3};
 
-void OnFileSelected(const std::shared_ptr<Renderer> &renderer,
-                    std::vector<std::shared_ptr<Entity>> &entities,
-                    std::vector<std::shared_ptr<MeshComponent>> &meshComponents);
-
 int main() {
     std::shared_ptr<Window> window = std::make_shared<Window>(WIDTH, HEIGHT, ENGINE_NAME);
     std::shared_ptr<EngineStatics> engineStatics = std::make_shared<EngineStatics>(window);
@@ -50,30 +46,6 @@ int main() {
         entities.push_back(entityWithCamera);
     }
 
-    OnFileSelected(renderer, entities, meshComponents);
-
-    // TODO: move exit on escape to some component
-    while (!window->shouldClose() && inputManager->getKeyState(Key::Escape) != KeyState::Press) {
-        engineStatics->update();
-
-        for (const auto &entity: entities) {
-            entity->update(timeManager->getDeltaTime());
-        }
-
-        DrawData drawData(EngineStatics::getCamera());
-        for (auto &meshComponent: meshComponents) {
-            drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getMaterial(), meshComponent->getModel());
-        }
-
-        renderer->update(drawData, timeManager->getCurrentTime(), timeManager->getDeltaTime());
-    }
-
-    return 0;
-}
-
-void OnFileSelected(const std::shared_ptr<Renderer> &renderer,
-                    std::vector<std::shared_ptr<Entity>> &entities,
-                    std::vector<std::shared_ptr<MeshComponent>> &meshComponents) {
     std::vector<VertexAttributeDescription> attributeDescriptions;
     attributeDescriptions.push_back(VertexAttributeDescription{
             .type = VertexAttributeType::Position,
@@ -111,4 +83,22 @@ void OnFileSelected(const std::shared_ptr<Renderer> &renderer,
         entities.push_back(entity);
         meshComponents.push_back(meshComponent);
     }
+
+    // TODO: move exit on escape to some component
+    while (!window->shouldClose() && inputManager->getKeyState(Key::Escape) != KeyState::Press) {
+        engineStatics->update();
+
+        for (const auto &entity: entities) {
+            entity->update(timeManager->getDeltaTime());
+        }
+
+        DrawData drawData(EngineStatics::getCamera());
+        for (auto &meshComponent: meshComponents) {
+            drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getMaterial(), meshComponent->getModel());
+        }
+
+        renderer->update(drawData, timeManager->getCurrentTime(), timeManager->getDeltaTime());
+    }
+
+    return 0;
 }
