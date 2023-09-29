@@ -15,7 +15,7 @@ public:
     MaterialManager() = default;
     MaterialManager(VkDevice device, std::shared_ptr<PipelineManager> pipelineManager);
 
-    std::optional<std::shared_ptr<Material>> getMaterial(const std::vector<VertexAttributeDescription>& descriptions, const std::vector<VkDescriptorType>& types, std::vector<std::shared_ptr<Texture>>& textures);
+    std::shared_ptr<Material> getMaterial(const std::vector<VertexAttributeDescription>& descriptions, const std::vector<VkDescriptorType>& types, std::vector<std::shared_ptr<Texture>>& textures);
 
     // TODO: Remove all destroys
     void destroy();

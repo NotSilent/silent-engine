@@ -49,7 +49,7 @@ public:
 
     std::shared_ptr<Texture> getTexture(const std::string &name);
 
-    std::optional<std::shared_ptr<Material>>
+    std::shared_ptr<Material>
     getMaterial(const std::vector<VertexAttributeDescription> &descriptions, const std::vector<VkDescriptorType> &types,
                 std::vector<std::shared_ptr<Texture>> &textures);
 

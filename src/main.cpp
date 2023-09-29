@@ -64,8 +64,8 @@ int main() {
     renderer->addBuffer("meshIndices", sizeof(meshIndices), meshIndices);
 
     std::vector<std::shared_ptr<Texture>> textures;
-    std::optional<std::shared_ptr<Material>> material= renderer->getMaterial(attributeDescriptions, {}, textures);
-    if(material.has_value())
+    std::shared_ptr<Material> material= renderer->getMaterial(attributeDescriptions, {}, textures);
+    if(material)
     {
         std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(6,
                                                                renderer->getBuffer("meshVertices"),
@@ -75,7 +75,7 @@ int main() {
         // TODO: Recreate MeshManager
         std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
         meshComponent->setMesh(newMesh);
-        meshComponent->setMaterial(material.value());
+        meshComponent->setMaterial(material);
 
         std::shared_ptr<Entity> entity = std::make_shared<Entity>();
         Entity::addComponent(entity, meshComponent);

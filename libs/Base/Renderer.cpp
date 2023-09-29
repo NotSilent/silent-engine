@@ -178,7 +178,7 @@ std::shared_ptr<Texture> Renderer::getTexture(const std::string &name) {
     return _textureManager.getTexture(name);
 }
 
-std::optional<std::shared_ptr<Material>>
+std::shared_ptr<Material>
 Renderer::getMaterial(const std::vector<VertexAttributeDescription> &descriptions,
                       const std::vector<VkDescriptorType> &types,
                       std::vector<std::shared_ptr<Texture>> &textures) {

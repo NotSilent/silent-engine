@@ -15,7 +15,7 @@ PipelineManager::PipelineManager(VkDevice device, float width, float height,
         , shaderManager(device){
 }
 
-std::optional<std::shared_ptr<Pipeline>> PipelineManager::getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
+std::shared_ptr<Pipeline> PipelineManager::getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
                                                        const std::vector<VkDescriptorType> &types,
                                                        const std::string &shaderName) {
     auto pipelineLayout = pipelineLayoutManager->getLayout(types);

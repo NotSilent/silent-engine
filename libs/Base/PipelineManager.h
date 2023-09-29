@@ -16,7 +16,8 @@ public:
     PipelineManager(VkDevice device, float width, float height,
                     std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager);
 
-    std::optional<std::shared_ptr<Pipeline>> getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
+    // TODO: Replace with optional
+    std::shared_ptr<Pipeline> getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
                                           const std::vector<VkDescriptorType> &types, const std::string &shaderName);
 
     // TODO: Remove all destroys
