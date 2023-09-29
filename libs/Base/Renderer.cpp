@@ -3,7 +3,6 @@
 #include <memory>
 #include <stdexcept>
 
-#include "VkDraw.h"
 #include "VkInit.h"
 
 #include "vk_mem_alloc.h"
@@ -193,9 +192,10 @@ void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {
                           acquireSemaphore, presentFence, &imageIndex);
 
     VkQueue graphicsQueue = device.get_queue(vkb::QueueType::graphics).value();
+    uint32_t graphicsQueueFamilyIndex = device.get_queue_index(vkb::QueueType::graphics).value();
 
     FrameResources &frameResources = _frameResource[imageIndex];
-    frameResources.prepareNewFrame(swapchain.swapchain, graphicsQueue, imageIndex, acquireSemaphore, drawData, renderArea);
+    frameResources.renderFrame(swapchain.swapchain, graphicsQueue, graphicsQueueFamilyIndex, imageIndex, acquireSemaphore, drawData, renderArea);
 
     vkWaitForFences(device, 1, &presentFence, true, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &presentFence);

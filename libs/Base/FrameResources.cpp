@@ -2,7 +2,8 @@
 
 #include "Image.h"
 #include "VkInit.h"
-#include "VkDraw.h"
+#include "PushData.h"
+#include "DrawData.h"
 #include <limits>
 
 FrameSynchronization::FrameSynchronization(VkDevice device)
@@ -29,8 +30,7 @@ FrameResources::FrameResources(VkDevice device,
         , queueFamilyIndex(queueFamilyIndex)
         , cmdPool(VkInit::createCommandPool(device, queueFamilyIndex))
         , synchronization(device)
-        , _swapchainImage(swapchainImage)
-        , _swapchainImageView(swapchainImageView) {
+        , deferredRenderPass(renderArea, swapchainImage, swapchainImageView) {
     ImageCreateInfo colorImageCreateInfo{
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
@@ -53,7 +53,8 @@ FrameResources::FrameResources(VkDevice device,
 }
 
 FrameResources::FrameResources(FrameResources &&other) noexcept
-    : synchronization(other.synchronization) {
+    : synchronization(other.synchronization)
+    , deferredRenderPass(std::move(other.deferredRenderPass)) {
     device = other.device;
     allocator = other.allocator;
 
@@ -61,8 +62,6 @@ FrameResources::FrameResources(FrameResources &&other) noexcept
     cmdPool = other.cmdPool;
     cmd = other.cmd;
 
-    _swapchainImage = other._swapchainImage;
-    _swapchainImageView = other._swapchainImageView;
     // TODO: Move?
     _colorImage = other._colorImage;
 }
@@ -81,10 +80,10 @@ FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
 
     synchronization = other.synchronization;
 
-    _swapchainImage = other._swapchainImage;
-    _swapchainImageView = other._swapchainImageView;
     // TODO: Move?
     _colorImage = other._colorImage;
+
+    deferredRenderPass = std::move(other.deferredRenderPass);
 
     return *this;
 }
@@ -98,7 +97,7 @@ void FrameResources::destroy() {
     _colorImage->destroy(device, allocator);
 }
 
-void FrameResources::prepareNewFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea) {
+void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t graphicsQueueFamilyIndex, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea) {
     vkWaitForFences(device, 1, &synchronization.queueFence, true, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &synchronization.queueFence);
 
@@ -110,7 +109,35 @@ void FrameResources::prepareNewFrame(VkSwapchainKHR swapchain, VkQueue graphicsQ
     synchronization.imageAcquireSemaphore = imageAcquireSemaphore;
     synchronization.presentSemahore = VkInit::createSemaphore(device);
 
-    VkDraw::recordCommandBuffer(cmd, drawData, _swapchainImage, _swapchainImageView, queueFamilyIndex, renderArea);
+    VkCommandBufferBeginInfo beginInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .pNext = nullptr,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            .pInheritanceInfo = nullptr,
+    };
+
+    vkBeginCommandBuffer(cmd, &beginInfo);
+
+    deferredRenderPass.render(cmd, graphicsQueueFamilyIndex, [&drawData](VkCommandBuffer commandBuffer) {
+        for (const DrawCall &drawCall: drawData.getDrawCalls()) {
+            PushData pushData(glm::mat4(1.0f), drawData.view, drawData.projection);
+
+            vkCmdPushConstants(commandBuffer, drawCall.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData),
+                               &pushData);
+
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);
+
+            VkDeviceSize offset = 0;
+            VkBuffer vertexBuffer = drawCall._mesh->getVertexBuffer();
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
+
+            vkCmdBindIndexBuffer(commandBuffer, drawCall._mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+            vkCmdDrawIndexed(commandBuffer, drawCall._mesh->getIndexCount(), 1, 0, 0, 0);
+        }
+    });
+
+    vkEndCommandBuffer(cmd);
 
      VkSemaphoreSubmitInfo imageAcquireSemaphoreSubmitInfo {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,

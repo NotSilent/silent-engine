@@ -18,7 +18,6 @@ set(BASE_SOURCES
         Texture.h Texture.cpp
         Vertex.h
         VertexAttribute.h VertexAttribute.cpp
-        VkDraw.h VkDraw.cpp
         VkInit.h VkInit.cpp
         Window.h Window.cpp
 
@@ -45,6 +44,8 @@ set(BASE_SOURCES
         Shader.h
         ShaderManager.cpp
         ShaderManager.h
+        DeferredRenderPass.cpp
+        DeferredRenderPass.h
 )
 
 add_library(base STATIC ${BASE_SOURCES})

@@ -3,6 +3,7 @@
 #include <memory>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan_core.h>
+#include "DeferredRenderPass.h"
 
 class Image;
 class DrawData;
@@ -19,25 +20,6 @@ struct FrameSynchronization {
 };
 
 class FrameResources {
-private:
-    VkDevice device;
-    // TODO: remove together with image
-    VmaAllocator allocator;
-
-    uint32_t queueFamilyIndex;
-    VkCommandPool cmdPool;
-    VkCommandBuffer cmd;
-
-    FrameSynchronization synchronization;
-
-    VkImage _swapchainImage;
-    VkImageView _swapchainImageView;
-
-    // TODO:
-    // Should be just a handle, from ImageManager
-    // Default move constructors after changing to handle
-    std::shared_ptr<Image> _colorImage;
-
 public:
     FrameResources(VkDevice device,
                    VmaAllocator allocator,
@@ -56,8 +38,26 @@ public:
 
     FrameResources &operator=(FrameResources &&other) noexcept;
 
-    void prepareNewFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea);
+    void renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t graphicsQueueFamilyIndex, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea);
 
     // Should be handled by whatever will create Images
     void destroy();
+
+private:
+    VkDevice device;
+    // TODO: remove together with image
+    VmaAllocator allocator;
+
+    uint32_t queueFamilyIndex;
+    VkCommandPool cmdPool;
+    VkCommandBuffer cmd;
+
+    FrameSynchronization synchronization;
+
+    // TODO:
+    // Should be just a handle, from ImageManager
+    // Default move constructors after changing to handle
+    std::shared_ptr<Image> _colorImage;
+
+    DeferredRenderPass deferredRenderPass;
 };
