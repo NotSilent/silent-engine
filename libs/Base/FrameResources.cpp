@@ -31,15 +31,6 @@ FrameResources::FrameResources(VkDevice device,
         , cmdPool(VkInit::createCommandPool(device, queueFamilyIndex))
         , synchronization(device)
         , deferredRenderPass(device, allocator, renderArea, swapchainImage, swapchainImageView) {
-    ImageCreateInfo colorImageCreateInfo{
-            .extent = {renderArea.extent.width, renderArea.extent.height, 1},
-            .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-            .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-    };
-
     VkCommandBufferAllocateInfo allocateInfo {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,

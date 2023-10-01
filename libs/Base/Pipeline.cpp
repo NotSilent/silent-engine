@@ -1,8 +1,9 @@
 #include "Pipeline.h"
 #include "PipelineLayout.h"
-#include "Vertex.h"
 #include <fstream>
 #include <array>
+
+#include "glm/glm.hpp"
 
 Pipeline::Pipeline(VkDevice device, float width, float height,
                    const std::shared_ptr<PipelineLayout>& layout, VkFormat swapchainFormat, const Shader &shader)
@@ -18,7 +19,7 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
     std::array vertexInputBindingDescriptions {
         VkVertexInputBindingDescription {
             .binding = 0,
-            .stride = sizeof(Vertex),
+            .stride = sizeof(glm::vec3),
             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
         }
     };
@@ -154,7 +155,7 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
     };
 
     // TODO: When per renderpass pipelines created, somehow control the format
-    std::array colorAttachmentFormats {VK_FORMAT_R16G16B16A16_SFLOAT, swapchainFormat};
+    std::array colorAttachmentFormats {VK_FORMAT_R8G8B8A8_UNORM, swapchainFormat};
     const VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
             .viewMask = 0,

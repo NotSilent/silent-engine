@@ -115,7 +115,7 @@ Image DeferredRenderPass::createColorImage() const {
     ImageCreateInfo createInfo {
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+            .format = VK_FORMAT_R8G8B8A8_UNORM,
             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

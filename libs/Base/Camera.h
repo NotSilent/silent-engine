@@ -3,6 +3,12 @@
 #include "glm/mat4x2.hpp"
 #include "glm/vec3.hpp"
 
+// TODO: Change to
+// Engine
+// x right
+// y up
+// z forward
+
 // 1/((w/h)tan(theta/2))) 0            0       0
 // 0                      tan(theta/2) 0       0
 // 0                      0            f/(f-n) -fn/(f-n)

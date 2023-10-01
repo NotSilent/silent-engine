@@ -1,7 +1,5 @@
 #include "Mesh.h"
 
-#include <utility>
-
 Mesh::Mesh(uint32_t indexCount, VkBuffer vertexBuffer, VkBuffer indexBuffer)
         : _indexCount(indexCount), _vertexBuffer(vertexBuffer), _indexBuffer(indexBuffer) {
 }

@@ -7,6 +7,7 @@
 #include "EngineStatics.h"
 #include "InputSystem.h"
 #include "TimeSystem.h"
+#include "PatchedSphere.h"
 #include <iostream>
 #include <vector>
 
@@ -15,14 +16,14 @@ const std::string ENGINE_NAME = "Silent Engine";
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
-Vertex meshVertices[]{
-        Vertex(-0.5f, 0.0f, 0.5f),
-        Vertex(-0.5f, 0.0f, -0.5f),
-        Vertex(0.5f, 0.0f, 0.5f),
-        Vertex(0.5f, 0.0f, -0.5f),
-};
-
-uint32_t meshIndices[]{0, 1, 2, 2, 1, 3};
+//glm::vec3 meshVertices[]{
+//        glm::vec3(-0.5f, 0.0f, 0.5f),
+//        glm::vec3(-0.5f, 0.0f, -0.5f),
+//        glm::vec3(0.5f, 0.0f, 0.5f),
+//        glm::vec3(0.5f, 0.0f, -0.5f),
+//};
+//
+//uint32_t meshIndices[]{0, 1, 2, 2, 1, 3};
 
 int main() {
     std::shared_ptr<Window> window = std::make_shared<Window>(WIDTH, HEIGHT, ENGINE_NAME);
@@ -46,14 +47,16 @@ int main() {
         entities.push_back(entityWithCamera);
     }
 
-    renderer->addBuffer("meshVertices", sizeof(meshVertices), meshVertices);
-    renderer->addBuffer("meshIndices", sizeof(meshIndices), meshIndices);
+    PatchedSphere patchedSphere(4);
+
+    renderer->addBuffer("meshVertices", patchedSphere.getVertices().size() * sizeof(glm::vec3), patchedSphere.getVertices().data());
+    renderer->addBuffer("meshIndices", patchedSphere.getIndices().size() * sizeof(uint32_t), patchedSphere.getIndices().data());
 
     std::vector<std::shared_ptr<Texture>> textures;
-    std::shared_ptr<Pipeline> pipeline= renderer->getPipeline("unlit");
+    std::shared_ptr<Pipeline> pipeline= renderer->getPipeline("pbrDeferred");
     if(pipeline)
     {
-        std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(6,
+        std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(patchedSphere.getIndices().size(),
                                                                renderer->getBuffer("meshVertices"),
                                                                renderer->getBuffer("meshIndices"));
 

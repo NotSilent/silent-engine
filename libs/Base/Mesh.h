@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "Buffer.h"
-#include "Vertex.h"
 
 class Mesh {
 public:
