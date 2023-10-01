@@ -1,22 +1,20 @@
 #include "DrawData.h"
-#include "Material.h"
 
-DrawData::DrawData(std::shared_ptr<Camera> camera) {
+#include <utility>
+
+DrawData::DrawData(const std::shared_ptr<Camera>& camera) {
     view = camera->getViewMatrix();
     projection = camera->getProjectionMatrix();
     position = camera->getPosition();
 }
 
-DrawData::~DrawData() {
-}
-
-void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, const glm::mat4 &model) {
+void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, const std::shared_ptr<Pipeline>& pipeline, const glm::mat4 &model) {
     DrawCall drawCall;
 
-    drawCall._mesh = mesh;
+    drawCall._mesh = std::move(mesh);
 
-    drawCall.pipelineLayout = material->getPipelineLayout();
-    drawCall.pipeline = material->getPipeline();
+    drawCall.pipelineLayout = pipeline->getPipelineLayout();
+    drawCall.pipeline = pipeline->getPipeline();
 
     drawCall.model = model;
 

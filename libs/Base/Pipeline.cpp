@@ -1,13 +1,13 @@
 #include "Pipeline.h"
 #include "PipelineLayout.h"
-#include "VertexAttribute.h"
+#include "Vertex.h"
 #include <fstream>
+#include <array>
 
 Pipeline::Pipeline(VkDevice device, float width, float height,
-                   const std::vector<VertexAttributeDescription> &attributeDescriptions,
-                   const std::shared_ptr<PipelineLayout>& layout, const Shader &shader)
-        : device(device),
-          attributeDescriptions(attributeDescriptions), layout(layout) {
+                   const std::shared_ptr<PipelineLayout>& layout, VkFormat swapchainFormat, const Shader &shader)
+        : device(device)
+        , layout(layout) {
     static const uint32_t SHADER_STAGES = 2;
 
     const VkPipelineShaderStageCreateInfo shaderStageCreateInfos[SHADER_STAGES]{
@@ -15,45 +15,38 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
             createPipelineShaderStageCreateinfo(VK_SHADER_STAGE_FRAGMENT_BIT, shader.frag),
     };
 
-    std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
-    std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
-    for (uint32_t i = 0; i < attributeDescriptions.size(); ++i) {
-        vertexInputBindingDescriptions.push_back({
-                                                         .binding = i,
-                                                         .stride = attributeDescriptions[i].stride,
-                                                         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-                                                 });
-
-        vertexInputAttributeDescriptions.push_back({
-                                                           .location = i,
-                                                           .binding = i,
-                                                           .format = attributeDescriptions[i].format,
-                                                           .offset = 0,
-                                                   });
-    }
+    std::array vertexInputBindingDescriptions {
+        VkVertexInputBindingDescription {
+            .binding = 0,
+            .stride = sizeof(Vertex),
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+        }
+    };
+    std::array vertexInputAttributeDescriptions {
+            VkVertexInputAttributeDescription {
+                    .location = 0,
+                    .binding = 0,
+                    .format = VK_FORMAT_R32G32B32_SFLOAT,
+                    .offset = 0,
+            }
+    };
 
     const VkPipelineVertexInputStateCreateInfo vertexInputState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindingDescriptions.size()),
+            .vertexBindingDescriptionCount = vertexInputBindingDescriptions.size(),
             .pVertexBindingDescriptions = vertexInputBindingDescriptions.data(),
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributeDescriptions.size()),
+            .vertexAttributeDescriptionCount = vertexInputAttributeDescriptions.size(),
             .pVertexAttributeDescriptions = vertexInputAttributeDescriptions.data(),
     };
 
     const VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
             .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .primitiveRestartEnable = VK_FALSE,
     };
 
     const VkPipelineTessellationStateCreateInfo tessellationState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
             .patchControlPoints = 0,
     };
 
@@ -71,8 +64,6 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
 
     const VkPipelineViewportStateCreateInfo viewportState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
             .viewportCount = 1,
             .pViewports = &viewport,
             .scissorCount = 1,
@@ -81,8 +72,6 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
 
     const VkPipelineRasterizationStateCreateInfo rasterizationState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
             .depthClampEnable = VK_FALSE,
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = VK_POLYGON_MODE_FILL,
@@ -97,8 +86,6 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
 
     const VkPipelineMultisampleStateCreateInfo multisampleState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
             .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
             .sampleShadingEnable = VK_FALSE,
             .minSampleShading = 0.0f,
@@ -122,6 +109,7 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
             .maxDepthBounds = 1.0f,
     };
 
+    // TODO: Create for renderpass?
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
     colorBlendAttachments.push_back({
                                             .blendEnable = VK_FALSE,
@@ -131,16 +119,28 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
                                             .srcAlphaBlendFactor = {},
                                             .dstAlphaBlendFactor = {},
                                             .alphaBlendOp = {},
-                                            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                                                              VK_COLOR_COMPONENT_G_BIT |
+                                                              VK_COLOR_COMPONENT_B_BIT |
+                                                              VK_COLOR_COMPONENT_A_BIT,
+                                    });
+    colorBlendAttachments.push_back({
+                                            .blendEnable = VK_FALSE,
+                                            .srcColorBlendFactor = {},
+                                            .dstColorBlendFactor = {},
+                                            .colorBlendOp = {},
+                                            .srcAlphaBlendFactor = {},
+                                            .dstAlphaBlendFactor = {},
+                                            .alphaBlendOp = {},
+                                            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                                                              VK_COLOR_COMPONENT_G_BIT |
                                                               VK_COLOR_COMPONENT_B_BIT |
                                                               VK_COLOR_COMPONENT_A_BIT,
                                     });
 
     const VkPipelineColorBlendStateCreateInfo colorBlendState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .logicOpEnable = VK_FALSE,
+            .logicOpEnable = false,
             .logicOp = {},
             .attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size()),
             .pAttachments = colorBlendAttachments.data(),
@@ -149,16 +149,24 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
 
     const VkPipelineDynamicStateCreateInfo dynamicState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
             .dynamicStateCount = 0,
             .pDynamicStates = nullptr,
     };
 
+    // TODO: When per renderpass pipelines created, somehow control the format
+    std::array colorAttachmentFormats {VK_FORMAT_R16G16B16A16_SFLOAT, swapchainFormat};
+    const VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+            .viewMask = 0,
+            .colorAttachmentCount = colorAttachmentFormats.size(),
+            .pColorAttachmentFormats = colorAttachmentFormats.data(),
+            .depthAttachmentFormat = VK_FORMAT_UNDEFINED,
+            .stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
+    };
+
     VkGraphicsPipelineCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
+            .pNext = &pipelineRenderingCreateInfo,
             .stageCount = SHADER_STAGES,
             .pStages = shaderStageCreateInfos,
             .pVertexInputState = &vertexInputState,
@@ -171,13 +179,13 @@ Pipeline::Pipeline(VkDevice device, float width, float height,
             .pColorBlendState = &colorBlendState,
             .pDynamicState = &dynamicState,
             .layout = layout->getPipelineLayout(),
-            .renderPass = VK_NULL_HANDLE,
+            .renderPass = nullptr,
             .subpass = 0,
-            .basePipelineHandle = VK_NULL_HANDLE,
+            .basePipelineHandle = nullptr,
             .basePipelineIndex = 0,
     };
 
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(device, nullptr, 1, &createInfo, nullptr, &pipeline) != VK_SUCCESS) {
         throw std::runtime_error("Couldn't create pipeline");
     }
 }
@@ -194,21 +202,9 @@ VkPipelineLayout Pipeline::getPipelineLayout() const {
     return layout->getPipelineLayout();
 }
 
-bool Pipeline::isCompatible(const std::vector<VertexAttributeDescription> &otherAttributeDescriptions,
-                            const std::shared_ptr<PipelineLayout> &otherLayout) {
-    // TODO: remove "this"
+bool Pipeline::isCompatible(const std::shared_ptr<PipelineLayout> &otherLayout) {
     if (layout != otherLayout) {
         return false;
-    }
-
-    if (attributeDescriptions.size() != otherAttributeDescriptions.size()) {
-        return false;
-    }
-
-    for (uint32_t i = 0; i < attributeDescriptions.size(); ++i) {
-        if (attributeDescriptions[i] != otherAttributeDescriptions[i]) {
-            return false;
-        }
     }
 
     return true;

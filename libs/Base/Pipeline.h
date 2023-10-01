@@ -6,15 +6,12 @@
 
 class PipelineLayout;
 
-struct VertexAttribute;
-struct VertexAttributeDescription;
-
 // TODO: just a handle
 class Pipeline {
 public:
+    // TODO: Per renderpass pipelines, swapchain passed only where relevant
     Pipeline(VkDevice device, float width, float height,
-             const std::vector<VertexAttributeDescription> &attributeDescriptions,
-             const std::shared_ptr<PipelineLayout>& layout, const Shader &shader);
+             const std::shared_ptr<PipelineLayout>& layout, VkFormat swapchainFormat, const Shader &shader);
 
     ~Pipeline();
 
@@ -22,15 +19,13 @@ public:
 
     [[nodiscard]] VkPipelineLayout getPipelineLayout() const;
 
-    bool isCompatible(const std::vector<VertexAttributeDescription> &otherAttributeDescriptions,
-                      const std::shared_ptr<PipelineLayout> &otherLayout);
+    bool isCompatible(const std::shared_ptr<PipelineLayout> &otherLayout);
 
 private:
     VkDevice device;
 
     VkPipeline pipeline;
 
-    std::vector<VertexAttributeDescription> attributeDescriptions;
     std::shared_ptr<PipelineLayout> layout;
 
     static VkPipelineShaderStageCreateInfo

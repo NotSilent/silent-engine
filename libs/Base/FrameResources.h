@@ -4,6 +4,7 @@
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan_core.h>
 #include "DeferredRenderPass.h"
+#include "Queue.h"
 
 class Image;
 class DrawData;
@@ -38,7 +39,7 @@ public:
 
     FrameResources &operator=(FrameResources &&other) noexcept;
 
-    void renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t graphicsQueueFamilyIndex, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea);
+    void renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea);
 
     // Should be handled by whatever will create Images
     void destroy();
@@ -53,11 +54,6 @@ private:
     VkCommandBuffer cmd;
 
     FrameSynchronization synchronization;
-
-    // TODO:
-    // Should be just a handle, from ImageManager
-    // Default move constructors after changing to handle
-    std::shared_ptr<Image> _colorImage;
 
     DeferredRenderPass deferredRenderPass;
 };

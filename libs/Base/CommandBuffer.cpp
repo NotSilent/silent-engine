@@ -4,8 +4,7 @@
 
 void CommandBuffer::pipelineBarrier(VkCommandBuffer cmd, VkPipelineStageFlags srcStageMask,
                                     VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask,
-                                    VkAccessFlags dstAccessMask, VkImageLayout oldLayout, VkImageLayout newLayout,
-                                    uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex, VkImage image,
+                                    VkAccessFlags dstAccessMask, VkImageLayout oldLayout, VkImageLayout newLayout, VkImage image,
                                     VkImageAspectFlags aspectMask) {
     VkImageSubresourceRange subresourceRange{
             .aspectMask = aspectMask,
@@ -17,13 +16,12 @@ void CommandBuffer::pipelineBarrier(VkCommandBuffer cmd, VkPipelineStageFlags sr
     std::vector<VkImageMemoryBarrier> memoryBarriers;
     memoryBarriers.push_back(VkImageMemoryBarrier{
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-            .pNext = nullptr,
             .srcAccessMask = srcAccessMask,
             .dstAccessMask = dstAccessMask,
             .oldLayout = oldLayout,
             .newLayout = newLayout,
-            .srcQueueFamilyIndex = srcQueueFamilyIndex,
-            .dstQueueFamilyIndex = dstQueueFamilyIndex,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image = image,
             .subresourceRange = subresourceRange,
     });

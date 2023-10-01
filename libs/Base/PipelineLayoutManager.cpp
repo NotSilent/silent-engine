@@ -7,7 +7,7 @@ PipelineLayoutManager::PipelineLayoutManager(VkDevice device)
         : device(device) {
 }
 
-std::shared_ptr<PipelineLayout> PipelineLayoutManager::getLayout(const std::vector<VkDescriptorType> &types) {
+std::shared_ptr<PipelineLayout> PipelineLayoutManager::getLayout() {
     auto layout = std::make_shared<PipelineLayout>(device, sizeof(PushData));
     _layouts.push_back(layout);
 

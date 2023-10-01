@@ -6,22 +6,21 @@
 #include <vector>
 #include <ranges>
 
-PipelineManager::PipelineManager(VkDevice device, float width, float height,
+PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, float width, float height,
                                  std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager)
         : device(device)
+        , swapchainFormat(swapchainFormat)
         , width(width)
         , height(height)
         , pipelineLayoutManager(std::move(pipelineLayoutManager))
         , shaderManager(device){
 }
 
-std::shared_ptr<Pipeline> PipelineManager::getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
-                                                       const std::vector<VkDescriptorType> &types,
-                                                       const std::string &shaderName) {
-    auto pipelineLayout = pipelineLayoutManager->getLayout(types);
+std::shared_ptr<Pipeline> PipelineManager::getPipeline(const std::string &shaderName) {
+    auto pipelineLayout = pipelineLayoutManager->getLayout();
 
     auto found = std::find_if(pipelines.begin(), pipelines.end(), [&](std::shared_ptr<Pipeline> &pipeline) {
-        return pipeline->isCompatible(descriptions, pipelineLayout);
+        return pipeline->isCompatible(pipelineLayout);
     });
 
     if (found != pipelines.end()) {
@@ -32,8 +31,8 @@ std::shared_ptr<Pipeline> PipelineManager::getPipeline(const std::vector<VertexA
 
     if(shader.has_value())
     {
-        auto pipeline = std::make_shared<Pipeline>(device, width, height, descriptions, pipelineLayout,
-                                                   shader.value());
+        auto pipeline = std::make_shared<Pipeline>(device, width, height, pipelineLayout,
+                                                   swapchainFormat, shader.value());
         pipelines.push_back(pipeline);
 
         return pipeline;

@@ -2,10 +2,15 @@
 
 #include <vulkan/vulkan_core.h>
 #include <functional>
+#include "Image.h"
 
 class DeferredRenderPass {
 public:
-    DeferredRenderPass(VkRect2D renderArea, VkImage swapchainImage, VkImageView swapchainImageView);
+    DeferredRenderPass(VkDevice device,
+                       VmaAllocator allocator,
+                       VkRect2D renderArea,
+                       VkImage swapchainImage,
+                       VkImageView swapchainImageView);
 
     DeferredRenderPass(DeferredRenderPass& other) = delete;
     DeferredRenderPass& operator=(DeferredRenderPass& other) = delete;
@@ -13,18 +18,27 @@ public:
     DeferredRenderPass(DeferredRenderPass&& other) = default;
     DeferredRenderPass& operator=(DeferredRenderPass&& other) = default;
 
+    void destroy();
+
     void render(VkCommandBuffer cmd,
-                uint32_t graphicsQueueFamilyIndex,
                 const std::function<void(VkCommandBuffer cmd)>& renderPassRecording);
 
 private:
+    VkDevice device;
+    VmaAllocator allocator;
+
     static inline VkClearValue clearValue{1.0f, 0.0f, 1.0f, 1.0f};
+    static inline VkClearValue clearValue2{0.0f, 1.0f, 0.0f, 1.0f};
 
     VkRect2D renderArea;
 
     VkImage swapchainImage;
     VkImageView swapchainImageView;
 
-    void beginRenderPass(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView, uint32_t graphicsQueueFamilyIndex);
-    void endRenderPass(VkCommandBuffer cmd, VkImage swapchainImage, uint32_t graphicsQueueFamilyIndex);
+    Image colorImage;
+
+    void beginRenderPass(VkCommandBuffer cmd);
+    void endRenderPass(VkCommandBuffer cmd);
+
+    [[nodiscard]] Image createColorImage() const;
 };

@@ -7,19 +7,19 @@
 #include <memory>
 #include <string>
 
-class Material;
+class Pipeline;
 
 class MeshComponent : public Component {
 public:
-    void setMesh(std::shared_ptr<Mesh> mesh);
+    void setMesh(std::shared_ptr<Mesh> newMesh);
 
-    void setMaterial(std::shared_ptr<Material> material);
+    void setPipeline(std::shared_ptr<Pipeline> newPipeline);
 
     [[nodiscard]] std::shared_ptr<Mesh> getMesh() const;
 
-    [[nodiscard]] std::shared_ptr<Material> getMaterial() const;
+    [[nodiscard]] std::shared_ptr<Pipeline> getPipeline() const;
 
 private:
-    std::shared_ptr<Mesh> _mesh;
-    std::shared_ptr<Material> _material;
+    std::shared_ptr<Mesh> mesh;
+    std::shared_ptr<Pipeline> pipeline;
 };

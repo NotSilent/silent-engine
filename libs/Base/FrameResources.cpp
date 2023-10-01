@@ -30,7 +30,7 @@ FrameResources::FrameResources(VkDevice device,
         , queueFamilyIndex(queueFamilyIndex)
         , cmdPool(VkInit::createCommandPool(device, queueFamilyIndex))
         , synchronization(device)
-        , deferredRenderPass(renderArea, swapchainImage, swapchainImageView) {
+        , deferredRenderPass(device, allocator, renderArea, swapchainImage, swapchainImageView) {
     ImageCreateInfo colorImageCreateInfo{
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
@@ -39,8 +39,6 @@ FrameResources::FrameResources(VkDevice device,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
     };
-
-    _colorImage = std::make_shared<Image>(device, allocator, colorImageCreateInfo);
 
     VkCommandBufferAllocateInfo allocateInfo {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -61,9 +59,6 @@ FrameResources::FrameResources(FrameResources &&other) noexcept
     queueFamilyIndex = other.queueFamilyIndex;
     cmdPool = other.cmdPool;
     cmd = other.cmd;
-
-    // TODO: Move?
-    _colorImage = other._colorImage;
 }
 
 FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
@@ -80,9 +75,6 @@ FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
 
     synchronization = other.synchronization;
 
-    // TODO: Move?
-    _colorImage = other._colorImage;
-
     deferredRenderPass = std::move(other.deferredRenderPass);
 
     return *this;
@@ -94,10 +86,10 @@ void FrameResources::destroy() {
     vkResetCommandPool(device, cmdPool, {});
     vkDestroyCommandPool(device, cmdPool, nullptr);
 
-    _colorImage->destroy(device, allocator);
+    deferredRenderPass.destroy();
 }
 
-void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t graphicsQueueFamilyIndex, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea) {
+void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea) {
     vkWaitForFences(device, 1, &synchronization.queueFence, true, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &synchronization.queueFence);
 
@@ -118,9 +110,9 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
 
     vkBeginCommandBuffer(cmd, &beginInfo);
 
-    deferredRenderPass.render(cmd, graphicsQueueFamilyIndex, [&drawData](VkCommandBuffer commandBuffer) {
+    deferredRenderPass.render(cmd, [&drawData](VkCommandBuffer commandBuffer) {
         for (const DrawCall &drawCall: drawData.getDrawCalls()) {
-            PushData pushData(glm::mat4(1.0f), drawData.view, drawData.projection);
+            PushData pushData(drawCall.model, drawData.view, drawData.projection);
 
             vkCmdPushConstants(commandBuffer, drawCall.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData),
                                &pushData);

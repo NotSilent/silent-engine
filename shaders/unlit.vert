@@ -1,5 +1,4 @@
 #version 450
-// #extension GL_KHR_vulkan_glsl : enable
 
 layout (push_constant) uniform Push {
     mat4 model;

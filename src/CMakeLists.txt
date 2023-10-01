@@ -10,6 +10,10 @@ if (MSVC)
     target_link_options(sengine PRIVATE $<$<CONFIG:RELWITHDEBINFO>:/PROFILE>)
 endif ()
 
-#file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/build/shaders/)
+#file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/build/shaders)
+#file(COPY ../shaders DESTINATION ${CMAKE_BINARY_DIR}/build)
 
-file(COPY ../shaders DESTINATION ${CMAKE_BINARY_DIR}/build)
+add_custom_target(copy_shaders
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_BINARY_DIR}/build/shaders
+)
+add_dependencies(sengine copy_shaders)

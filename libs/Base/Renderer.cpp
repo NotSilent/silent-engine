@@ -34,12 +34,14 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
     _imageManager = ImageManager(device, _allocator, _commandPool);
     _samplerManager = SamplerManager(device, _allocator, _commandPool);
     _pipelineLayoutManager = std::make_shared<PipelineLayoutManager>(device);
-    _pipelineManager = std::make_shared<PipelineManager>(device, static_cast<float>(window->getWidth()),
+    _pipelineManager = std::make_shared<PipelineManager>(device, swapchain.image_format, static_cast<float>(window->getWidth()),
                                                          static_cast<float>(window->getHeight()),
                                                          _pipelineLayoutManager);
-    _materialManager = MaterialManager(device, _pipelineManager);
 
     presentFence = VkInit::createFence(device, {});
+
+    graphicsQueue.queue = device.get_queue(vkb::QueueType::graphics).value();
+    graphicsQueue.familyIndex = device.get_queue_index(vkb::QueueType::graphics).value();
 }
 
 vkb::Instance Renderer::createInstance() {
@@ -112,7 +114,6 @@ Renderer::~Renderer() {
     _imageManager.destroy();
     _samplerManager.destroy();
     _textureManager.destroy();
-    _materialManager.destroy();
     _pipelineManager->destroy();
     _pipelineLayoutManager->destroy();
 
@@ -177,13 +178,6 @@ std::shared_ptr<Texture> Renderer::getTexture(const std::string &name) {
     return _textureManager.getTexture(name);
 }
 
-std::shared_ptr<Material>
-Renderer::getMaterial(const std::vector<VertexAttributeDescription> &descriptions,
-                      const std::vector<VkDescriptorType> &types,
-                      std::vector<std::shared_ptr<Texture>> &textures) {
-    return _materialManager.getMaterial(descriptions, types, textures);
-}
-
 void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {
     VkSemaphore acquireSemaphore = VkInit::createSemaphore(device);
 
@@ -191,12 +185,13 @@ void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {
     vkAcquireNextImageKHR(device.device, swapchain.swapchain, std::numeric_limits<uint64_t>::max(),
                           acquireSemaphore, presentFence, &imageIndex);
 
-    VkQueue graphicsQueue = device.get_queue(vkb::QueueType::graphics).value();
-    uint32_t graphicsQueueFamilyIndex = device.get_queue_index(vkb::QueueType::graphics).value();
-
     FrameResources &frameResources = _frameResource[imageIndex];
-    frameResources.renderFrame(swapchain.swapchain, graphicsQueue, graphicsQueueFamilyIndex, imageIndex, acquireSemaphore, drawData, renderArea);
+    frameResources.renderFrame(swapchain.swapchain, graphicsQueue.queue, imageIndex, acquireSemaphore, drawData, renderArea);
 
     vkWaitForFences(device, 1, &presentFence, true, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &presentFence);
+}
+
+std::shared_ptr<Pipeline> Renderer::getPipeline(const std::string& shaderName) {
+    return _pipelineManager->getPipeline(shaderName);
 }

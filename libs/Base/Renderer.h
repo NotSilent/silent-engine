@@ -13,7 +13,6 @@
 #include "SamplerManager.h"
 #include "Texture.h"
 #include "TextureManager.h"
-#include "MaterialManager.h"
 #include "Window.h"
 #include "Sampler.h"
 #include "Buffer.h"
@@ -21,6 +20,7 @@
 #include "Entity.h"
 #include "MeshComponent.h"
 #include "FrameResources.h"
+#include "Queue.h"
 #include <functional>
 
 // TODO: VkCommandPool and VkCommands creation manager;
@@ -49,9 +49,7 @@ public:
 
     std::shared_ptr<Texture> getTexture(const std::string &name);
 
-    std::shared_ptr<Material>
-    getMaterial(const std::vector<VertexAttributeDescription> &descriptions, const std::vector<VkDescriptorType> &types,
-                std::vector<std::shared_ptr<Texture>> &textures);
+    std::shared_ptr<Pipeline> getPipeline(const std::string& shaderName);
 
 private:
     void draw(const DrawData &drawData, VkRect2D renderArea);
@@ -86,6 +84,8 @@ private:
 
     VkFence presentFence;
 
+    Queue graphicsQueue;
+
     // TODO: Remove?
     std::vector<VkImageView> _swapchainImageViews;
     std::vector<FrameResources> _frameResource;
@@ -94,7 +94,6 @@ private:
     ImageManager _imageManager;
     TextureManager _textureManager;
     SamplerManager _samplerManager;
-    MaterialManager _materialManager;
     std::shared_ptr<PipelineManager> _pipelineManager;
     std::shared_ptr<PipelineLayoutManager> _pipelineLayoutManager;
 };

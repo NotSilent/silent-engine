@@ -7,7 +7,6 @@ set(BASE_SOURCES
         DrawData.h DrawData.cpp
         Image.h Image.cpp
         Implementations.cpp
-        Material.h Material.cpp
         Mesh.h Mesh.cpp
         Pipeline.h Pipeline.cpp
         PipelineLayout.h PipelineLayout.cpp
@@ -17,7 +16,6 @@ set(BASE_SOURCES
         Sampler.h Sampler.cpp
         Texture.h Texture.cpp
         Vertex.h
-        VertexAttribute.h VertexAttribute.cpp
         VkInit.h VkInit.cpp
         Window.h Window.cpp
 
@@ -28,7 +26,6 @@ set(BASE_SOURCES
 
         BufferManager.h BufferManager.cpp
         ImageManager.h ImageManager.cpp
-        MaterialManager.h MaterialManager.cpp
         PipelineLayoutManager.h PipelineLayoutManager.cpp
         PipelineManager.h PipelineManager.cpp
         SamplerManager.h SamplerManager.cpp

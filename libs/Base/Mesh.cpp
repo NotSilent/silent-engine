@@ -2,15 +2,8 @@
 
 #include <utility>
 
-Mesh::Mesh(uint32_t indexCount, VkBuffer vertexBuffer, VkBuffer indexBuffer,
-           std::vector<VertexAttribute> attributes)
-        : _indexCount(indexCount), _vertexBuffer(vertexBuffer), _indexBuffer(indexBuffer),
-          _attributes(std::move(attributes)) {
-}
-
-void Mesh::destroy(VkDevice device, VmaAllocator allocator) {
-    //_vertexBuffer.destroy(device, allocator);
-    //_indexBuffer.destroy(device, allocator);
+Mesh::Mesh(uint32_t indexCount, VkBuffer vertexBuffer, VkBuffer indexBuffer)
+        : _indexCount(indexCount), _vertexBuffer(vertexBuffer), _indexBuffer(indexBuffer) {
 }
 
 uint32_t Mesh::getIndexCount() const {
@@ -24,8 +17,4 @@ VkBuffer Mesh::getVertexBuffer() const {
 
 VkBuffer Mesh::getIndexBuffer() const {
     return _indexBuffer;
-}
-
-std::vector<VertexAttribute> const &Mesh::getAttributes() const {
-    return _attributes;
 }

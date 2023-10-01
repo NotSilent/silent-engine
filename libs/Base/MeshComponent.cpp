@@ -1,18 +1,19 @@
 #include "MeshComponent.h"
-#include "Material.h"
 
-void MeshComponent::setMesh(std::shared_ptr<Mesh> mesh) {
-    _mesh = mesh;
+#include <utility>
+
+void MeshComponent::setMesh(std::shared_ptr<Mesh> newMesh) {
+    mesh = std::move(newMesh);
 }
 
-void MeshComponent::setMaterial(std::shared_ptr<Material> material) {
-    _material = material;
+void MeshComponent::setPipeline(std::shared_ptr<Pipeline> newPipeline) {
+    pipeline = std::move(newPipeline);
 }
 
 std::shared_ptr<Mesh> MeshComponent::getMesh() const {
-    return _mesh;
+    return mesh;
 }
 
-std::shared_ptr<Material> MeshComponent::getMaterial() const {
-    return _material;
+std::shared_ptr<Pipeline> MeshComponent::getPipeline() const {
+    return pipeline;
 }

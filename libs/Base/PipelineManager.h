@@ -2,7 +2,6 @@
 
 #include "VkBootstrap.h"
 #include "ShaderManager.h"
-#include "VertexAttribute.h"
 #include "PipelineLayout.h"
 #include <memory>
 #include <optional>
@@ -13,18 +12,20 @@ class PipelineLayoutManager;
 
 class PipelineManager {
 public:
-    PipelineManager(VkDevice device, float width, float height,
+    PipelineManager(VkDevice device, VkFormat swapchainFormat, float width, float height,
                     std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager);
 
     // TODO: Replace with optional
-    std::shared_ptr<Pipeline> getPipeline(const std::vector<VertexAttributeDescription> &descriptions,
-                                          const std::vector<VkDescriptorType> &types, const std::string &shaderName);
+    std::shared_ptr<Pipeline> getPipeline(const std::string &shaderName);
 
     // TODO: Remove all destroys
     void destroy();
 
 private:
     VkDevice device;
+
+    // TODO: Only in relevant renderpasses
+    VkFormat swapchainFormat;
 
     float width;
     float height;

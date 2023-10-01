@@ -46,42 +46,50 @@ int main() {
         entities.push_back(entityWithCamera);
     }
 
-    std::vector<VertexAttributeDescription> attributeDescriptions;
-    attributeDescriptions.push_back(VertexAttributeDescription{
-            .type = VertexAttributeType::Position,
-            .format = VK_FORMAT_R32G32B32_SFLOAT,
-            .stride = sizeof(Vertex),
-    });
-
-    std::vector<VertexAttribute> attributes;
-    attributes.push_back(VertexAttribute{
-            .description = attributeDescriptions[0],
-            .buffer = VK_NULL_HANDLE,
-            .bufferOffset = 0,
-    });
-
     renderer->addBuffer("meshVertices", sizeof(meshVertices), meshVertices);
     renderer->addBuffer("meshIndices", sizeof(meshIndices), meshIndices);
 
     std::vector<std::shared_ptr<Texture>> textures;
-    std::shared_ptr<Material> material= renderer->getMaterial(attributeDescriptions, {}, textures);
-    if(material)
+    std::shared_ptr<Pipeline> pipeline= renderer->getPipeline("unlit");
+    if(pipeline)
     {
         std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(6,
                                                                renderer->getBuffer("meshVertices"),
-                                                               renderer->getBuffer("meshIndices"),
-                                                               attributes);
+                                                               renderer->getBuffer("meshIndices"));
 
         // TODO: Recreate MeshManager
-        std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
-        meshComponent->setMesh(newMesh);
-        meshComponent->setMaterial(material);
 
         std::shared_ptr<Entity> entity = std::make_shared<Entity>();
+
+        std::shared_ptr<MeshComponent> meshComponent = std::make_shared<MeshComponent>();
+        meshComponent->setMesh(newMesh);
+        meshComponent->setPipeline(pipeline);
         Entity::addComponent(entity, meshComponent);
 
         entities.push_back(entity);
         meshComponents.push_back(meshComponent);
+
+        std::shared_ptr<Entity> entityTop = std::make_shared<Entity>();
+        entityTop->translate(glm::vec3{0.0f, 0.0f, 5.0f});
+
+        std::shared_ptr<MeshComponent> meshTop = std::make_shared<MeshComponent>();
+        meshTop->setMesh(newMesh);
+        meshTop->setPipeline(pipeline);
+        Entity::addComponent(entityTop, meshTop);
+
+        entities.push_back(entityTop);
+        meshComponents.push_back(meshTop);
+
+        std::shared_ptr<Entity> entityRight = std::make_shared<Entity>();
+        entityRight->translate(glm::vec3{5.0f, 0.0f, 0.0f});
+
+        std::shared_ptr<MeshComponent> meshRight = std::make_shared<MeshComponent>();
+        meshRight->setMesh(newMesh);
+        meshRight->setPipeline(pipeline);
+        Entity::addComponent(entityRight, meshRight);
+
+        entities.push_back(entityRight);
+        meshComponents.push_back(meshRight);
     }
 
     // TODO: move exit on escape to some component
@@ -94,7 +102,7 @@ int main() {
 
         DrawData drawData(EngineStatics::getCamera());
         for (auto &meshComponent: meshComponents) {
-            drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getMaterial(), meshComponent->getModel());
+            drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getPipeline(), meshComponent->getModel());
         }
 
         renderer->update(drawData, timeManager->getCurrentTime(), timeManager->getDeltaTime());
