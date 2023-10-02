@@ -2,74 +2,53 @@
 #include <algorithm>
 #include "glm/gtc/epsilon.hpp"
 
-// TODO: Seems to work for now, verify after changing engine coordinate space
-// Had to invert corners for the commented faces
-
 PatchedSphere::PatchedSphere(uint32_t subdivisions) {
+    // Directions are based on the observer in the middle of the sphere
+    // and facing forward direction
+
     // The one that is in the forward direction
     Face forwardFace {
-            .topLeft = {1.0f, 1.0f, 1.0f},
-            .topRight = {-1.0f, 1.0f, 1.0f},
-            .bottomLeft = {1.0f, -1.0f, 1.0f},
-            .bottomRight = {-1.0f, -1.0f, 1.0f},
+            .topLeft = {-1.0f, 1.0f, 1.0f},
+            .topRight = {1.0f, 1.0f, 1.0f},
+            .bottomLeft = {-1.0f, -1.0f, 1.0f},
+            .bottomRight = {1.0f, -1.0f, 1.0f},
     };
 
     // The one that actually faces the screen
-//    Face backFace {
-//            .topLeft = {1.0f, 1.0f, -1.0f},
-//            .topRight = {-1.0f, 1.0f, -1.0f},
-//            .bottomLeft = {1.0f, -1.0f, -1.0f},
-//            .bottomRight = {-1.0f, -1.0f, -1.0f},
-//    };
-
     Face backFace {
-            .topLeft = {-1.0f, 1.0f, -1.0f},
-            .topRight = {1.0f, 1.0f, -1.0f},
-            .bottomLeft = {-1.0f, -1.0f, -1.0f},
-            .bottomRight = {1.0f, -1.0f, -1.0f}
-    };
-
-//    Face leftFace {
-//            .topLeft = {-1.0f, 1.0f, -1.0f},
-//            .topRight = {-1.0f, 1.0f, 1.0f},
-//            .bottomLeft = {-1.0f, -1.0f, -1.0f},
-//            .bottomRight = {-1.0f, -1.0f, 1.0f},
-//    };
-
-    Face leftFace {
-            .topLeft = {-1.0f, 1.0f, 1.0f},
+            .topLeft = {1.0f, 1.0f, -1.0f},
             .topRight = {-1.0f, 1.0f, -1.0f},
-            .bottomLeft = {-1.0f, -1.0f, 1.0f},
+            .bottomLeft = {1.0f, -1.0f, -1.0f},
             .bottomRight = {-1.0f, -1.0f, -1.0f},
     };
 
+    Face leftFace {
+            .topLeft = {-1.0f, 1.0f, -1.0f},
+            .topRight = {-1.0f, 1.0f, 1.0f},
+            .bottomLeft = {-1.0f, -1.0f, -1.0f},
+            .bottomRight = {-1.0f, -1.0f, 1.0f},
+    };
+
     Face rightFace {
-            .topLeft = {1.0f, 1.0f, -1.0f},
-            .topRight = {1.0f, 1.0f, 1.0f},
-            .bottomLeft = {1.0f, -1.0f, -1.0f},
-            .bottomRight = {1.0f, -1.0f, 1.0f},
+            .topLeft = {1.0f, 1.0f, 1.0f},
+            .topRight = {1.0f, 1.0f, -1.0f},
+            .bottomLeft = {1.0f, -1.0f, 1.0f},
+            .bottomRight = {1.0f, -1.0f, -1.0f},
     };
 
     // From center of the cube, look up by rotating around x axis
-//    Face topFace {
-//            .topLeft = {-1.0f, 1.0f, -1.0f},
-//            .topRight = {1.0f, 1.0f, -1.0f},
-//            .bottomLeft = {-1.0f, 1.0f, 1.0f},
-//            .bottomRight = {1.0f, 1.0f, 1.0f},
-//    };
-
     Face topFace {
-            .topLeft = {1.0f, 1.0f, -1.0f},
-            .topRight = {-1.0f, 1.0f, -1.0f},
-            .bottomLeft = {1.0f, 1.0f, 1.0f},
-            .bottomRight = {-1.0f, 1.0f, 1.0f},
+            .topLeft = {-1.0f, 1.0f, -1.0f},
+            .topRight = {1.0f, 1.0f, -1.0f},
+            .bottomLeft = {-1.0f, 1.0f, 1.0f},
+            .bottomRight = {1.0f, 1.0f, 1.0f},
     };
 
     Face bottomFace {
-            .topLeft = {-1.0f, -1.0f, -1.0f},
-            .topRight = {1.0f, -1.0f, -1.0f},
-            .bottomLeft = {-1.0f, -1.0f, 1.0f},
-            .bottomRight = {1.0f, -1.0f, 1.0f},
+            .topLeft = {-1.0f, -1.0f, 1.0f},
+            .topRight = {1.0f, -1.0f, 1.0f},
+            .bottomLeft = {-1.0f, -1.0f, -1.0f},
+            .bottomRight = {1.0f, -1.0f, -1.0f},
     };
 
     std::vector<Face> faces {
@@ -111,7 +90,7 @@ std::vector<glm::vec3> PatchedSphere::getVertices() const {
     return vertices;
 }
 
-std::vector<int32_t> PatchedSphere::getIndices() const {
+std::vector<uint32_t> PatchedSphere::getIndices() const {
     return indices;
 }
 

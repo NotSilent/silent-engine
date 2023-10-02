@@ -16,15 +16,6 @@ const std::string ENGINE_NAME = "Silent Engine";
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
-//glm::vec3 meshVertices[]{
-//        glm::vec3(-0.5f, 0.0f, 0.5f),
-//        glm::vec3(-0.5f, 0.0f, -0.5f),
-//        glm::vec3(0.5f, 0.0f, 0.5f),
-//        glm::vec3(0.5f, 0.0f, -0.5f),
-//};
-//
-//uint32_t meshIndices[]{0, 1, 2, 2, 1, 3};
-
 int main() {
     std::shared_ptr<Window> window = std::make_shared<Window>(WIDTH, HEIGHT, ENGINE_NAME);
     std::shared_ptr<EngineStatics> engineStatics = std::make_shared<EngineStatics>(window);
@@ -47,7 +38,7 @@ int main() {
         entities.push_back(entityWithCamera);
     }
 
-    PatchedSphere patchedSphere(4);
+    PatchedSphere patchedSphere(2);
 
     renderer->addBuffer("meshVertices", patchedSphere.getVertices().size() * sizeof(glm::vec3), patchedSphere.getVertices().data());
     renderer->addBuffer("meshIndices", patchedSphere.getIndices().size() * sizeof(uint32_t), patchedSphere.getIndices().data());
@@ -73,7 +64,7 @@ int main() {
         meshComponents.push_back(meshComponent);
 
         std::shared_ptr<Entity> entityTop = std::make_shared<Entity>();
-        entityTop->translate(glm::vec3{0.0f, 0.0f, 5.0f});
+        entityTop->translate(glm::vec3{0.0f, 5.0f, 0.0f});
 
         std::shared_ptr<MeshComponent> meshTop = std::make_shared<MeshComponent>();
         meshTop->setMesh(newMesh);

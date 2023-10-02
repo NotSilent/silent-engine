@@ -10,8 +10,6 @@ public:
 
 	virtual void update(float deltaTime) override;
 
-	std::shared_ptr<Camera> getCamera();
-
 private:
 	std::shared_ptr<Camera> _camera;
 	std::shared_ptr<InputSystem> _inputManager;

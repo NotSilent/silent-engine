@@ -6,6 +6,7 @@
 #include "glm/glm.hpp"
 
 enum class Key {
+    Space = GLFW_KEY_SPACE,
     A = GLFW_KEY_A,
     D = GLFW_KEY_D,
     F = GLFW_KEY_F,
@@ -13,6 +14,7 @@ enum class Key {
     W = GLFW_KEY_W,
     Escape = GLFW_KEY_ESCAPE,
     Tab = GLFW_KEY_TAB,
+    Ctrl = GLFW_KEY_LEFT_CONTROL,
 };
 
 enum class KeyState {

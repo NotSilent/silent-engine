@@ -3,12 +3,6 @@
 #include "glm/mat4x2.hpp"
 #include "glm/vec3.hpp"
 
-// TODO: Change to
-// Engine
-// x right
-// y up
-// z forward
-
 // 1/((w/h)tan(theta/2))) 0            0       0
 // 0                      tan(theta/2) 0       0
 // 0                      0            f/(f-n) -fn/(f-n)
@@ -18,11 +12,11 @@
 // x right
 // y bottom
 // z forward
-//
+
 // Engine
 // x right
-// y forward
-// z up
+// y up
+// z forward
 
 class Camera {
 public:
@@ -40,7 +34,7 @@ public:
 
     Camera &operator=(Camera &&other) = default;
 
-    void update(glm::vec2 directionInput, glm::vec2 rotationInput);
+    void update(glm::vec3 directionInput, glm::vec2 rotationInput, float deltaTime);
 
     [[nodiscard]] glm::vec3 getPosition() const;
 
@@ -50,18 +44,14 @@ public:
 
 private:
     // todo: Vector::FORWARD
-    static constexpr glm::vec3 FORWARD{0.0f, 1.0f, 0.0f};
-    static constexpr glm::vec3 UP{0.0f, 0.0f, 1.0f};
+    static constexpr glm::vec3 FORWARD{0.0f, 0.0f, 1.0f};
+    static constexpr glm::vec3 UP{0.0f, 1.0f, 0.0f};
     static constexpr glm::vec3 RIGHT{1.0f, 0.0f, 0.0f};
 
-    static constexpr glm::mat4 _engineToVulkanCoordinateSpace = {1.0f, 0.0f, 0.0f,
-                                                                 0.0f,
-                                                                 0.0f, 0.0f, 1.0f,
-                                                                 0.0f,
-                                                                 0.0f, -1.0f, 0.0f,
-                                                                 0.0f,
-                                                                 0.0f, 0.0f, 0.0f,
-                                                                 1.0f};
+    static constexpr glm::mat4 _engineToVulkanCoordinateSpace = {1.0f, 0.0f, 0.0f,0.0f,
+                                                                 0.0f, -1.0f, 0.0f, 0.0f,
+                                                                 0.0f, 0.0f, 1.0f,0.0f,
+                                                                 0.0f, 0.0f, 0.0f, 1.0f};
 
     glm::mat4 _transform{1.0f};
     glm::mat4 _projection{};
@@ -69,12 +59,12 @@ private:
     glm::vec3 _displacement{0.0f};
     glm::vec2 _rotation{0.0f};
 
-    float _displacementPerSecond{0.05f};
+    float _displacementPerSecond{0.025f};
     float _anglePerSecond{0.15f};
     float _horizontalAngle{0.0f};
     float _verticalAngle{0.0f};
 
     glm::vec3 _currentDirection{0.0f, 0.0f, 1.0f};
 
-    glm::mat4 createProjection(float aspectRatio, float fov, float near, float far);
+    static glm::mat4 createProjection(float aspectRatio, float fov, float near, float far);
 };

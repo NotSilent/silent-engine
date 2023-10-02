@@ -11,28 +11,32 @@ CameraComponent::CameraComponent() {
 }
 
 void CameraComponent::update(float deltaTime) {
-    glm::vec2 input{0.0f};
+    glm::vec3 input{0.0f};
 
     // TODO: Add deltaTime
-    if (_inputManager->getKeyState(Key::W) == KeyState::Press) {
-        input.y += _displacementPerSecond * deltaTime;
+    if (_inputManager->getKeyState(Key::Space) == KeyState::Press) {
+        input.y += _displacementPerSecond;
     }
 
-    if (_inputManager->getKeyState(Key::S) == KeyState::Press) {
-        input.y -= _displacementPerSecond * deltaTime;
+    if (_inputManager->getKeyState(Key::Ctrl) == KeyState::Press) {
+        input.y -= _displacementPerSecond;
     }
 
     if (_inputManager->getKeyState(Key::A) == KeyState::Press) {
-        input.x -= _displacementPerSecond * deltaTime;
+        input.x -= _displacementPerSecond;
     }
 
     if (_inputManager->getKeyState(Key::D) == KeyState::Press) {
-        input.x += _displacementPerSecond * deltaTime;
+        input.x += _displacementPerSecond;
     }
 
-    _camera->update(input, _inputManager->getCursorDisplacement() * _cameraRotationPerSecond * deltaTime);
-}
+    if (_inputManager->getKeyState(Key::W) == KeyState::Press) {
+        input.z += _displacementPerSecond;
+    }
 
-std::shared_ptr<Camera> CameraComponent::getCamera() {
-    return _camera;
+    if (_inputManager->getKeyState(Key::S) == KeyState::Press) {
+        input.z -= _displacementPerSecond;
+    }
+
+    _camera->update(input, _inputManager->getCursorDisplacement() * _cameraRotationPerSecond, deltaTime);
 }
