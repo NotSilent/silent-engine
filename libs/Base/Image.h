@@ -20,10 +20,10 @@ struct ImageCreateInfo {
 
 class Image {
 private:
-    VkImage _image = VK_NULL_HANDLE;
-    VkImageView _imageView = VK_NULL_HANDLE;
+    VkImage _image = nullptr;
+    VkImageView _imageView = nullptr;
 
-    VmaAllocation _allocation = VK_NULL_HANDLE;
+    VmaAllocation _allocation = nullptr;
 
 public:
     Image() = default;

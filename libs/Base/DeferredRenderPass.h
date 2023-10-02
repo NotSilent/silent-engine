@@ -30,6 +30,8 @@ private:
     static inline VkClearValue clearValue{1.0f, 0.0f, 1.0f, 1.0f};
     static inline VkClearValue clearValue2{0.0f, 1.0f, 0.0f, 1.0f};
 
+    static inline VkClearValue depthClearValue {1.0f, 0};
+
     VkRect2D renderArea;
 
     VkImage swapchainImage;
@@ -37,8 +39,12 @@ private:
 
     Image colorImage;
 
+    Image depthImage;
+
     void beginRenderPass(VkCommandBuffer cmd);
     void endRenderPass(VkCommandBuffer cmd);
 
     [[nodiscard]] Image createColorImage() const;
+
+    [[nodiscard]] Image createDepthImage() const;
 };

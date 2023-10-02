@@ -10,23 +10,15 @@ Camera::Camera(float aspectRatio)
 }
 
 void Camera::update(glm::vec3 directionInput, glm::vec2 rotationInput, float deltaTime) {
-    //glm::vec2 displacement = directionInput * _displacementPerSecond;
-    //glm::vec2 rotation = rotationInput /** _anglePerSecond*/;
-
-    //_rotation += rotation;
-
-    //glm::vec3 direction = glm::rotate(FORWARD, _rotation.x, UP);
-    //direction = glm::rotate(direction, _rotation.y, RIGHT);
-
-    //glm::vec3 displacement = glm::rotate(glm::vec3(directionInput, 0.0f), _rotation.x, UP);
-    //displacement = glm::rotate(direction, _rotation.y, RIGHT);
 
     _displacement += directionInput * _displacementPerSecond * deltaTime;
 
-    //glm::mat4 m_rotation = glm::rotate(glm::mat4(1.0f), _rotation.x, -UP);
-    //m_rotation = glm::rotate(m_rotation, _rotation.y, RIGHT);
+    // TODO: this is just temp orbiting camera
 
-    _transform = glm::translate(glm::mat4(1.0f), _displacement);
+    _rotation += rotationInput * _anglePerSecond;
+    glm::mat4 rotationMat = glm::rotate(glm::mat4(1.0f), _rotation.x, UP);
+
+    _transform = glm::translate(rotationMat, _displacement);
 }
 
 glm::vec3 Camera::getPosition() const {

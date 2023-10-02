@@ -60,7 +60,7 @@ private:
     glm::vec2 _rotation{0.0f};
 
     float _displacementPerSecond{0.025f};
-    float _anglePerSecond{0.15f};
+    float _anglePerSecond{0.025f};
     float _horizontalAngle{0.0f};
     float _verticalAngle{0.0f};
 
