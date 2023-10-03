@@ -2,38 +2,86 @@
 
 #include "VkBootstrap.h"
 #include "ShaderManager.h"
-#include "PipelineLayout.h"
 #include <memory>
 #include <optional>
 
-class Pipeline;
-
-class PipelineLayoutManager;
-
 class PipelineManager {
 public:
-    PipelineManager(VkDevice device, VkFormat swapchainFormat, float width, float height,
-                    std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager);
+    PipelineManager(VkDevice device, VkFormat swapchainFormat, const VkRect2D& renderArea);
 
-    // TODO: Replace with optional
-    std::shared_ptr<Pipeline> getPipeline(const std::string &shaderName);
-
-    // TODO: Remove all destroys
+    // TODO: Remove all destroys?
     void destroy();
+
+    [[nodiscard]] VkPipelineLayout getDeferredPipelineLayout() const;
+    [[nodiscard]] VkPipelineLayout getCompositePipelineLayout() const;
+
+    [[nodiscard]] VkPipeline getDeferredPipeline() const;
+    [[nodiscard]] VkPipeline getCompositePipeline() const;
 
 private:
     VkDevice device;
 
-    // TODO: Only in relevant renderpasses
-    VkFormat swapchainFormat;
-
-    float width;
-    float height;
-
-    std::vector<std::shared_ptr<Pipeline>> pipelines;
-    std::shared_ptr<PipelineLayoutManager> pipelineLayoutManager;
+    VkRect2D renderArea;
 
     ShaderManager shaderManager;
+
+    VkPipelineLayout deferredPipelineLayout;
+    VkPipelineLayout compositePipelineLayout;
+
+    VkPipeline deferredPipeline;
+    VkPipeline compositePipeline;
+
+    [[nodiscard]] std::optional<VkPipelineLayout> createPipelineLayout(uint32_t pushConstantRangeCount, const VkPushConstantRange* pushConstantRange);
+
+    [[nodiscard]] std::optional<VkPipeline> createDeferredPipeline();
+
+    [[nodiscard]] std::optional<VkPipeline> createCompositePipeline(VkFormat swapchainFormat);
+
+    // TODO: unify color attachments?
+    [[nodiscard]] std::optional<VkPipeline> createPipeline(const Shader& shader,
+                                                           uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
+                                                           uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription* pVertexAttributeDescriptions,
+                                                           uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments,
+                                                           uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats,
+                                                           VkPipelineLayout pipelineLayout);
+
+    [[nodiscard]] static VkPipelineVertexInputStateCreateInfo
+    createPipelineVertexInputStateCreateInfo(uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
+                                             uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription* pVertexAttributeDescriptions);
+
+    [[nodiscard]] static VkPipelineShaderStageCreateInfo
+    createPipelineShaderStageCreateInfo(VkShaderStageFlagBits shaderStage, VkShaderModule module);
+
+    [[nodiscard]] static VkPipelineRasterizationStateCreateInfo
+    createRasterizationStateCreateInfo();
+
+    [[nodiscard]] static VkPipelineInputAssemblyStateCreateInfo
+    createPipelineInputAssemblyStateCreateInfo();
+
+    [[nodiscard]] static VkPipelineTessellationStateCreateInfo
+    createPipelineTessellationStateCreateInfo();
+
+    [[nodiscard]] static VkPipelineViewportStateCreateInfo
+    createViewportStateCreateInfo(const VkViewport& viewport, const VkRect2D& renderArea);
+
+    [[nodiscard]] static VkPipelineMultisampleStateCreateInfo
+    createPipelineMultisampleStateCreateInfo();
+
+    [[nodiscard]] static VkPipelineDepthStencilStateCreateInfo
+    createPipelineDepthStencilStateCreateInfo();
+
+    [[nodiscard]] static VkPipelineColorBlendAttachmentState
+    createPipelineColorBlendAttachmentState();
+
+    [[nodiscard]] static VkPipelineColorBlendStateCreateInfo
+    createPipelineColorBlendStateCreateInfo(uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments);
+
+    [[nodiscard]] static VkPipelineDynamicStateCreateInfo
+    createPipelineDynamicStateCreateInfo();
+
+    // TODO: configure depth
+    [[nodiscard]] static VkPipelineRenderingCreateInfoKHR
+    createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats);
 };
 
 // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#descriptorsets-compatibility

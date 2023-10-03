@@ -22,21 +22,18 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
 
     uint32_t queueFamilyIndex = device.get_queue_index(vkb::QueueType::graphics).value();;
 
-    for (size_t i = 0; i < swapchain.image_count; ++i) {
-        _frameResource.emplace_back(
-                device.device, _allocator, queueFamilyIndex, swapchainImages[i], _swapchainImageViews[i], _renderArea);
-    }
-
     _commandPool = VkInit::createCommandPool(device, device.get_queue_index(vkb::QueueType::graphics).value());
 
     _textureManager = TextureManager(device, _allocator, _commandPool);
     _bufferManager = BufferManager(device, _allocator, _commandPool);
     _imageManager = ImageManager(device, _allocator, _commandPool);
     _samplerManager = SamplerManager(device, _allocator, _commandPool);
-    _pipelineLayoutManager = std::make_shared<PipelineLayoutManager>(device);
-    _pipelineManager = std::make_shared<PipelineManager>(device, swapchain.image_format, static_cast<float>(window->getWidth()),
-                                                         static_cast<float>(window->getHeight()),
-                                                         _pipelineLayoutManager);
+    _pipelineManager = std::make_shared<PipelineManager>(device, swapchain.image_format, _renderArea);
+
+    for (size_t i = 0; i < swapchain.image_count; ++i) {
+        _frameResource.emplace_back(
+                device.device, _allocator, queueFamilyIndex, swapchainImages[i], _swapchainImageViews[i], _pipelineManager->getCompositePipeline(), _renderArea);
+    }
 
     presentFence = VkInit::createFence(device, {});
 
@@ -115,7 +112,6 @@ Renderer::~Renderer() {
     _samplerManager.destroy();
     _textureManager.destroy();
     _pipelineManager->destroy();
-    _pipelineLayoutManager->destroy();
 
     vmaDestroyAllocator(_allocator);
 
@@ -186,12 +182,20 @@ void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {
                           acquireSemaphore, presentFence, &imageIndex);
 
     FrameResources &frameResources = _frameResource[imageIndex];
-    frameResources.renderFrame(swapchain.swapchain, graphicsQueue.queue, imageIndex, acquireSemaphore, drawData, renderArea);
+    frameResources.renderFrame(swapchain.swapchain, graphicsQueue.queue, imageIndex, acquireSemaphore, drawData);
 
     vkWaitForFences(device, 1, &presentFence, true, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &presentFence);
 }
 
-std::shared_ptr<Pipeline> Renderer::getPipeline(const std::string& shaderName) {
-    return _pipelineManager->getPipeline(shaderName);
+VkPipelineLayout Renderer::getDeferredPipelineLayout() const {
+    return _pipelineManager->getDeferredPipelineLayout();
+}
+
+VkPipeline Renderer::getDeferredPipeline() const {
+    return _pipelineManager->getDeferredPipeline();
+}
+
+VkPipeline Renderer::getCompositePipeline() const {
+    return _pipelineManager->getCompositePipeline();
 }

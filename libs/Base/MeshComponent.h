@@ -7,19 +7,17 @@
 #include <memory>
 #include <string>
 
-class Pipeline;
-
 class MeshComponent : public Component {
 public:
     void setMesh(std::shared_ptr<Mesh> newMesh);
 
-    void setPipeline(std::shared_ptr<Pipeline> newPipeline);
+    void setPipeline(VkPipeline newPipeline);
 
     [[nodiscard]] std::shared_ptr<Mesh> getMesh() const;
 
-    [[nodiscard]] std::shared_ptr<Pipeline> getPipeline() const;
+    [[nodiscard]] VkPipeline getPipeline() const;
 
 private:
     std::shared_ptr<Mesh> mesh;
-    std::shared_ptr<Pipeline> pipeline;
+    VkPipeline pipeline;
 };

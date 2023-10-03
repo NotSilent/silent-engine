@@ -8,8 +8,6 @@ set(BASE_SOURCES
         Image.h Image.cpp
         Implementations.cpp
         Mesh.h Mesh.cpp
-        Pipeline.h Pipeline.cpp
-        PipelineLayout.h PipelineLayout.cpp
         ProfillerTimer.h ProfillerTimer.cpp
         PushData.h
         Renderer.h Renderer.cpp
@@ -25,7 +23,6 @@ set(BASE_SOURCES
 
         BufferManager.h BufferManager.cpp
         ImageManager.h ImageManager.cpp
-        PipelineLayoutManager.h PipelineLayoutManager.cpp
         PipelineManager.h PipelineManager.cpp
         SamplerManager.h SamplerManager.cpp
         TextureManager.h TextureManager.cpp
@@ -44,6 +41,8 @@ set(BASE_SOURCES
         DeferredRenderPass.h
         PatchedSphere.cpp
         PatchedSphere.h
+        CompositeRenderPass.cpp
+        CompositeRenderPass.h
 )
 
 add_library(base STATIC ${BASE_SOURCES})

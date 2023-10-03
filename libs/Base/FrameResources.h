@@ -5,6 +5,7 @@
 #include <vulkan/vulkan_core.h>
 #include "DeferredRenderPass.h"
 #include "Queue.h"
+#include "CompositeRenderPass.h"
 
 class Image;
 class DrawData;
@@ -27,6 +28,7 @@ public:
                    uint32_t queueFamilyIndex,
                    VkImage swapchainImage,
                    VkImageView swapchainImageView,
+                   VkPipeline compositePipeline,
                    const VkRect2D &renderArea);
 
     ~FrameResources() = default;
@@ -39,21 +41,22 @@ public:
 
     FrameResources &operator=(FrameResources &&other) noexcept;
 
-    void renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea);
+    void renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData);
 
     // Should be handled by whatever will create Images
     void destroy();
 
 private:
     VkDevice device;
-    // TODO: remove together with image
-    VmaAllocator allocator;
 
-    uint32_t queueFamilyIndex;
+    VkImage swapchainImage;
+    VkImageView swapchainImageView;
+
     VkCommandPool cmdPool;
     VkCommandBuffer cmd;
 
     FrameSynchronization synchronization;
 
     DeferredRenderPass deferredRenderPass;
+    CompositeRenderPass compositeRenderPass;
 };

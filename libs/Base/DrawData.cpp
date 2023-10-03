@@ -2,19 +2,19 @@
 
 #include <utility>
 
-DrawData::DrawData(const std::shared_ptr<Camera>& camera) {
-    view = camera->getViewMatrix();
-    projection = camera->getProjectionMatrix();
-    position = camera->getPosition();
+DrawData::DrawData(const std::shared_ptr<Camera>& camera, VkPipelineLayout deferredPipelineLayout)
+    : deferredPipelineLayout(deferredPipelineLayout)
+    , view(camera->getViewMatrix())
+    , projection(camera->getProjectionMatrix())
+    , position(camera->getPosition()) {
 }
 
-void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, const std::shared_ptr<Pipeline>& pipeline, const glm::mat4 &model) {
+void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, VkPipeline pipeline, const glm::mat4 &model) {
     DrawCall drawCall;
 
     drawCall._mesh = std::move(mesh);
 
-    drawCall.pipelineLayout = pipeline->getPipelineLayout();
-    drawCall.pipeline = pipeline->getPipeline();
+    drawCall.pipeline = pipeline;
 
     drawCall.model = model;
 

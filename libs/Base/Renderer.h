@@ -8,7 +8,6 @@
 #include "Camera.h"
 #include "DrawData.h"
 #include "ImageManager.h"
-#include "PipelineLayoutManager.h"
 #include "PipelineManager.h"
 #include "SamplerManager.h"
 #include "Texture.h"
@@ -49,7 +48,13 @@ public:
 
     std::shared_ptr<Texture> getTexture(const std::string &name);
 
-    std::shared_ptr<Pipeline> getPipeline(const std::string& shaderName);
+
+    // TODO: Technicaly unsafe
+    [[nodiscard]] VkPipelineLayout getDeferredPipelineLayout() const;
+
+    [[nodiscard]] VkPipeline getDeferredPipeline() const;
+
+    [[nodiscard]] VkPipeline getCompositePipeline() const;
 
 private:
     void draw(const DrawData &drawData, VkRect2D renderArea);
@@ -95,5 +100,4 @@ private:
     TextureManager _textureManager;
     SamplerManager _samplerManager;
     std::shared_ptr<PipelineManager> _pipelineManager;
-    std::shared_ptr<PipelineLayoutManager> _pipelineLayoutManager;
 };

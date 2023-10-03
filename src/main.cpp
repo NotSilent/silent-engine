@@ -44,8 +44,8 @@ int main() {
     renderer->addBuffer("meshIndices", patchedSphere.getIndices().size() * sizeof(uint32_t), patchedSphere.getIndices().data());
 
     std::vector<std::shared_ptr<Texture>> textures;
-    std::shared_ptr<Pipeline> pipeline= renderer->getPipeline("pbrDeferred");
-    if(pipeline)
+    VkPipeline pipeline = renderer->getDeferredPipeline();
+    if(pipeline != nullptr)
     {
         std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>(patchedSphere.getIndices().size(),
                                                                renderer->getBuffer("meshVertices"),
@@ -94,7 +94,7 @@ int main() {
             entity->update(timeManager->getDeltaTime());
         }
 
-        DrawData drawData(EngineStatics::getCamera());
+        DrawData drawData(EngineStatics::getCamera(), renderer->getDeferredPipelineLayout());
         for (auto &meshComponent: meshComponents) {
             drawData.addDrawCall(meshComponent->getMesh(), meshComponent->getPipeline(), meshComponent->getModel());
         }

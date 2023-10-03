@@ -7,9 +7,8 @@
 #include <limits>
 
 FrameSynchronization::FrameSynchronization(VkDevice device)
-    : queueFence(VkInit::createFence(device, VK_FENCE_CREATE_SIGNALED_BIT))
-    , imageAcquireSemaphore(nullptr)
-    , presentSemahore(nullptr) {
+        : queueFence(VkInit::createFence(device, VK_FENCE_CREATE_SIGNALED_BIT)), imageAcquireSemaphore(nullptr),
+          presentSemahore(nullptr) {
 }
 
 void FrameSynchronization::destroy(VkDevice device) {
@@ -24,14 +23,12 @@ FrameResources::FrameResources(VkDevice device,
                                uint32_t queueFamilyIndex,
                                VkImage swapchainImage,
                                VkImageView swapchainImageView,
+                               VkPipeline compositePipeline,
                                const VkRect2D &renderArea)
-        : device(device)
-        , allocator(allocator)
-        , queueFamilyIndex(queueFamilyIndex)
-        , cmdPool(VkInit::createCommandPool(device, queueFamilyIndex))
-        , synchronization(device)
-        , deferredRenderPass(device, allocator, renderArea, swapchainImage, swapchainImageView) {
-    VkCommandBufferAllocateInfo allocateInfo {
+        : device(device), swapchainImage(swapchainImage), swapchainImageView(swapchainImageView),
+          cmdPool(VkInit::createCommandPool(device, queueFamilyIndex)), synchronization(device),
+          deferredRenderPass(device, allocator, renderArea), compositeRenderPass(compositePipeline, renderArea) {
+    VkCommandBufferAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
             .commandPool = cmdPool,
@@ -42,12 +39,13 @@ FrameResources::FrameResources(VkDevice device,
 }
 
 FrameResources::FrameResources(FrameResources &&other) noexcept
-    : synchronization(other.synchronization)
-    , deferredRenderPass(std::move(other.deferredRenderPass)) {
+        : synchronization(other.synchronization), deferredRenderPass(std::move(other.deferredRenderPass)),
+          compositeRenderPass(std::move(other.compositeRenderPass)) {
     device = other.device;
-    allocator = other.allocator;
 
-    queueFamilyIndex = other.queueFamilyIndex;
+    swapchainImage = other.swapchainImage;
+    swapchainImageView = other.swapchainImageView;
+
     cmdPool = other.cmdPool;
     cmd = other.cmd;
 }
@@ -58,15 +56,17 @@ FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
     }
 
     device = other.device;
-    allocator = other.allocator;
 
-    queueFamilyIndex = other.queueFamilyIndex;
+    swapchainImage = other.swapchainImage;
+    swapchainImageView = other.swapchainImageView;
+
     cmdPool = other.cmdPool;
     cmd = other.cmd;
 
     synchronization = other.synchronization;
 
     deferredRenderPass = std::move(other.deferredRenderPass);
+    compositeRenderPass = std::move(other.compositeRenderPass);
 
     return *this;
 }
@@ -80,7 +80,8 @@ void FrameResources::destroy() {
     deferredRenderPass.destroy();
 }
 
-void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData, VkRect2D renderArea) {
+void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex,
+                                 VkSemaphore imageAcquireSemaphore, const DrawData &drawData) {
     vkWaitForFences(device, 1, &synchronization.queueFence, true, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &synchronization.queueFence);
 
@@ -103,9 +104,10 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
 
     deferredRenderPass.render(cmd, [&drawData](VkCommandBuffer commandBuffer) {
         for (const DrawCall &drawCall: drawData.getDrawCalls()) {
+            // TODO: Move inside render pass
             PushData pushData(drawCall.model, drawData.view, drawData.projection);
-
-            vkCmdPushConstants(commandBuffer, drawCall.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushData),
+            vkCmdPushConstants(commandBuffer, drawData.deferredPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                               sizeof(PushData),
                                &pushData);
 
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);
@@ -120,33 +122,35 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
         }
     });
 
+    compositeRenderPass.render(cmd, swapchainImage, swapchainImageView, deferredRenderPass.getOutput());
+
     vkEndCommandBuffer(cmd);
 
-     VkSemaphoreSubmitInfo imageAcquireSemaphoreSubmitInfo {
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = imageAcquireSemaphore,
-        .stageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    VkSemaphoreSubmitInfo imageAcquireSemaphoreSubmitInfo{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .semaphore = imageAcquireSemaphore,
+            .stageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
-     VkCommandBufferSubmitInfo cmdBufferSubmitInfo {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-        .commandBuffer = cmd,
+    VkCommandBufferSubmitInfo cmdBufferSubmitInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+            .commandBuffer = cmd,
     };
 
-    VkSemaphoreSubmitInfo presentSemaphoreSubmitInfo {
+    VkSemaphoreSubmitInfo presentSemaphoreSubmitInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .semaphore = synchronization.presentSemahore,
             .stageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
     };
 
-    VkSubmitInfo2 submitInfo2 {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-        .waitSemaphoreInfoCount = 1,
-        .pWaitSemaphoreInfos = &imageAcquireSemaphoreSubmitInfo,
-        .commandBufferInfoCount = 1,
-        .pCommandBufferInfos = &cmdBufferSubmitInfo,
-        .signalSemaphoreInfoCount = 1,
-        .pSignalSemaphoreInfos = &presentSemaphoreSubmitInfo,
+    VkSubmitInfo2 submitInfo2{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+            .waitSemaphoreInfoCount = 1,
+            .pWaitSemaphoreInfos = &imageAcquireSemaphoreSubmitInfo,
+            .commandBufferInfoCount = 1,
+            .pCommandBufferInfos = &cmdBufferSubmitInfo,
+            .signalSemaphoreInfoCount = 1,
+            .pSignalSemaphoreInfos = &presentSemaphoreSubmitInfo,
     };
 
     vkQueueSubmit2(graphicsQueue, 1, &submitInfo2, synchronization.queueFence);

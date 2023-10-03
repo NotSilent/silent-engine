@@ -3,13 +3,11 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Texture.h"
-#include "Pipeline.h"
 #include <vector>
 
 struct DrawCall {
     std::shared_ptr<Mesh> _mesh;
 
-    VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
 
     glm::mat4 model;
@@ -17,11 +15,13 @@ struct DrawCall {
 
 class DrawData {
 public:
-    explicit DrawData(const std::shared_ptr<Camera>& camera);
+    DrawData(const std::shared_ptr<Camera>& camera, VkPipelineLayout deferredPipelineLayout);
 
-    void addDrawCall(std::shared_ptr<Mesh> mesh, const std::shared_ptr<Pipeline>& pipeline, const glm::mat4 &model);
+    void addDrawCall(std::shared_ptr<Mesh> mesh, VkPipeline pipeline, const glm::mat4 &model);
 
     [[nodiscard]] std::vector<DrawCall> const &getDrawCalls() const;
+
+    VkPipelineLayout deferredPipelineLayout;
 
     glm::mat4 view;
     glm::mat4 projection;

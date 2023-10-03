@@ -4,13 +4,23 @@
 #include <functional>
 #include "Image.h"
 
+struct RenderPassAttachmentOutput {
+    VkImage image;
+    VkImageView imageView;
+    VkAccessFlags accessMask;
+    VkImageLayout imageLayout;
+};
+
+struct DeferredRenderPassOutput {
+    RenderPassAttachmentOutput color;
+    RenderPassAttachmentOutput depth;
+};
+
 class DeferredRenderPass {
 public:
     DeferredRenderPass(VkDevice device,
                        VmaAllocator allocator,
-                       VkRect2D renderArea,
-                       VkImage swapchainImage,
-                       VkImageView swapchainImageView);
+                       VkRect2D renderArea);
 
     DeferredRenderPass(DeferredRenderPass& other) = delete;
     DeferredRenderPass& operator=(DeferredRenderPass& other) = delete;
@@ -23,19 +33,16 @@ public:
     void render(VkCommandBuffer cmd,
                 const std::function<void(VkCommandBuffer cmd)>& renderPassRecording);
 
+    [[nodiscard]] DeferredRenderPassOutput getOutput() const;
+
 private:
     VkDevice device;
     VmaAllocator allocator;
 
     static inline VkClearValue clearValue{1.0f, 0.0f, 1.0f, 1.0f};
-    static inline VkClearValue clearValue2{0.0f, 1.0f, 0.0f, 1.0f};
-
     static inline VkClearValue depthClearValue {1.0f, 0};
 
     VkRect2D renderArea;
-
-    VkImage swapchainImage;
-    VkImageView swapchainImageView;
 
     Image colorImage;
 
