@@ -32,7 +32,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
 
     for (size_t i = 0; i < swapchain.image_count; ++i) {
         _frameResource.emplace_back(
-                device.device, _allocator, queueFamilyIndex, swapchainImages[i], _swapchainImageViews[i], _pipelineManager->getCompositePipeline(), _renderArea);
+                device.device, _allocator, queueFamilyIndex, swapchainImages[i], _swapchainImageViews[i],_pipelineManager->getCompositeSet(i), _pipelineManager->getCompositePipelineLayout(), _pipelineManager->getCompositePipeline(), _renderArea);
     }
 
     presentFence = VkInit::createFence(device, {});

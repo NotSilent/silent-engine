@@ -89,15 +89,6 @@ void DeferredRenderPass::beginRenderPass(VkCommandBuffer cmd) {
 
 void DeferredRenderPass::endRenderPass(VkCommandBuffer cmd) {
     vkCmdEndRendering(cmd);
-
-//    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-//                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-//                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-//                                   VK_ACCESS_SHADER_READ_BIT,
-//                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-//                                   VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-//                                   colorImage.getImage(),
-//                                   VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 Image DeferredRenderPass::createColorImage() const {
@@ -105,7 +96,7 @@ Image DeferredRenderPass::createColorImage() const {
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
             .format = VK_FORMAT_R8G8B8A8_UNORM,
-            .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
     };
@@ -127,15 +118,18 @@ Image DeferredRenderPass::createDepthImage() const {
 }
 
 DeferredRenderPassOutput DeferredRenderPass::getOutput() const {
+    // TODO: Access mask?
     RenderPassAttachmentOutput color = {
             .image = colorImage.getImage(),
             .imageView = colorImage.getImageView(),
+            //.accessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
 
     RenderPassAttachmentOutput depth = {
             .image = depthImage.getImage(),
             .imageView = depthImage.getImageView(),
+            //.accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
     };
 

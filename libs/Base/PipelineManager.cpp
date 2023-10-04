@@ -14,27 +14,15 @@ PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, cons
             .size = sizeof(PushData),
     };
 
-    std::optional<VkPipelineLayout> newDeferredLayout = createPipelineLayout(1, &deferredPushConstantRange);
-    if(newDeferredLayout.has_value())
-    {
-        deferredPipelineLayout = newDeferredLayout.value();
-    }
-
-    std::optional<VkPipelineLayout> newCompositeLayout = createPipelineLayout(0, nullptr);
-    if(newCompositeLayout.has_value())
-    {
-        compositePipelineLayout = newCompositeLayout.value();
-    }
-
-    std::optional<VkPipeline> newDeferredPipeline = createDeferredPipeline();
-    if(newDeferredPipeline.has_value()) {
-        deferredPipeline = newDeferredPipeline.value();
-    }
-
-    std::optional<VkPipeline> newCompositePipeline = createCompositePipeline(swapchainFormat);
-    if(newCompositePipeline.has_value()) {
-        compositePipeline = newCompositePipeline.value();
-    }
+    descriptorPool = createDescriptorPool();
+    compositeDescriptorSetLayout = createDescriptorSetLayout();
+    compositeSets[0] = createCompositeSet();
+    compositeSets[1] = createCompositeSet();
+    compositeSets[2] = createCompositeSet();
+    deferredPipelineLayout = createPipelineLayout(0, nullptr, 1, &deferredPushConstantRange);
+    compositePipelineLayout = createPipelineLayout(1, &compositeDescriptorSetLayout, 0, nullptr);
+    deferredPipeline = createDeferredPipeline();
+    compositePipeline = createCompositePipeline(swapchainFormat);
 }
 
 void PipelineManager::destroy() {
@@ -42,8 +30,14 @@ void PipelineManager::destroy() {
     vkDestroyPipeline(device, compositePipeline, nullptr);
     vkDestroyPipelineLayout(device, deferredPipelineLayout, nullptr);
     vkDestroyPipelineLayout(device, compositePipelineLayout, nullptr);
+    vkDestroyDescriptorSetLayout(device, compositeDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
     shaderManager.destroy();
+}
+
+VkDescriptorSet PipelineManager::getCompositeSet(uint32_t frameIndex) const {
+    return compositeSets[frameIndex];
 }
 
 VkPipelineLayout PipelineManager::getDeferredPipelineLayout() const {
@@ -62,26 +56,100 @@ VkPipeline PipelineManager::getCompositePipeline() const {
     return compositePipeline;
 }
 
-std::optional<VkPipelineLayout> PipelineManager::createPipelineLayout(uint32_t pushConstantRangeCount, const VkPushConstantRange* pushConstantRange) {
+VkDescriptorPool PipelineManager::createDescriptorPool() {
+    // TODO: Configurable and per type
+    static uint32_t DescriptorSetCount = 3;
+
+    std::array descriptorPoolSizes {
+        VkDescriptorPoolSize {
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = DescriptorSetCount,
+        }
+    };
+
+    VkDescriptorPoolCreateInfo createInfo {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = {},
+        .maxSets = DescriptorSetCount,
+        .poolSizeCount = descriptorPoolSizes.size(),
+        .pPoolSizes = descriptorPoolSizes.data(),
+    };
+
+    VkDescriptorPool descriptorPool;
+    if(vkCreateDescriptorPool(device, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("PipelineManager::createDescriptorPool");
+    }
+
+    return descriptorPool;
+}
+
+VkDescriptorSetLayout PipelineManager::createDescriptorSetLayout() {
+    // TODO: try immutable samplers for deferred lightning
+    std::array bindings {
+            VkDescriptorSetLayoutBinding {
+                    .binding = 0,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .descriptorCount = 1,
+                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .pImmutableSamplers = nullptr,
+            }
+    };
+
+    VkDescriptorSetLayoutCreateInfo createInfo {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = {},
+            .bindingCount = bindings.size(),
+            .pBindings = bindings.data(),
+    };
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    if(vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("PipelineManager::vkCreateDescriptorSetLayout");
+    }
+
+    return descriptorSetLayout;
+}
+
+VkDescriptorSet PipelineManager::createCompositeSet() {
+    VkDescriptorSetAllocateInfo allocateInfo {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .descriptorPool = descriptorPool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &compositeDescriptorSetLayout,
+    };
+
+    VkDescriptorSet descriptorSet;
+    if(vkAllocateDescriptorSets(device, &allocateInfo, &descriptorSet)) {
+        throw std::runtime_error("PipelineManager::createCompositeSet");
+    }
+
+    return descriptorSet;
+}
+
+VkPipelineLayout PipelineManager::createPipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout* pSetLayouts,
+                                                       uint32_t pushConstantRangeCount, const VkPushConstantRange* pushConstantRange) {
     const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
-            .setLayoutCount = 0,
-            .pSetLayouts = nullptr,
+            .setLayoutCount = setLayoutCount,
+            .pSetLayouts = pSetLayouts,
             .pushConstantRangeCount = pushConstantRangeCount,
             .pPushConstantRanges = pushConstantRange,
     };
 
     VkPipelineLayout pipeline;
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipeline) == VK_SUCCESS) {
-        return pipeline;
+    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipeline) != VK_SUCCESS) {
+        throw std::runtime_error("PipelineManager::createPipelineLayout");
     }
 
-    return {};
+    return pipeline;
 }
 
-std::optional<VkPipeline> PipelineManager::createDeferredPipeline() {
+VkPipeline PipelineManager::createDeferredPipeline() {
     std::optional<Shader> shader = shaderManager.getShader("pbrDeferred");
     if(shader.has_value())
     {
@@ -118,23 +186,22 @@ std::optional<VkPipeline> PipelineManager::createDeferredPipeline() {
                               colorBlendAttachments.data(),
                               colorAttachmentFormats.size(),
                               colorAttachmentFormats.data(),
-                              deferredPipelineLayout);
+                              deferredPipelineLayout,
+                              VK_CULL_MODE_BACK_BIT);
     }
 
     return {};
 }
 
-std::optional<VkPipeline> PipelineManager::createCompositePipeline(VkFormat swapchainFormat) {
+VkPipeline PipelineManager::createCompositePipeline(VkFormat swapchainFormat) {
     std::optional<Shader> shader = shaderManager.getShader("pbrComposite");
     if(shader.has_value())
     {
-        std::array<VkPipelineColorBlendAttachmentState, 2> colorBlendAttachments {
-                createPipelineColorBlendAttachmentState(),
+        std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachments {
                 createPipelineColorBlendAttachmentState(),
         };
 
-        // TODO: manage format
-        std::array<VkFormat, 2> colorAttachmentFormats {swapchainFormat, VK_FORMAT_R8G8B8A8_UNORM};
+        std::array<VkFormat, 1> colorAttachmentFormats {swapchainFormat};
 
         return createPipeline(shader.value(),
                               0,
@@ -145,18 +212,19 @@ std::optional<VkPipeline> PipelineManager::createCompositePipeline(VkFormat swap
                               colorBlendAttachments.data(),
                               colorAttachmentFormats.size(),
                               colorAttachmentFormats.data(),
-                              compositePipelineLayout);
+                              compositePipelineLayout,
+                              VK_CULL_MODE_NONE);
     }
 
     return {};
 }
 
-std::optional<VkPipeline> PipelineManager::createPipeline(const Shader& shader,
+VkPipeline PipelineManager::createPipeline(const Shader& shader,
                                                           uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
                                                           uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription* pVertexAttributeDescriptions,
                                                           uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments,
                                                           uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats,
-                                                          VkPipelineLayout pipelineLayout) {
+                                                          VkPipelineLayout pipelineLayout, VkCullModeFlags cullMode) {
     const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStageCreateInfos = {
             createPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, shader.vert),
             createPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, shader.frag),
@@ -178,7 +246,7 @@ std::optional<VkPipeline> PipelineManager::createPipeline(const Shader& shader,
     };
 
     const VkPipelineViewportStateCreateInfo viewportState = createViewportStateCreateInfo(viewport, renderArea);
-    const VkPipelineRasterizationStateCreateInfo rasterizationState = createRasterizationStateCreateInfo();
+    const VkPipelineRasterizationStateCreateInfo rasterizationState = createRasterizationStateCreateInfo(cullMode);
     const VkPipelineMultisampleStateCreateInfo multisampleState = createPipelineMultisampleStateCreateInfo();
     const VkPipelineDepthStencilStateCreateInfo depthStencilState = createPipelineDepthStencilStateCreateInfo();
     const VkPipelineColorBlendStateCreateInfo colorBlendState = createPipelineColorBlendStateCreateInfo(attachmentCount, pAttachments);
@@ -208,11 +276,11 @@ std::optional<VkPipeline> PipelineManager::createPipeline(const Shader& shader,
     };
 
     VkPipeline pipeline;
-    if (vkCreateGraphicsPipelines(device, nullptr, 1, &createInfo, nullptr, &pipeline) == VK_SUCCESS) {
-        return pipeline;
+    if (vkCreateGraphicsPipelines(device, nullptr, 1, &createInfo, nullptr, &pipeline) != VK_SUCCESS) {
+        throw std::runtime_error("PipelineManager::createPipeline");
     }
 
-    return {};
+    return pipeline;
 }
 
 VkPipelineShaderStageCreateInfo
@@ -245,7 +313,7 @@ PipelineManager::createPipelineVertexInputStateCreateInfo(uint32_t vertexBinding
 }
 
 VkPipelineRasterizationStateCreateInfo
-PipelineManager::createRasterizationStateCreateInfo() {
+PipelineManager::createRasterizationStateCreateInfo(VkCullModeFlags cullMode) {
     return VkPipelineRasterizationStateCreateInfo {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             .pNext = nullptr,
@@ -253,7 +321,7 @@ PipelineManager::createRasterizationStateCreateInfo() {
             .depthClampEnable = false,
             .rasterizerDiscardEnable = false,
             .polygonMode = VK_POLYGON_MODE_FILL,
-            .cullMode = VK_CULL_MODE_BACK_BIT,
+            .cullMode = cullMode,
             .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
             .depthBiasEnable = false,
             .depthBiasConstantFactor = 0.0f,

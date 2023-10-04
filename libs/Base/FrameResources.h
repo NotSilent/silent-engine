@@ -28,6 +28,8 @@ public:
                    uint32_t queueFamilyIndex,
                    VkImage swapchainImage,
                    VkImageView swapchainImageView,
+                   VkDescriptorSet compositeSet,
+                   VkPipelineLayout compositePipelineLayout,
                    VkPipeline compositePipeline,
                    const VkRect2D &renderArea);
 

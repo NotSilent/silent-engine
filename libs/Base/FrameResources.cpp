@@ -23,11 +23,14 @@ FrameResources::FrameResources(VkDevice device,
                                uint32_t queueFamilyIndex,
                                VkImage swapchainImage,
                                VkImageView swapchainImageView,
+                               VkDescriptorSet compositeSet,
+                               VkPipelineLayout compositePipelineLayout,
                                VkPipeline compositePipeline,
                                const VkRect2D &renderArea)
         : device(device), swapchainImage(swapchainImage), swapchainImageView(swapchainImageView),
           cmdPool(VkInit::createCommandPool(device, queueFamilyIndex)), synchronization(device),
-          deferredRenderPass(device, allocator, renderArea), compositeRenderPass(compositePipeline, renderArea) {
+          deferredRenderPass(device, allocator, renderArea),
+          compositeRenderPass(device, compositeSet, compositePipelineLayout, compositePipeline, renderArea, deferredRenderPass.getOutput()) {
     VkCommandBufferAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -122,7 +125,7 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
         }
     });
 
-    compositeRenderPass.render(cmd, swapchainImage, swapchainImageView, deferredRenderPass.getOutput());
+    compositeRenderPass.render(cmd, swapchainImage, swapchainImageView);
 
     vkEndCommandBuffer(cmd);
 

@@ -3,7 +3,6 @@
 #include "VkBootstrap.h"
 #include "ShaderManager.h"
 #include <memory>
-#include <optional>
 
 class PipelineManager {
 public:
@@ -11,6 +10,9 @@ public:
 
     // TODO: Remove all destroys?
     void destroy();
+
+    // TODO: Make set during creation of renderpass?
+    [[nodiscard]] VkDescriptorSet getCompositeSet(uint32_t frameIndex) const;
 
     [[nodiscard]] VkPipelineLayout getDeferredPipelineLayout() const;
     [[nodiscard]] VkPipelineLayout getCompositePipelineLayout() const;
@@ -25,25 +27,34 @@ private:
 
     ShaderManager shaderManager;
 
+    VkDescriptorPool descriptorPool;
+    VkDescriptorSetLayout compositeDescriptorSetLayout;
+    VkDescriptorSet compositeSets[3];
+
     VkPipelineLayout deferredPipelineLayout;
     VkPipelineLayout compositePipelineLayout;
 
     VkPipeline deferredPipeline;
     VkPipeline compositePipeline;
 
-    [[nodiscard]] std::optional<VkPipelineLayout> createPipelineLayout(uint32_t pushConstantRangeCount, const VkPushConstantRange* pushConstantRange);
+    [[nodiscard]] VkDescriptorPool createDescriptorPool();
 
-    [[nodiscard]] std::optional<VkPipeline> createDeferredPipeline();
+    [[nodiscard]] VkDescriptorSetLayout createDescriptorSetLayout();
 
-    [[nodiscard]] std::optional<VkPipeline> createCompositePipeline(VkFormat swapchainFormat);
+    [[nodiscard]] VkPipelineLayout createPipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout* pSetLayouts,
+                                                        uint32_t pushConstantRangeCount, const VkPushConstantRange* pushConstantRange);
+
+    [[nodiscard]] VkPipeline createDeferredPipeline();
+
+    [[nodiscard]] VkPipeline createCompositePipeline(VkFormat swapchainFormat);
 
     // TODO: unify color attachments?
-    [[nodiscard]] std::optional<VkPipeline> createPipeline(const Shader& shader,
+    [[nodiscard]] VkPipeline createPipeline(const Shader& shader,
                                                            uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
                                                            uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription* pVertexAttributeDescriptions,
                                                            uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments,
                                                            uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats,
-                                                           VkPipelineLayout pipelineLayout);
+                                                           VkPipelineLayout pipelineLayout, VkCullModeFlags cullMode);
 
     [[nodiscard]] static VkPipelineVertexInputStateCreateInfo
     createPipelineVertexInputStateCreateInfo(uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
@@ -53,7 +64,7 @@ private:
     createPipelineShaderStageCreateInfo(VkShaderStageFlagBits shaderStage, VkShaderModule module);
 
     [[nodiscard]] static VkPipelineRasterizationStateCreateInfo
-    createRasterizationStateCreateInfo();
+    createRasterizationStateCreateInfo(VkCullModeFlags cullMode);
 
     [[nodiscard]] static VkPipelineInputAssemblyStateCreateInfo
     createPipelineInputAssemblyStateCreateInfo();
@@ -82,6 +93,8 @@ private:
     // TODO: configure depth
     [[nodiscard]] static VkPipelineRenderingCreateInfoKHR
     createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats);
+
+    VkDescriptorSet createCompositeSet();
 };
 
 // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#descriptorsets-compatibility

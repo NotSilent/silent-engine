@@ -6,7 +6,7 @@
 class CompositeRenderPass {
 public:
     // TODO: create pipeline
-    CompositeRenderPass(VkPipeline pipeline, VkRect2D renderArea);
+    CompositeRenderPass(VkDevice device, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput);
 
     CompositeRenderPass(CompositeRenderPass& other) = delete;
     CompositeRenderPass& operator=(CompositeRenderPass& other) = delete;
@@ -14,15 +14,24 @@ public:
     CompositeRenderPass(CompositeRenderPass&& other) = default;
     CompositeRenderPass& operator=(CompositeRenderPass&& other) = default;
 
-    void render(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView, const DeferredRenderPassOutput& deferredRenderPassOutput);
+    void render(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView);
 
 private:
+    VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
     VkRect2D renderArea;
 
-    inline static VkClearValue swapchainClearValue = {1.0f, 0.0f, 0.0f, 0.0f};
+    DeferredRenderPassOutput deferredRenderPassOutput;
 
-    void beginRenderPass(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView,
-                         const DeferredRenderPassOutput &deferredRenderPassOutput);
+    VkDescriptorSet descriptorSet;
+
+    // TODO: get from some manager
+    VkSampler sampler;
+
+    inline static VkClearValue swapchainClearValue = {0.25f, 0.25f, 0.25f, 0.25f};
+
+    void beginRenderPass(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView);
     void endRenderPass(VkCommandBuffer cmd, VkImage swapchainImage);
+
+    VkSampler createSampler(VkDevice device);
 };
