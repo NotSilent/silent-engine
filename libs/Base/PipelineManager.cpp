@@ -15,45 +15,45 @@ PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, cons
     };
 
     descriptorPool = createDescriptorPool();
-    compositeDescriptorSetLayout = createDescriptorSetLayout();
-    compositeSets[0] = createCompositeSet();
-    compositeSets[1] = createCompositeSet();
-    compositeSets[2] = createCompositeSet();
+    deferredLightningDescriptorSetLayout = createDescriptorSetLayout();
+    deferredLightningSets[0] = createDeferredLightningSet();
+    deferredLightningSets[1] = createDeferredLightningSet();
+    deferredLightningSets[2] = createDeferredLightningSet();
     deferredPipelineLayout = createPipelineLayout(0, nullptr, 1, &deferredPushConstantRange);
-    compositePipelineLayout = createPipelineLayout(1, &compositeDescriptorSetLayout, 0, nullptr);
+    deferredLightningPipelineLayout = createPipelineLayout(1, &deferredLightningDescriptorSetLayout, 0, nullptr);
     deferredPipeline = createDeferredPipeline();
-    compositePipeline = createCompositePipeline(swapchainFormat);
+    deferredLightningPipeline = createDeferredLightningPipeline(swapchainFormat);
 }
 
 void PipelineManager::destroy() {
     vkDestroyPipeline(device, deferredPipeline, nullptr);
-    vkDestroyPipeline(device, compositePipeline, nullptr);
+    vkDestroyPipeline(device, deferredLightningPipeline, nullptr);
     vkDestroyPipelineLayout(device, deferredPipelineLayout, nullptr);
-    vkDestroyPipelineLayout(device, compositePipelineLayout, nullptr);
-    vkDestroyDescriptorSetLayout(device, compositeDescriptorSetLayout, nullptr);
+    vkDestroyPipelineLayout(device, deferredLightningPipelineLayout, nullptr);
+    vkDestroyDescriptorSetLayout(device, deferredLightningDescriptorSetLayout, nullptr);
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
     shaderManager.destroy();
 }
 
-VkDescriptorSet PipelineManager::getCompositeSet(uint32_t frameIndex) const {
-    return compositeSets[frameIndex];
+VkDescriptorSet PipelineManager::getDeferredLightningSet(uint32_t frameIndex) const {
+    return deferredLightningSets[frameIndex];
 }
 
 VkPipelineLayout PipelineManager::getDeferredPipelineLayout() const {
     return deferredPipelineLayout;
 }
 
-VkPipelineLayout PipelineManager::getCompositePipelineLayout() const {
-    return compositePipelineLayout;
+VkPipelineLayout PipelineManager::getDeferredLightningPipelineLayout() const {
+    return deferredLightningPipelineLayout;
 }
 
 VkPipeline PipelineManager::getDeferredPipeline() const {
     return deferredPipeline;
 }
 
-VkPipeline PipelineManager::getCompositePipeline() const {
-    return compositePipeline;
+VkPipeline PipelineManager::getDeferredLightningPipeline() const {
+    return deferredLightningPipeline;
 }
 
 VkDescriptorPool PipelineManager::createDescriptorPool() {
@@ -112,18 +112,18 @@ VkDescriptorSetLayout PipelineManager::createDescriptorSetLayout() {
     return descriptorSetLayout;
 }
 
-VkDescriptorSet PipelineManager::createCompositeSet() {
+VkDescriptorSet PipelineManager::createDeferredLightningSet() {
     VkDescriptorSetAllocateInfo allocateInfo {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext = nullptr,
         .descriptorPool = descriptorPool,
         .descriptorSetCount = 1,
-        .pSetLayouts = &compositeDescriptorSetLayout,
+        .pSetLayouts = &deferredLightningDescriptorSetLayout,
     };
 
     VkDescriptorSet descriptorSet;
     if(vkAllocateDescriptorSets(device, &allocateInfo, &descriptorSet)) {
-        throw std::runtime_error("PipelineManager::createCompositeSet");
+        throw std::runtime_error("PipelineManager::createDeferredLightningSet");
     }
 
     return descriptorSet;
@@ -150,7 +150,7 @@ VkPipelineLayout PipelineManager::createPipelineLayout(uint32_t setLayoutCount, 
 }
 
 VkPipeline PipelineManager::createDeferredPipeline() {
-    std::optional<Shader> shader = shaderManager.getShader("pbrDeferred");
+    std::optional<Shader> shader = shaderManager.getShader("Deferred");
     if(shader.has_value())
     {
         std::array<VkVertexInputBindingDescription, 1> vertexBindingDescriptions = {
@@ -193,8 +193,8 @@ VkPipeline PipelineManager::createDeferredPipeline() {
     return {};
 }
 
-VkPipeline PipelineManager::createCompositePipeline(VkFormat swapchainFormat) {
-    std::optional<Shader> shader = shaderManager.getShader("pbrComposite");
+VkPipeline PipelineManager::createDeferredLightningPipeline(VkFormat swapchainFormat) {
+    std::optional<Shader> shader = shaderManager.getShader("DeferredLightning");
     if(shader.has_value())
     {
         std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachments {
@@ -212,7 +212,7 @@ VkPipeline PipelineManager::createCompositePipeline(VkFormat swapchainFormat) {
                               colorBlendAttachments.data(),
                               colorAttachmentFormats.size(),
                               colorAttachmentFormats.data(),
-                              compositePipelineLayout,
+                              deferredLightningPipelineLayout,
                               VK_CULL_MODE_NONE);
     }
 

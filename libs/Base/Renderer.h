@@ -54,7 +54,7 @@ public:
 
     [[nodiscard]] VkPipeline getDeferredPipeline() const;
 
-    [[nodiscard]] VkPipeline getCompositePipeline() const;
+    [[nodiscard]] VkPipeline getDeferredLightningPipeline() const;
 
 private:
     void draw(const DrawData &drawData, VkRect2D renderArea);

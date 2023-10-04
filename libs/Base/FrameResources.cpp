@@ -23,14 +23,14 @@ FrameResources::FrameResources(VkDevice device,
                                uint32_t queueFamilyIndex,
                                VkImage swapchainImage,
                                VkImageView swapchainImageView,
-                               VkDescriptorSet compositeSet,
-                               VkPipelineLayout compositePipelineLayout,
-                               VkPipeline compositePipeline,
+                               VkDescriptorSet deferredLightningSet,
+                               VkPipelineLayout deferredLightningPipelineLayout,
+                               VkPipeline deferredLightningPipeline,
                                const VkRect2D &renderArea)
         : device(device), swapchainImage(swapchainImage), swapchainImageView(swapchainImageView),
           cmdPool(VkInit::createCommandPool(device, queueFamilyIndex)), synchronization(device),
           deferredRenderPass(device, allocator, renderArea),
-          compositeRenderPass(device, compositeSet, compositePipelineLayout, compositePipeline, renderArea, deferredRenderPass.getOutput()) {
+          deferredLightningRenderPass(device, deferredLightningSet, deferredLightningPipelineLayout, deferredLightningPipeline, renderArea, deferredRenderPass.getOutput()) {
     VkCommandBufferAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -43,7 +43,7 @@ FrameResources::FrameResources(VkDevice device,
 
 FrameResources::FrameResources(FrameResources &&other) noexcept
         : synchronization(other.synchronization), deferredRenderPass(std::move(other.deferredRenderPass)),
-          compositeRenderPass(std::move(other.compositeRenderPass)) {
+          deferredLightningRenderPass(std::move(other.deferredLightningRenderPass)) {
     device = other.device;
 
     swapchainImage = other.swapchainImage;
@@ -69,7 +69,7 @@ FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
     synchronization = other.synchronization;
 
     deferredRenderPass = std::move(other.deferredRenderPass);
-    compositeRenderPass = std::move(other.compositeRenderPass);
+    deferredLightningRenderPass = std::move(other.deferredLightningRenderPass);
 
     return *this;
 }
@@ -125,7 +125,7 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
         }
     });
 
-    compositeRenderPass.render(cmd, swapchainImage, swapchainImageView);
+    deferredLightningRenderPass.render(cmd, swapchainImage, swapchainImageView);
 
     vkEndCommandBuffer(cmd);
 

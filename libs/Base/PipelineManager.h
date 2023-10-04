@@ -12,13 +12,13 @@ public:
     void destroy();
 
     // TODO: Make set during creation of renderpass?
-    [[nodiscard]] VkDescriptorSet getCompositeSet(uint32_t frameIndex) const;
+    [[nodiscard]] VkDescriptorSet getDeferredLightningSet(uint32_t frameIndex) const;
 
     [[nodiscard]] VkPipelineLayout getDeferredPipelineLayout() const;
-    [[nodiscard]] VkPipelineLayout getCompositePipelineLayout() const;
+    [[nodiscard]] VkPipelineLayout getDeferredLightningPipelineLayout() const;
 
     [[nodiscard]] VkPipeline getDeferredPipeline() const;
-    [[nodiscard]] VkPipeline getCompositePipeline() const;
+    [[nodiscard]] VkPipeline getDeferredLightningPipeline() const;
 
 private:
     VkDevice device;
@@ -28,14 +28,14 @@ private:
     ShaderManager shaderManager;
 
     VkDescriptorPool descriptorPool;
-    VkDescriptorSetLayout compositeDescriptorSetLayout;
-    VkDescriptorSet compositeSets[3];
+    VkDescriptorSetLayout deferredLightningDescriptorSetLayout;
+    VkDescriptorSet deferredLightningSets[3];
 
     VkPipelineLayout deferredPipelineLayout;
-    VkPipelineLayout compositePipelineLayout;
+    VkPipelineLayout deferredLightningPipelineLayout;
 
     VkPipeline deferredPipeline;
-    VkPipeline compositePipeline;
+    VkPipeline deferredLightningPipeline;
 
     [[nodiscard]] VkDescriptorPool createDescriptorPool();
 
@@ -46,7 +46,7 @@ private:
 
     [[nodiscard]] VkPipeline createDeferredPipeline();
 
-    [[nodiscard]] VkPipeline createCompositePipeline(VkFormat swapchainFormat);
+    [[nodiscard]] VkPipeline createDeferredLightningPipeline(VkFormat swapchainFormat);
 
     // TODO: unify color attachments?
     [[nodiscard]] VkPipeline createPipeline(const Shader& shader,
@@ -94,7 +94,7 @@ private:
     [[nodiscard]] static VkPipelineRenderingCreateInfoKHR
     createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats);
 
-    VkDescriptorSet createCompositeSet();
+    VkDescriptorSet createDeferredLightningSet();
 };
 
 // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#descriptorsets-compatibility

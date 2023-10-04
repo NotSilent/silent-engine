@@ -1,8 +1,8 @@
-#include "CompositeRenderPass.h"
+#include "DeferredLightningRenderpass.h"
 #include "CommandBuffer.h"
 #include <array>
 
-CompositeRenderPass::CompositeRenderPass(VkDevice device, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput)
+DeferredLightningRenderpass::DeferredLightningRenderpass(VkDevice device, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput)
     : descriptorSet(descriptorSet)
     , pipelineLayout(pipelineLayout)
     , pipeline(pipeline)
@@ -33,7 +33,7 @@ CompositeRenderPass::CompositeRenderPass(VkDevice device, VkDescriptorSet descri
     vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 }
 
-void CompositeRenderPass::render(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView) {
+void DeferredLightningRenderpass::render(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView) {
     beginRenderPass(cmd, swapchainImage, swapchainImageView);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -44,7 +44,7 @@ void CompositeRenderPass::render(VkCommandBuffer cmd, VkImage swapchainImage, Vk
     endRenderPass(cmd, swapchainImage);
 }
 
-void CompositeRenderPass::beginRenderPass(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView) {
+void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView) {
     VkRenderingAttachmentInfo swapchainAttachment {
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = swapchainImageView,
@@ -91,7 +91,7 @@ void CompositeRenderPass::beginRenderPass(VkCommandBuffer cmd, VkImage swapchain
     vkCmdBeginRendering(cmd, &renderingInfo);
 }
 
-void CompositeRenderPass::endRenderPass(VkCommandBuffer cmd, VkImage swapchainImage) {
+void DeferredLightningRenderpass::endRenderPass(VkCommandBuffer cmd, VkImage swapchainImage) {
     vkCmdEndRendering(cmd);
 
     CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -104,7 +104,7 @@ void CompositeRenderPass::endRenderPass(VkCommandBuffer cmd, VkImage swapchainIm
                                    VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
-VkSampler CompositeRenderPass::createSampler(VkDevice device) {
+VkSampler DeferredLightningRenderpass::createSampler(VkDevice device) {
     VkSamplerCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .pNext = nullptr,
@@ -129,7 +129,7 @@ VkSampler CompositeRenderPass::createSampler(VkDevice device) {
     VkSampler sampler;
     if(vkCreateSampler(device, &createInfo, nullptr, &sampler) != VK_SUCCESS)
     {
-        throw std::runtime_error("CompositeRenderPass::createSampler");
+        throw std::runtime_error("DeferredLightningRenderpass::createSampler");
     }
 
     return sampler;

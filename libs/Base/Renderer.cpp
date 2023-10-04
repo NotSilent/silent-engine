@@ -32,7 +32,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
 
     for (size_t i = 0; i < swapchain.image_count; ++i) {
         _frameResource.emplace_back(
-                device.device, _allocator, queueFamilyIndex, swapchainImages[i], _swapchainImageViews[i],_pipelineManager->getCompositeSet(i), _pipelineManager->getCompositePipelineLayout(), _pipelineManager->getCompositePipeline(), _renderArea);
+                device.device, _allocator, queueFamilyIndex, swapchainImages[i], _swapchainImageViews[i],_pipelineManager->getDeferredLightningSet(i), _pipelineManager->getDeferredLightningPipelineLayout(), _pipelineManager->getDeferredLightningPipeline(), _renderArea);
     }
 
     presentFence = VkInit::createFence(device, {});
@@ -196,6 +196,6 @@ VkPipeline Renderer::getDeferredPipeline() const {
     return _pipelineManager->getDeferredPipeline();
 }
 
-VkPipeline Renderer::getCompositePipeline() const {
-    return _pipelineManager->getCompositePipeline();
+VkPipeline Renderer::getDeferredLightningPipeline() const {
+    return _pipelineManager->getDeferredLightningPipeline();
 }

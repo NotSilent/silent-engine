@@ -16,17 +16,17 @@ struct DeferredRenderPassOutput {
     RenderPassAttachmentOutput depth;
 };
 
-class DeferredRenderPass {
+class DeferredRenderpass {
 public:
-    DeferredRenderPass(VkDevice device,
+    DeferredRenderpass(VkDevice device,
                        VmaAllocator allocator,
                        VkRect2D renderArea);
 
-    DeferredRenderPass(DeferredRenderPass& other) = delete;
-    DeferredRenderPass& operator=(DeferredRenderPass& other) = delete;
+    DeferredRenderpass(DeferredRenderpass& other) = delete;
+    DeferredRenderpass& operator=(DeferredRenderpass& other) = delete;
 
-    DeferredRenderPass(DeferredRenderPass&& other) = default;
-    DeferredRenderPass& operator=(DeferredRenderPass&& other) = default;
+    DeferredRenderpass(DeferredRenderpass&& other) = default;
+    DeferredRenderpass& operator=(DeferredRenderpass&& other) = default;
 
     void destroy();
 

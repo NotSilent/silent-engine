@@ -1,8 +1,8 @@
-#include "DeferredRenderPass.h"
+#include "DeferredRenderpass.h"
 
 #include "CommandBuffer.h"
 
-DeferredRenderPass::DeferredRenderPass(VkDevice device,
+DeferredRenderpass::DeferredRenderpass(VkDevice device,
                                        VmaAllocator allocator,
                                        VkRect2D renderArea)
         : device(device)
@@ -12,12 +12,12 @@ DeferredRenderPass::DeferredRenderPass(VkDevice device,
     depthImage = createDepthImage();
 }
 
-void DeferredRenderPass::destroy() {
+void DeferredRenderpass::destroy() {
     colorImage.destroy(device, allocator);
     depthImage.destroy(device, allocator);
 }
 
-void DeferredRenderPass::render(VkCommandBuffer cmd,
+void DeferredRenderpass::render(VkCommandBuffer cmd,
                                 const std::function<void(VkCommandBuffer cmd)> &renderPassRecording) {
     beginRenderPass(cmd);
 
@@ -26,7 +26,7 @@ void DeferredRenderPass::render(VkCommandBuffer cmd,
     endRenderPass(cmd);
 }
 
-void DeferredRenderPass::beginRenderPass(VkCommandBuffer cmd) {
+void DeferredRenderpass::beginRenderPass(VkCommandBuffer cmd) {
     VkRenderingAttachmentInfo depthAttachment {
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = depthImage.getImageView(),
@@ -87,11 +87,11 @@ void DeferredRenderPass::beginRenderPass(VkCommandBuffer cmd) {
     vkCmdBeginRendering(cmd, &renderingInfo);
 }
 
-void DeferredRenderPass::endRenderPass(VkCommandBuffer cmd) {
+void DeferredRenderpass::endRenderPass(VkCommandBuffer cmd) {
     vkCmdEndRendering(cmd);
 }
 
-Image DeferredRenderPass::createColorImage() const {
+Image DeferredRenderpass::createColorImage() const {
     ImageCreateInfo createInfo {
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
@@ -104,7 +104,7 @@ Image DeferredRenderPass::createColorImage() const {
     return Image(device, allocator, createInfo);
 }
 
-Image DeferredRenderPass::createDepthImage() const {
+Image DeferredRenderpass::createDepthImage() const {
     ImageCreateInfo createInfo {
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
@@ -117,7 +117,7 @@ Image DeferredRenderPass::createDepthImage() const {
     return Image(device, allocator, createInfo);
 }
 
-DeferredRenderPassOutput DeferredRenderPass::getOutput() const {
+DeferredRenderPassOutput DeferredRenderpass::getOutput() const {
     // TODO: Access mask?
     RenderPassAttachmentOutput color = {
             .image = colorImage.getImage(),

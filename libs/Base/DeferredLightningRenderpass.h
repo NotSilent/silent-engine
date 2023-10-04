@@ -1,18 +1,18 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
-#include "DeferredRenderPass.h"
+#include "DeferredRenderpass.h"
 
-class CompositeRenderPass {
+class DeferredLightningRenderpass {
 public:
     // TODO: create pipeline
-    CompositeRenderPass(VkDevice device, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput);
+    DeferredLightningRenderpass(VkDevice device, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput);
 
-    CompositeRenderPass(CompositeRenderPass& other) = delete;
-    CompositeRenderPass& operator=(CompositeRenderPass& other) = delete;
+    DeferredLightningRenderpass(DeferredLightningRenderpass& other) = delete;
+    DeferredLightningRenderpass& operator=(DeferredLightningRenderpass& other) = delete;
 
-    CompositeRenderPass(CompositeRenderPass&& other) = default;
-    CompositeRenderPass& operator=(CompositeRenderPass&& other) = default;
+    DeferredLightningRenderpass(DeferredLightningRenderpass&& other) = default;
+    DeferredLightningRenderpass& operator=(DeferredLightningRenderpass&& other) = default;
 
     void render(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView);
 

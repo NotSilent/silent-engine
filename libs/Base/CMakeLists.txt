@@ -37,12 +37,12 @@ set(BASE_SOURCES
         Shader.h
         ShaderManager.cpp
         ShaderManager.h
-        DeferredRenderPass.cpp
-        DeferredRenderPass.h
+        DeferredRenderpass.cpp
+        DeferredRenderpass.h
         PatchedSphere.cpp
         PatchedSphere.h
-        CompositeRenderPass.cpp
-        CompositeRenderPass.h
+        DeferredLightningRenderpass.cpp
+        DeferredLightningRenderpass.h
 )
 
 add_library(base STATIC ${BASE_SOURCES})

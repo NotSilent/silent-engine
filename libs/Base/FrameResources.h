@@ -3,9 +3,9 @@
 #include <memory>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan_core.h>
-#include "DeferredRenderPass.h"
+#include "DeferredRenderpass.h"
 #include "Queue.h"
-#include "CompositeRenderPass.h"
+#include "DeferredLightningRenderpass.h"
 
 class Image;
 class DrawData;
@@ -28,9 +28,9 @@ public:
                    uint32_t queueFamilyIndex,
                    VkImage swapchainImage,
                    VkImageView swapchainImageView,
-                   VkDescriptorSet compositeSet,
-                   VkPipelineLayout compositePipelineLayout,
-                   VkPipeline compositePipeline,
+                   VkDescriptorSet deferredLightningSet,
+                   VkPipelineLayout deferredLightningPipelineLayout,
+                   VkPipeline deferredLightningPipeline,
                    const VkRect2D &renderArea);
 
     ~FrameResources() = default;
@@ -59,6 +59,6 @@ private:
 
     FrameSynchronization synchronization;
 
-    DeferredRenderPass deferredRenderPass;
-    CompositeRenderPass compositeRenderPass;
+    DeferredRenderpass deferredRenderPass;
+    DeferredLightningRenderpass deferredLightningRenderPass;
 };
