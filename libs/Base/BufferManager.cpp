@@ -17,13 +17,11 @@ void BufferManager::destroy() {
     _buffers.clear();
 }
 
-void BufferManager::addBuffer(const std::string &name, uint32_t sizeBytes, const void *data) {
+void BufferManager::addBuffer(const std::string &name, VkBufferUsageFlags flags, uint32_t sizeBytes, const void *data) {
     if (_buffers.contains(name)) {
         // TODO: Make less-error prone
         return;
     }
 
-    // TODO: Usage
-    VkBufferUsageFlags flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     _buffers[name] = Buffer(_device, _allocator, _commandPool, flags, sizeBytes, data);
 }

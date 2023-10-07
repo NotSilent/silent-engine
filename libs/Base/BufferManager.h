@@ -10,7 +10,7 @@ public:
 
     BufferManager(const vkb::Device &device, VmaAllocator allocator, VkCommandPool commandPool);
 
-    void addBuffer(const std::string &name, uint32_t sizeBytes, const void *data);
+    void addBuffer(const std::string &name, VkBufferUsageFlags flags, uint32_t sizeBytes, const void *data);
 
     VkBuffer getBuffer(const std::string &name);
 

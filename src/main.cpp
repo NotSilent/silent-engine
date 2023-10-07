@@ -40,10 +40,9 @@ int main() {
 
     PatchedSphere patchedSphere(2);
 
-    renderer->addBuffer("meshVertices", patchedSphere.getVertices().size() * sizeof(glm::vec3), patchedSphere.getVertices().data());
-    renderer->addBuffer("meshIndices", patchedSphere.getIndices().size() * sizeof(uint32_t), patchedSphere.getIndices().data());
+    renderer->addBuffer("meshVertices", VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, patchedSphere.getVertices().size() * sizeof(glm::vec3), patchedSphere.getVertices().data());
+    renderer->addBuffer("meshIndices", VK_BUFFER_USAGE_INDEX_BUFFER_BIT, patchedSphere.getIndices().size() * sizeof(uint32_t), patchedSphere.getIndices().data());
 
-    std::vector<std::shared_ptr<Texture>> textures;
     VkPipeline pipeline = renderer->getDeferredPipeline();
     if(pipeline != nullptr)
     {

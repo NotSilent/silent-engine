@@ -22,10 +22,8 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
 
     _commandPool = VkInit::createCommandPool(device, device.get_queue_index(vkb::QueueType::graphics).value());
 
-    _textureManager = TextureManager(device, _allocator, _commandPool);
     _bufferManager = BufferManager(device, _allocator, _commandPool);
     _imageManager = ImageManager(device, _allocator, _commandPool);
-    _samplerManager = SamplerManager(device, _allocator, _commandPool);
 
     std::vector<VkImage> swapchainImages = swapchain.get_images().value();
     _swapchainImageViews = swapchain.get_image_views().value();
@@ -109,8 +107,6 @@ Renderer::~Renderer() {
 
     _bufferManager.destroy();
     _imageManager.destroy();
-    _samplerManager.destroy();
-    _textureManager.destroy();
     _pipelineManager.destroy();
 
     vmaDestroyAllocator(_allocator);
@@ -142,16 +138,8 @@ Renderer::update(const DrawData &drawData, float currentTime, float deltaTime) {
     draw(drawData, _renderArea);
 }
 
-void Renderer::addSampler(const std::string &name) {
-    _samplerManager.addSampler(name);
-}
-
-std::shared_ptr<Sampler> Renderer::getSampler(const std::string &name) {
-    return _samplerManager.getSampler(name);
-}
-
-void Renderer::addBuffer(const std::string &name, uint32_t size, const void *data) {
-    _bufferManager.addBuffer(name, size, data);
+void Renderer::addBuffer(const std::string &name, VkBufferUsageFlags flags, uint32_t size, const void *data) {
+    _bufferManager.addBuffer(name, flags, size, data);
 }
 
 VkBuffer Renderer::getBuffer(const std::string &name) {
@@ -164,14 +152,6 @@ void Renderer::addImage(const std::string &name, uint32_t width, uint32_t height
 
 std::shared_ptr<Image> Renderer::getImage(const std::string &name) {
     return _imageManager.getImage(name);
-}
-
-void Renderer::addTexture(const std::string &name, std::shared_ptr<Sampler> sampler, std::shared_ptr<Image> image) {
-    _textureManager.addTexture(name, std::move(sampler), std::move(image));
-}
-
-std::shared_ptr<Texture> Renderer::getTexture(const std::string &name) {
-    return _textureManager.getTexture(name);
 }
 
 void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {

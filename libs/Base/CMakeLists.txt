@@ -11,8 +11,6 @@ set(BASE_SOURCES
         ProfillerTimer.h ProfillerTimer.cpp
         PushData.h
         Renderer.h Renderer.cpp
-        Sampler.h Sampler.cpp
-        Texture.h Texture.cpp
         VkInit.h VkInit.cpp
         Window.h Window.cpp
 
@@ -24,8 +22,6 @@ set(BASE_SOURCES
         BufferManager.h BufferManager.cpp
         ImageManager.h ImageManager.cpp
         PipelineManager.h PipelineManager.cpp
-        SamplerManager.h SamplerManager.cpp
-        TextureManager.h TextureManager.cpp
 
         EngineStatics.h EngineStatics.cpp
         InputSystem.h InputSystem.cpp
