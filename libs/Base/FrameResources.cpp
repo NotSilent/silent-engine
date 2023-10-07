@@ -22,14 +22,12 @@ FrameResources::FrameResources(VkDevice device,
                                VmaAllocator allocator,
                                uint32_t queueFamilyIndex,
                                Image swapchainImage,
-                               VkDescriptorSet deferredLightningSet,
-                               VkPipelineLayout deferredLightningPipelineLayout,
-                               VkPipeline deferredLightningPipeline,
+                               PipelineManager& pipelineManager,
                                const VkRect2D &renderArea)
         : device(device), swapchainImage(std::move(swapchainImage)),
           cmdPool(VkInit::createCommandPool(device, queueFamilyIndex)), synchronization(device),
           deferredRenderPass(device, allocator, renderArea),
-          deferredLightningRenderPass(device, deferredLightningSet, deferredLightningPipelineLayout, deferredLightningPipeline, renderArea, deferredRenderPass.getOutput()) {
+          deferredLightningRenderPass(pipelineManager, renderArea, deferredRenderPass.getOutput()) {
     VkCommandBufferAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -38,37 +36,6 @@ FrameResources::FrameResources(VkDevice device,
             .commandBufferCount = 1,
     };
     vkAllocateCommandBuffers(device, &allocateInfo, &cmd);
-}
-
-FrameResources::FrameResources(FrameResources &&other) noexcept
-        : synchronization(other.synchronization), deferredRenderPass(std::move(other.deferredRenderPass)),
-          deferredLightningRenderPass(std::move(other.deferredLightningRenderPass)) {
-    device = other.device;
-
-    swapchainImage = std::move(other.swapchainImage);
-
-    cmdPool = other.cmdPool;
-    cmd = other.cmd;
-}
-
-FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
-    if (this == &other) {
-        return *this;
-    }
-
-    device = other.device;
-
-    swapchainImage = std::move(other.swapchainImage);
-
-    cmdPool = other.cmdPool;
-    cmd = other.cmd;
-
-    synchronization = other.synchronization;
-
-    deferredRenderPass = std::move(other.deferredRenderPass);
-    deferredLightningRenderPass = std::move(other.deferredLightningRenderPass);
-
-    return *this;
 }
 
 void FrameResources::destroy() {

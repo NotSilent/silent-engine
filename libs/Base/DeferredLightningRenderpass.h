@@ -2,11 +2,13 @@
 
 #include <vulkan/vulkan_core.h>
 #include "DeferredRenderpass.h"
+#include "PipelineManager.h"
+#include "DeferredLightningMaterial.h"
 
 class DeferredLightningRenderpass {
 public:
-    // TODO: create pipeline
-    DeferredLightningRenderpass(VkDevice device, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput);
+    // TODO: Pass PipelineManager as part of some kind of Engine/Renderer Context
+    DeferredLightningRenderpass(PipelineManager& pipelineManager, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput);
 
     DeferredLightningRenderpass(DeferredLightningRenderpass& other) = delete;
     DeferredLightningRenderpass& operator=(DeferredLightningRenderpass& other) = delete;
@@ -17,21 +19,15 @@ public:
     void render(VkCommandBuffer cmd, const Image& swapchainImage);
 
 private:
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
+    // TODO: As parameter to render?
     VkRect2D renderArea;
 
     DeferredRenderPassOutput deferredRenderPassOutput;
 
-    VkDescriptorSet descriptorSet;
-
-    // TODO: get from some manager
-    VkSampler sampler;
+    DeferredLightningMaterial material;
 
     inline static VkClearValue swapchainClearValue = {0.0f, 0.0f, 0.0f, 0.0f};
 
     void beginRenderPass(VkCommandBuffer cmd, const Image& swapchainImage);
     void endRenderPass(VkCommandBuffer cmd, const Image& swapchainImage);
-
-    VkSampler createSampler(VkDevice device);
 };

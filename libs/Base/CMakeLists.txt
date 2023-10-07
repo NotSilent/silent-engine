@@ -43,6 +43,8 @@ set(BASE_SOURCES
         PatchedSphere.h
         DeferredLightningRenderpass.cpp
         DeferredLightningRenderpass.h
+        DeferredLightningMaterial.cpp
+        DeferredLightningMaterial.h
 )
 
 add_library(base STATIC ${BASE_SOURCES})

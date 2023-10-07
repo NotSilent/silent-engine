@@ -2,6 +2,7 @@
 
 #include "VkBootstrap.h"
 #include "ShaderManager.h"
+#include "DeferredLightningMaterial.h"
 #include <memory>
 
 class PipelineManager {
@@ -16,14 +17,11 @@ public:
     PipelineManager(PipelineManager&& other) = default;
     PipelineManager& operator=(PipelineManager&& other) = default;
 
-    // TODO: Make set during creation of renderpass?
-    [[nodiscard]] VkDescriptorSet getDeferredLightningSet(uint32_t frameIndex) const;
-
     [[nodiscard]] VkPipelineLayout getDeferredPipelineLayout() const;
-    [[nodiscard]] VkPipelineLayout getDeferredLightningPipelineLayout() const;
 
     [[nodiscard]] VkPipeline getDeferredPipeline() const;
-    [[nodiscard]] VkPipeline getDeferredLightningPipeline() const;
+
+    [[nodiscard]] DeferredLightningMaterial createDeferredLightningMaterial(VkImageView colorImageView);
 
 private:
     VkDevice device;
@@ -32,15 +30,19 @@ private:
 
     ShaderManager shaderManager;
 
+    VkSampler defaultSampler;
+
     VkDescriptorPool descriptorPool;
-    VkDescriptorSetLayout deferredLightningDescriptorSetLayout;
-    VkDescriptorSet deferredLightningSets[3];
 
     VkPipelineLayout deferredPipelineLayout;
-    VkPipelineLayout deferredLightningPipelineLayout;
-
     VkPipeline deferredPipeline;
+
+    VkDescriptorSetLayout deferredLightningDescriptorSetLayout;
+    VkPipelineLayout deferredLightningPipelineLayout;
     VkPipeline deferredLightningPipeline;
+    std::vector<VkDescriptorSet> deferredLightningSets;
+
+    [[nodiscard]] VkSampler createDefaultSampler(VkDevice device);
 
     [[nodiscard]] VkDescriptorPool createDescriptorPool();
 

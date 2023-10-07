@@ -48,13 +48,10 @@ public:
 
     std::shared_ptr<Texture> getTexture(const std::string &name);
 
-
     // TODO: Technicaly unsafe
     [[nodiscard]] VkPipelineLayout getDeferredPipelineLayout() const;
 
     [[nodiscard]] VkPipeline getDeferredPipeline() const;
-
-    [[nodiscard]] VkPipeline getDeferredLightningPipeline() const;
 
 private:
     void draw(const DrawData &drawData, VkRect2D renderArea);

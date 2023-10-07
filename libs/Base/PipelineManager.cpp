@@ -14,11 +14,10 @@ PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, cons
             .size = sizeof(PushData),
     };
 
+    defaultSampler = createDefaultSampler(device);
+
     descriptorPool = createDescriptorPool();
     deferredLightningDescriptorSetLayout = createDescriptorSetLayout();
-    deferredLightningSets[0] = createDeferredLightningSet();
-    deferredLightningSets[1] = createDeferredLightningSet();
-    deferredLightningSets[2] = createDeferredLightningSet();
     deferredPipelineLayout = createPipelineLayout(0, nullptr, 1, &deferredPushConstantRange);
     deferredLightningPipelineLayout = createPipelineLayout(1, &deferredLightningDescriptorSetLayout, 0, nullptr);
     deferredPipeline = createDeferredPipeline();
@@ -33,28 +32,82 @@ void PipelineManager::destroy() {
     vkDestroyDescriptorSetLayout(device, deferredLightningDescriptorSetLayout, nullptr);
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
+    vkDestroySampler(device, defaultSampler, nullptr);
+
     shaderManager.destroy();
 }
 
-VkDescriptorSet PipelineManager::getDeferredLightningSet(uint32_t frameIndex) const {
-    return deferredLightningSets[frameIndex];
+VkSampler PipelineManager::createDefaultSampler(VkDevice device) {
+    VkSamplerCreateInfo createInfo {
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = {},
+            .magFilter = VK_FILTER_LINEAR,
+            .minFilter = VK_FILTER_LINEAR,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .mipLodBias = 0.0f,
+            .anisotropyEnable = false,
+            .maxAnisotropy = 0.0f,
+            .compareEnable = false,
+            .compareOp = VK_COMPARE_OP_NEVER,
+            .minLod = 0,
+            .maxLod = 0,
+            .borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE,
+            .unnormalizedCoordinates = false,
+    };
+
+    VkSampler sampler;
+    if(vkCreateSampler(device, &createInfo, nullptr, &sampler) != VK_SUCCESS)
+    {
+        throw std::runtime_error("DeferredLightningRenderpass::createSampler");
+    }
+
+    return sampler;
 }
 
 VkPipelineLayout PipelineManager::getDeferredPipelineLayout() const {
     return deferredPipelineLayout;
 }
 
-VkPipelineLayout PipelineManager::getDeferredLightningPipelineLayout() const {
-    return deferredLightningPipelineLayout;
-}
-
 VkPipeline PipelineManager::getDeferredPipeline() const {
     return deferredPipeline;
 }
 
-VkPipeline PipelineManager::getDeferredLightningPipeline() const {
-    return deferredLightningPipeline;
+DeferredLightningMaterial PipelineManager::createDeferredLightningMaterial(VkImageView colorImageView) {
+    VkDescriptorImageInfo imageInfo {
+            .sampler = defaultSampler,
+            .imageView = colorImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+
+    VkDescriptorSet set = createDeferredLightningSet();
+    deferredLightningSets.push_back(set);
+
+    VkWriteDescriptorSet descriptorWrite {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext = nullptr,
+            .dstSet = set,
+            .dstBinding = 0,
+            .dstArrayElement =0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .pImageInfo = &imageInfo,
+            .pBufferInfo = nullptr,
+            .pTexelBufferView = nullptr,
+    };
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+
+    return {
+        .layout = deferredLightningPipelineLayout,
+        .pipeline = deferredLightningPipeline,
+        .set = set,
+    };
 }
+
 
 VkDescriptorPool PipelineManager::createDescriptorPool() {
     // TODO: Configurable and per type

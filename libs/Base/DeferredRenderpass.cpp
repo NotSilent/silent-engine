@@ -122,14 +122,12 @@ DeferredRenderPassOutput DeferredRenderpass::getOutput() const {
     RenderPassAttachmentOutput color = {
             .image = colorImage.getImage(),
             .imageView = colorImage.getImageView(),
-            //.accessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
 
     RenderPassAttachmentOutput depth = {
             .image = depthImage.getImage(),
             .imageView = depthImage.getImageView(),
-            //.accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
     };
 

@@ -6,6 +6,7 @@
 #include "DeferredRenderpass.h"
 #include "Queue.h"
 #include "DeferredLightningRenderpass.h"
+#include "PipelineManager.h"
 
 class Image;
 class DrawData;
@@ -27,9 +28,7 @@ public:
                    VmaAllocator allocator,
                    uint32_t queueFamilyIndex,
                    Image swapchainImage,
-                   VkDescriptorSet deferredLightningSet,
-                   VkPipelineLayout deferredLightningPipelineLayout,
-                   VkPipeline deferredLightningPipeline,
+                   PipelineManager& pipelineManager,
                    const VkRect2D &renderArea);
 
     ~FrameResources() = default;
@@ -38,13 +37,12 @@ public:
 
     FrameResources &operator=(const FrameResources &other) = delete;
 
-    FrameResources(FrameResources &&other) noexcept;
+    FrameResources(FrameResources &&other) = default;
 
-    FrameResources &operator=(FrameResources &&other) noexcept;
+    FrameResources &operator=(FrameResources &&other) = default;
 
     void renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, VkFence presentFence, const DrawData& drawData);
 
-    // Should be handled by whatever will create Images
     void destroy();
 
 private:

@@ -7,7 +7,6 @@
 struct RenderPassAttachmentOutput {
     VkImage image;
     VkImageView imageView;
-    VkAccessFlags accessMask;
     VkImageLayout imageLayout;
 };
 
