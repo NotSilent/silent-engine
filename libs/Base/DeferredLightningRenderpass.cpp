@@ -33,8 +33,8 @@ DeferredLightningRenderpass::DeferredLightningRenderpass(VkDevice device, VkDesc
     vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 }
 
-void DeferredLightningRenderpass::render(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView) {
-    beginRenderPass(cmd, swapchainImage, swapchainImageView);
+void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image& swapchainImage) {
+    beginRenderPass(cmd, swapchainImage);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
@@ -44,10 +44,10 @@ void DeferredLightningRenderpass::render(VkCommandBuffer cmd, VkImage swapchainI
     endRenderPass(cmd, swapchainImage);
 }
 
-void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, VkImage swapchainImage, VkImageView swapchainImageView) {
+void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, const Image& swapchainImage) {
     VkRenderingAttachmentInfo swapchainAttachment {
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView = swapchainImageView,
+            .imageView = swapchainImage.getImageView(),
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .resolveMode = VK_RESOLVE_MODE_NONE,
             .resolveImageView = nullptr,
@@ -65,7 +65,7 @@ void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, VkImage s
                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                    VK_IMAGE_LAYOUT_UNDEFINED,
                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                   swapchainImage,
+                                   swapchainImage.getImage(),
                                    VK_IMAGE_ASPECT_COLOR_BIT);
 
     CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
@@ -91,7 +91,7 @@ void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, VkImage s
     vkCmdBeginRendering(cmd, &renderingInfo);
 }
 
-void DeferredLightningRenderpass::endRenderPass(VkCommandBuffer cmd, VkImage swapchainImage) {
+void DeferredLightningRenderpass::endRenderPass(VkCommandBuffer cmd, const Image& swapchainImage) {
     vkCmdEndRendering(cmd);
 
     CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -100,7 +100,7 @@ void DeferredLightningRenderpass::endRenderPass(VkCommandBuffer cmd, VkImage swa
                                    VK_ACCESS_NONE,
                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                                   swapchainImage,
+                                   swapchainImage.getImage(),
                                    VK_IMAGE_ASPECT_COLOR_BIT);
 }
 

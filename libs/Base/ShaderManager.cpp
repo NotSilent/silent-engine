@@ -7,6 +7,7 @@
 
 ShaderManager::ShaderManager(VkDevice device)
     : device(device)
+    , compiler(shaderc_compiler_initialize())
 {
 
 }
@@ -16,6 +17,8 @@ void ShaderManager::destroy() {
         vkDestroyShaderModule(device, shader.vert, nullptr);
         vkDestroyShaderModule(device, shader.frag, nullptr);
     }
+
+    shaderc_compiler_release(compiler);
 }
 
 std::optional<Shader> ShaderManager::getShader(const std::string& shaderName) {
@@ -68,20 +71,23 @@ std::optional<std::string> ShaderManager::loadShaderFile(const std::string &shad
 
 std::optional<VkShaderModule> ShaderManager::compileShader(const std::string &text, shaderc_shader_kind shaderKind,
                                                            const std::string &shaderName) const {
-    const shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(text, shaderKind, shaderName.c_str());
-    if(result.GetCompilationStatus() != shaderc_compilation_status_success)
-    {
-        std::cout << result.GetErrorMessage();
-    }
+    shaderc_compilation_result_t result = shaderc_compile_into_spv(compiler, text.c_str(), text.size(), shaderKind, shaderName.c_str(), "main", nullptr);
 
-    ptrdiff_t codeSize = result.end() - result.begin();
+    if( shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success)
+    {
+        std::cout << shaderc_result_get_error_message(result);
+
+        shaderc_result_release(result);
+
+        return {};
+    }
 
     const VkShaderModuleCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
-            .codeSize = codeSize * sizeof(uint32_t),
-            .pCode = result.begin(),
+            .codeSize = shaderc_result_get_length(result),
+            .pCode = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result)),
     };
 
     VkShaderModule shaderModule;
@@ -90,6 +96,8 @@ std::optional<VkShaderModule> ShaderManager::compileShader(const std::string &te
         const std::string shaderKindName = shaderKind == shaderc_shader_kind::shaderc_vertex_shader ? "vertex" : "fragment";
         std::cout << std::format("Couldn't create {} shader module: {}\n", shaderName, shaderKindName );
     }
+
+    shaderc_result_release(result);
 
     return shaderModule;
 }

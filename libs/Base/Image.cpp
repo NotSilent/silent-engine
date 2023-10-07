@@ -190,6 +190,12 @@ Image::Image(const vkb::Device &device, VmaAllocator allocator, VkCommandPool co
     }
 }
 
+Image::Image(VkImage image, VkImageView imageView) {
+    _image = image;
+    _imageView = imageView;
+}
+
+
 Image::Image(VkDevice device, VmaAllocator allocator, const ImageCreateInfo &imageCreateInfo) {
     VkImageCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,

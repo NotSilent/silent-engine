@@ -9,16 +9,14 @@
 #include <limits>
 #include <iostream>
 #include <utility>
+#include "Image.h"
 
 Renderer::Renderer(const std::shared_ptr<Window> &window)
         : window(window), instance(createInstance()), surface(createSurface()), physicalDevice(selectPhysicalDevice()),
           device(createDevice()), swapchain(createSwapchain()),
-          _renderArea(VkRect2D{{0,                  0},
-                               {window->getWidth(), window->getHeight()}}) {
+          _renderArea(VkRect2D{{0, 0}, {window->getWidth(), window->getHeight()}}),
+          _pipelineManager(device.device, swapchain.image_format, _renderArea) {
     _allocator = VkInit::createAllocator(instance, physicalDevice, device, VK_API_VERSION_1_3);
-
-    std::vector<VkImage> swapchainImages = swapchain.get_images().value();
-    _swapchainImageViews = swapchain.get_image_views().value();
 
     uint32_t queueFamilyIndex = device.get_queue_index(vkb::QueueType::graphics).value();;
 
@@ -28,11 +26,13 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
     _bufferManager = BufferManager(device, _allocator, _commandPool);
     _imageManager = ImageManager(device, _allocator, _commandPool);
     _samplerManager = SamplerManager(device, _allocator, _commandPool);
-    _pipelineManager = std::make_shared<PipelineManager>(device, swapchain.image_format, _renderArea);
+
+    std::vector<VkImage> swapchainImages = swapchain.get_images().value();
+    _swapchainImageViews = swapchain.get_image_views().value();
 
     for (size_t i = 0; i < swapchain.image_count; ++i) {
         _frameResource.emplace_back(
-                device.device, _allocator, queueFamilyIndex, swapchainImages[i], _swapchainImageViews[i],_pipelineManager->getDeferredLightningSet(i), _pipelineManager->getDeferredLightningPipelineLayout(), _pipelineManager->getDeferredLightningPipeline(), _renderArea);
+                device.device, _allocator, queueFamilyIndex, Image(swapchainImages[i], _swapchainImageViews[i]),_pipelineManager.getDeferredLightningSet(i), _pipelineManager.getDeferredLightningPipelineLayout(), _pipelineManager.getDeferredLightningPipeline(), _renderArea);
     }
 
     presentFence = VkInit::createFence(device, {});
@@ -111,7 +111,7 @@ Renderer::~Renderer() {
     _imageManager.destroy();
     _samplerManager.destroy();
     _textureManager.destroy();
-    _pipelineManager->destroy();
+    _pipelineManager.destroy();
 
     vmaDestroyAllocator(_allocator);
 
@@ -182,20 +182,17 @@ void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {
                           acquireSemaphore, presentFence, &imageIndex);
 
     FrameResources &frameResources = _frameResource[imageIndex];
-    frameResources.renderFrame(swapchain.swapchain, graphicsQueue.queue, imageIndex, acquireSemaphore, drawData);
-
-    vkWaitForFences(device, 1, &presentFence, true, std::numeric_limits<uint64_t>::max());
-    vkResetFences(device, 1, &presentFence);
+    frameResources.renderFrame(swapchain.swapchain, graphicsQueue.queue, imageIndex, acquireSemaphore, presentFence, drawData);
 }
 
 VkPipelineLayout Renderer::getDeferredPipelineLayout() const {
-    return _pipelineManager->getDeferredPipelineLayout();
+    return _pipelineManager.getDeferredPipelineLayout();
 }
 
 VkPipeline Renderer::getDeferredPipeline() const {
-    return _pipelineManager->getDeferredPipeline();
+    return _pipelineManager.getDeferredPipeline();
 }
 
 VkPipeline Renderer::getDeferredLightningPipeline() const {
-    return _pipelineManager->getDeferredLightningPipeline();
+    return _pipelineManager.getDeferredLightningPipeline();
 }

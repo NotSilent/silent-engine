@@ -8,26 +8,25 @@
 
 FrameSynchronization::FrameSynchronization(VkDevice device)
         : queueFence(VkInit::createFence(device, VK_FENCE_CREATE_SIGNALED_BIT)), imageAcquireSemaphore(nullptr),
-          presentSemahore(nullptr) {
+          presentSemaphore(nullptr) {
 }
 
 void FrameSynchronization::destroy(VkDevice device) {
     vkWaitForFences(device, 1, &queueFence, true, std::numeric_limits<uint64_t>::max());
     vkDestroyFence(device, queueFence, nullptr);
     vkDestroySemaphore(device, imageAcquireSemaphore, nullptr);
-    vkDestroySemaphore(device, presentSemahore, nullptr);
+    vkDestroySemaphore(device, presentSemaphore, nullptr);
 }
 
 FrameResources::FrameResources(VkDevice device,
                                VmaAllocator allocator,
                                uint32_t queueFamilyIndex,
-                               VkImage swapchainImage,
-                               VkImageView swapchainImageView,
+                               Image swapchainImage,
                                VkDescriptorSet deferredLightningSet,
                                VkPipelineLayout deferredLightningPipelineLayout,
                                VkPipeline deferredLightningPipeline,
                                const VkRect2D &renderArea)
-        : device(device), swapchainImage(swapchainImage), swapchainImageView(swapchainImageView),
+        : device(device), swapchainImage(std::move(swapchainImage)),
           cmdPool(VkInit::createCommandPool(device, queueFamilyIndex)), synchronization(device),
           deferredRenderPass(device, allocator, renderArea),
           deferredLightningRenderPass(device, deferredLightningSet, deferredLightningPipelineLayout, deferredLightningPipeline, renderArea, deferredRenderPass.getOutput()) {
@@ -46,8 +45,7 @@ FrameResources::FrameResources(FrameResources &&other) noexcept
           deferredLightningRenderPass(std::move(other.deferredLightningRenderPass)) {
     device = other.device;
 
-    swapchainImage = other.swapchainImage;
-    swapchainImageView = other.swapchainImageView;
+    swapchainImage = std::move(other.swapchainImage);
 
     cmdPool = other.cmdPool;
     cmd = other.cmd;
@@ -60,8 +58,7 @@ FrameResources &FrameResources::operator=(FrameResources &&other) noexcept {
 
     device = other.device;
 
-    swapchainImage = other.swapchainImage;
-    swapchainImageView = other.swapchainImageView;
+    swapchainImage = std::move(other.swapchainImage);
 
     cmdPool = other.cmdPool;
     cmd = other.cmd;
@@ -84,17 +81,13 @@ void FrameResources::destroy() {
 }
 
 void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex,
-                                 VkSemaphore imageAcquireSemaphore, const DrawData &drawData) {
+                                 VkSemaphore imageAcquireSemaphore, VkFence presentFence, const DrawData &drawData) {
+    VkSemaphore presentSemaphore = VkInit::createSemaphore(device);
+
     vkWaitForFences(device, 1, &synchronization.queueFence, true, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &synchronization.queueFence);
 
     vkResetCommandPool(device, cmdPool, {});
-
-    vkDestroySemaphore(device, synchronization.imageAcquireSemaphore, nullptr);
-    vkDestroySemaphore(device, synchronization.presentSemahore, nullptr);
-
-    synchronization.imageAcquireSemaphore = imageAcquireSemaphore;
-    synchronization.presentSemahore = VkInit::createSemaphore(device);
 
     VkCommandBufferBeginInfo beginInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -125,7 +118,7 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
         }
     });
 
-    deferredLightningRenderPass.render(cmd, swapchainImage, swapchainImageView);
+    deferredLightningRenderPass.render(cmd, swapchainImage);
 
     vkEndCommandBuffer(cmd);
 
@@ -142,7 +135,7 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
 
     VkSemaphoreSubmitInfo presentSemaphoreSubmitInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .semaphore = synchronization.presentSemahore,
+            .semaphore = presentSemaphore,
             .stageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
     };
 
@@ -162,7 +155,7 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = nullptr,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &synchronization.presentSemahore,
+            .pWaitSemaphores = &presentSemaphore,
             .swapchainCount = 1,
             .pSwapchains = &swapchain,
             .pImageIndices = &imageIndex,
@@ -170,4 +163,13 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
     };
 
     vkQueuePresentKHR(graphicsQueue, &presentInfo);
+
+    vkWaitForFences(device, 1, &presentFence, true, std::numeric_limits<uint64_t>::max());
+    vkResetFences(device, 1, &presentFence);
+
+    vkDestroySemaphore(device, synchronization.imageAcquireSemaphore, nullptr);
+    vkDestroySemaphore(device, synchronization.presentSemaphore, nullptr);
+
+    synchronization.imageAcquireSemaphore = imageAcquireSemaphore;
+    synchronization.presentSemaphore = presentSemaphore;
 }

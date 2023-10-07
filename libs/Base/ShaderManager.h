@@ -4,7 +4,7 @@
 #include <string>
 #include <vulkan/vulkan_core.h>
 #include <optional>
-#include <shaderc/shaderc.hpp>
+#include <shaderc/shaderc.h>
 #include "Shader.h"
 
 class ShaderManager {
@@ -15,14 +15,14 @@ public:
     ShaderManager(ShaderManager& other) = delete;
     ShaderManager& operator=(ShaderManager& other) = delete;
 
-    ShaderManager(ShaderManager&& other) = delete;
-    ShaderManager& operator=(ShaderManager&& other) = delete;
+    ShaderManager(ShaderManager&& other) = default;
+    ShaderManager& operator=(ShaderManager&& other) = default;
 
     [[nodiscard]] std::optional<Shader> getShader(const std::string& shaderName);
 
 private:
     VkDevice device;
-    shaderc::Compiler compiler;
+    shaderc_compiler_t compiler;
 
     std::unordered_map<std::string, Shader> shaders;
 

@@ -18,6 +18,9 @@ struct ImageCreateInfo {
     VkImageAspectFlags aspectMask;
 };
 
+// TODO: Move creation to image manager
+// Allocation stored with ImageAllocation{Image, VmaAllocation}
+
 class Image {
 private:
     VkImage _image = nullptr;
@@ -27,6 +30,8 @@ private:
 
 public:
     Image() = default;
+
+    Image(VkImage image, VkImageView imageView);
 
     Image(const vkb::Device &device, VmaAllocator allocator, VkCommandPool commandPool, uint32_t width, uint32_t height,
           VkFormat format, uint32_t size, const void *data);

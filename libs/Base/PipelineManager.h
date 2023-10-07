@@ -8,8 +8,13 @@ class PipelineManager {
 public:
     PipelineManager(VkDevice device, VkFormat swapchainFormat, const VkRect2D& renderArea);
 
-    // TODO: Remove all destroys?
     void destroy();
+
+    PipelineManager(PipelineManager& other) = delete;
+    PipelineManager& operator=(PipelineManager& other) = delete;
+
+    PipelineManager(PipelineManager&& other) = default;
+    PipelineManager& operator=(PipelineManager&& other) = default;
 
     // TODO: Make set during creation of renderpass?
     [[nodiscard]] VkDescriptorSet getDeferredLightningSet(uint32_t frameIndex) const;

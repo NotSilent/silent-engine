@@ -99,5 +99,5 @@ private:
     ImageManager _imageManager;
     TextureManager _textureManager;
     SamplerManager _samplerManager;
-    std::shared_ptr<PipelineManager> _pipelineManager;
+    PipelineManager _pipelineManager;
 };

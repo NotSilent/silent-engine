@@ -14,7 +14,7 @@ class DrawData;
 struct FrameSynchronization {
     VkFence queueFence;
     VkSemaphore imageAcquireSemaphore;
-    VkSemaphore presentSemahore;
+    VkSemaphore presentSemaphore;
 
     explicit FrameSynchronization(VkDevice device);
 
@@ -26,8 +26,7 @@ public:
     FrameResources(VkDevice device,
                    VmaAllocator allocator,
                    uint32_t queueFamilyIndex,
-                   VkImage swapchainImage,
-                   VkImageView swapchainImageView,
+                   Image swapchainImage,
                    VkDescriptorSet deferredLightningSet,
                    VkPipelineLayout deferredLightningPipelineLayout,
                    VkPipeline deferredLightningPipeline,
@@ -43,7 +42,7 @@ public:
 
     FrameResources &operator=(FrameResources &&other) noexcept;
 
-    void renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, const DrawData& drawData);
+    void renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex, VkSemaphore imageAcquireSemaphore, VkFence presentFence, const DrawData& drawData);
 
     // Should be handled by whatever will create Images
     void destroy();
@@ -51,8 +50,7 @@ public:
 private:
     VkDevice device;
 
-    VkImage swapchainImage;
-    VkImageView swapchainImageView;
+    Image swapchainImage;
 
     VkCommandPool cmdPool;
     VkCommandBuffer cmd;
