@@ -1,4 +1,5 @@
 #include "PipelineManager.h"
+#include "DeferredRenderpass.h"
 #include <algorithm>
 #include <PushData.h>
 #include <array>
@@ -76,11 +77,23 @@ VkPipeline PipelineManager::getDeferredPipeline() const {
     return deferredPipeline;
 }
 
-DeferredLightningMaterial PipelineManager::createDeferredLightningMaterial(VkImageView colorImageView) {
-    VkDescriptorImageInfo imageInfo {
-            .sampler = defaultSampler,
-            .imageView = colorImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+DeferredLightningMaterial PipelineManager::createDeferredLightningMaterial(VkImageView color, VkImageView normal, VkImageView position) {
+    std::array imageInfos{
+            VkDescriptorImageInfo{
+                    .sampler = defaultSampler,
+                    .imageView = color,
+                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            },
+            VkDescriptorImageInfo{
+                    .sampler = defaultSampler,
+                    .imageView = normal,
+                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            },
+            VkDescriptorImageInfo{
+                    .sampler = defaultSampler,
+                    .imageView = position,
+                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            }
     };
 
     VkDescriptorSet set = createDeferredLightningSet();
@@ -92,9 +105,9 @@ DeferredLightningMaterial PipelineManager::createDeferredLightningMaterial(VkIma
             .dstSet = set,
             .dstBinding = 0,
             .dstArrayElement =0,
-            .descriptorCount = 1,
+            .descriptorCount = imageInfos.size(),
             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .pImageInfo = &imageInfo,
+            .pImageInfo = imageInfos.data(),
             .pBufferInfo = nullptr,
             .pTexelBufferView = nullptr,
     };
@@ -146,6 +159,20 @@ VkDescriptorSetLayout PipelineManager::createDescriptorSetLayout() {
                     .descriptorCount = 1,
                     .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
                     .pImmutableSamplers = nullptr,
+            },
+            VkDescriptorSetLayoutBinding {
+                .binding = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .pImmutableSamplers = nullptr,
+            },
+            VkDescriptorSetLayoutBinding {
+                .binding = 2,
+                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .pImmutableSamplers = nullptr,
             }
     };
 
@@ -223,12 +250,18 @@ VkPipeline PipelineManager::createDeferredPipeline() {
                 }
         };
 
-        std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachments {
+        static const size_t ATTACHMENT_COUNT = 3;
+
+        std::array<VkPipelineColorBlendAttachmentState, ATTACHMENT_COUNT> colorBlendAttachments {
+                createPipelineColorBlendAttachmentState(),
+                createPipelineColorBlendAttachmentState(),
                 createPipelineColorBlendAttachmentState(),
         };
 
         // TODO: manage format
-        std::array<VkFormat, 1> colorAttachmentFormats {VK_FORMAT_R8G8B8A8_UNORM};
+        std::array<VkFormat, ATTACHMENT_COUNT> colorAttachmentFormats {DeferredRenderpassDefinitions::Formats::COLOR,
+                                                        DeferredRenderpassDefinitions::Formats::NORMAL,
+                                                        DeferredRenderpassDefinitions::Formats::POSITION};
 
         return createPipeline(shader.value(),
                               vertexBindingDescriptions.size(),
@@ -492,7 +525,7 @@ VkPipelineRenderingCreateInfoKHR PipelineManager::createPipelineRenderingCreateI
             .viewMask = 0,
             .colorAttachmentCount = colorAttachmentCount,
             .pColorAttachmentFormats = pColorAttachmentFormats,
-            .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
+            .depthAttachmentFormat = DeferredRenderpassDefinitions::Formats::DEPTH,
             .stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
     };
 }

@@ -21,7 +21,7 @@ public:
 
     [[nodiscard]] VkPipeline getDeferredPipeline() const;
 
-    [[nodiscard]] DeferredLightningMaterial createDeferredLightningMaterial(VkImageView colorImageView);
+    [[nodiscard]] DeferredLightningMaterial createDeferredLightningMaterial(VkImageView color, VkImageView normal, VkImageView position);
 
 private:
     VkDevice device;
@@ -55,7 +55,6 @@ private:
 
     [[nodiscard]] VkPipeline createDeferredLightningPipeline(VkFormat swapchainFormat);
 
-    // TODO: unify color attachments?
     [[nodiscard]] VkPipeline createPipeline(const Shader& shader,
                                                            uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
                                                            uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription* pVertexAttributeDescriptions,

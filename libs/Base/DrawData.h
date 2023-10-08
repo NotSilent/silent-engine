@@ -20,6 +20,7 @@ public:
 
     [[nodiscard]] std::vector<DrawCall> const &getDrawCalls() const;
 
+    // TODO: Part of material
     VkPipelineLayout deferredPipelineLayout;
 
     glm::mat4 view;

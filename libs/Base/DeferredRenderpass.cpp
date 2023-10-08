@@ -8,12 +8,16 @@ DeferredRenderpass::DeferredRenderpass(VkDevice device,
         : device(device)
         , allocator(allocator)
         , renderArea(renderArea) {
-    colorImage = createColorImage();
+    colorImage = createColorImage(DeferredRenderpassDefinitions::Formats::COLOR);
+    normalImage = createColorImage(DeferredRenderpassDefinitions::Formats::NORMAL);
+    positionImage = createColorImage(DeferredRenderpassDefinitions::Formats::POSITION);
     depthImage = createDepthImage();
 }
 
 void DeferredRenderpass::destroy() {
     colorImage.destroy(device, allocator);
+    normalImage.destroy(device, allocator);
+    positionImage.destroy(device, allocator);
     depthImage.destroy(device, allocator);
 }
 
@@ -27,18 +31,6 @@ void DeferredRenderpass::render(VkCommandBuffer cmd,
 }
 
 void DeferredRenderpass::beginRenderPass(VkCommandBuffer cmd) {
-    VkRenderingAttachmentInfo depthAttachment {
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView = depthImage.getImageView(),
-            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-            .resolveMode = VK_RESOLVE_MODE_NONE,
-            .resolveImageView = nullptr,
-            .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = depthClearValue,
-    };
-
     VkRenderingAttachmentInfo colorAttachment {
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = colorImage.getImageView(),
@@ -51,18 +43,45 @@ void DeferredRenderpass::beginRenderPass(VkCommandBuffer cmd) {
             .clearValue = clearValue,
     };
 
-    std::array attachments {colorAttachment};
+    VkRenderingAttachmentInfo normalAttachment {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = normalImage.getImageView(),
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .resolveMode = VK_RESOLVE_MODE_NONE,
+            .resolveImageView = nullptr,
+            .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = clearValue,
+    };
+
+    VkRenderingAttachmentInfo positionAttachment {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = positionImage.getImageView(),
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .resolveMode = VK_RESOLVE_MODE_NONE,
+            .resolveImageView = nullptr,
+            .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = clearValue,
+    };
+
+    VkRenderingAttachmentInfo depthAttachment {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = depthImage.getImageView(),
+            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            .resolveMode = VK_RESOLVE_MODE_NONE,
+            .resolveImageView = nullptr,
+            .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = depthClearValue,
+    };
+
+    std::array attachments {colorAttachment, normalAttachment, positionAttachment};
 
     // TODO: Single vkCmdPipelineBarrier
-
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                   VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                   VK_ACCESS_NONE,
-                                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                   VK_IMAGE_LAYOUT_UNDEFINED,
-                                   VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                                   depthImage.getImage(),
-                                   VK_IMAGE_ASPECT_DEPTH_BIT);
 
     CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -72,6 +91,33 @@ void DeferredRenderpass::beginRenderPass(VkCommandBuffer cmd) {
                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                    colorImage.getImage(),
                                    VK_IMAGE_ASPECT_COLOR_BIT);
+
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                   VK_ACCESS_NONE,
+                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                   VK_IMAGE_LAYOUT_UNDEFINED,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   normalImage.getImage(),
+                                   VK_IMAGE_ASPECT_COLOR_BIT);
+
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                   VK_ACCESS_NONE,
+                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                   VK_IMAGE_LAYOUT_UNDEFINED,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   positionImage.getImage(),
+                                   VK_IMAGE_ASPECT_COLOR_BIT);
+
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                   VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                   VK_ACCESS_NONE,
+                                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                   VK_IMAGE_LAYOUT_UNDEFINED,
+                                   VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                   depthImage.getImage(),
+                                   VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkRenderingInfo renderingInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
@@ -91,11 +137,11 @@ void DeferredRenderpass::endRenderPass(VkCommandBuffer cmd) {
     vkCmdEndRendering(cmd);
 }
 
-Image DeferredRenderpass::createColorImage() const {
+Image DeferredRenderpass::createColorImage(VkFormat format) const {
     ImageCreateInfo createInfo {
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_R8G8B8A8_UNORM,
+            .format = format,
             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -108,7 +154,7 @@ Image DeferredRenderpass::createDepthImage() const {
     ImageCreateInfo createInfo {
             .extent = {renderArea.extent.width, renderArea.extent.height, 1},
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_D32_SFLOAT,
+            .format = DeferredRenderpassDefinitions::Formats::DEPTH,
             .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
@@ -118,10 +164,21 @@ Image DeferredRenderpass::createDepthImage() const {
 }
 
 DeferredRenderPassOutput DeferredRenderpass::getOutput() const {
-    // TODO: Access mask?
     RenderPassAttachmentOutput color = {
             .image = colorImage.getImage(),
             .imageView = colorImage.getImageView(),
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    RenderPassAttachmentOutput normal = {
+            .image = normalImage.getImage(),
+            .imageView = normalImage.getImageView(),
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    RenderPassAttachmentOutput position = {
+            .image = positionImage.getImage(),
+            .imageView = positionImage.getImageView(),
             .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
 
@@ -133,6 +190,8 @@ DeferredRenderPassOutput DeferredRenderpass::getOutput() const {
 
     return DeferredRenderPassOutput {
         .color = color,
+        .normal = normal,
+        .position = position,
         .depth = depth,
     };
 }

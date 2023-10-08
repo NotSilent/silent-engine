@@ -38,7 +38,7 @@ int main() {
         entities.push_back(entityWithCamera);
     }
 
-    PatchedSphere patchedSphere(2);
+    PatchedSphere patchedSphere(4);
 
     renderer->addBuffer("meshVertices", VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, patchedSphere.getVertices().size() * sizeof(glm::vec3), patchedSphere.getVertices().data());
     renderer->addBuffer("meshIndices", VK_BUFFER_USAGE_INDEX_BUFFER_BIT, patchedSphere.getIndices().size() * sizeof(uint32_t), patchedSphere.getIndices().data());

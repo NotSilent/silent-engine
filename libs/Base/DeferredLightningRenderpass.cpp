@@ -4,7 +4,7 @@
 DeferredLightningRenderpass::DeferredLightningRenderpass(PipelineManager& pipelineManager, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput)
     : renderArea(renderArea)
     , deferredRenderPassOutput(deferredRenderPassOutput)
-    , material(pipelineManager.createDeferredLightningMaterial(deferredRenderPassOutput.color.imageView)) {
+    , material(pipelineManager.createDeferredLightningMaterial(deferredRenderPassOutput.color.imageView, deferredRenderPassOutput.normal.imageView, deferredRenderPassOutput.position.imageView)) {
 }
 
 void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image& swapchainImage) {
@@ -49,6 +49,24 @@ void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, const Ima
                                    deferredRenderPassOutput.color.imageLayout,
                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                    deferredRenderPassOutput.color.image,
+                                   VK_IMAGE_ASPECT_COLOR_BIT);
+
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                   VK_ACCESS_NONE,
+                                   VK_ACCESS_SHADER_READ_BIT,
+                                   deferredRenderPassOutput.normal.imageLayout,
+                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   deferredRenderPassOutput.normal.image,
+                                   VK_IMAGE_ASPECT_COLOR_BIT);
+
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                   VK_ACCESS_NONE,
+                                   VK_ACCESS_SHADER_READ_BIT,
+                                   deferredRenderPassOutput.position.imageLayout,
+                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   deferredRenderPassOutput.position.image,
                                    VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkRenderingInfo renderingInfo{
