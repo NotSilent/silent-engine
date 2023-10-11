@@ -7,9 +7,10 @@ DeferredLightningRenderpass::DeferredLightningRenderpass(PipelineManager& pipeli
     , material(pipelineManager.createDeferredLightningMaterial(deferredRenderPassOutput.color.imageView, deferredRenderPassOutput.normal.imageView, deferredRenderPassOutput.position.imageView)) {
 }
 
-void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image& swapchainImage) {
+void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image& swapchainImage, glm::vec3 viewDirection) {
     beginRenderPass(cmd, swapchainImage);
 
+    vkCmdPushConstants(cmd, material.layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(glm::vec3), &viewDirection);
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material.pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material.layout, 0, 1, &material.set, 0, nullptr);
 

@@ -15,12 +15,18 @@ PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, cons
             .size = sizeof(PushData),
     };
 
+    VkPushConstantRange deferredLightningPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .offset = 0,
+            .size = sizeof(glm::vec3),
+    };
+
     defaultSampler = createDefaultSampler(device);
 
     descriptorPool = createDescriptorPool();
     deferredLightningDescriptorSetLayout = createDescriptorSetLayout();
     deferredPipelineLayout = createPipelineLayout(0, nullptr, 1, &deferredPushConstantRange);
-    deferredLightningPipelineLayout = createPipelineLayout(1, &deferredLightningDescriptorSetLayout, 0, nullptr);
+    deferredLightningPipelineLayout = createPipelineLayout(1, &deferredLightningDescriptorSetLayout, 1, &deferredLightningPushConstantRange);
     deferredPipeline = createDeferredPipeline();
     deferredLightningPipeline = createDeferredLightningPipeline(swapchainFormat);
 }

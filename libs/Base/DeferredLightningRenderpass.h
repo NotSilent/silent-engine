@@ -4,6 +4,7 @@
 #include "DeferredRenderpass.h"
 #include "PipelineManager.h"
 #include "DeferredLightningMaterial.h"
+#include "glm/vec3.hpp"
 
 class DeferredLightningRenderpass {
 public:
@@ -16,7 +17,7 @@ public:
     DeferredLightningRenderpass(DeferredLightningRenderpass&& other) = default;
     DeferredLightningRenderpass& operator=(DeferredLightningRenderpass&& other) = default;
 
-    void render(VkCommandBuffer cmd, const Image& swapchainImage);
+    void render(VkCommandBuffer cmd, const Image& swapchainImage, glm::vec3 viewDirection);
 
 private:
     // TODO: As parameter to render?

@@ -15,7 +15,7 @@ void main() {
     mat3 normalMatrix = transpose(inverse(mat3(push.model)));
     outNormal = normalMatrix * inPosition;
 
-    vec4 position = push.model * vec4(inPosition, 1);
+    vec4 position = push.model * vec4(inPosition, 1.0);
     outPosition = position.xyz;
 
     gl_Position = push.projection * push.view * position;

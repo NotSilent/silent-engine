@@ -85,7 +85,9 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
         }
     });
 
-    deferredLightningRenderPass.render(cmd, swapchainImage);
+    const glm::vec3 viewDirection = glm::inverse(-drawData.view)[2];
+
+    deferredLightningRenderPass.render(cmd, swapchainImage, viewDirection);
 
     vkEndCommandBuffer(cmd);
 

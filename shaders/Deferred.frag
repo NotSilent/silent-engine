@@ -8,9 +8,7 @@ layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec4 outPosition;
 
 void main() {
-    outColor = vec4(1, 0, 0, 1.0);
-    outNormal = vec4(inNormal, 1.0);
-    outPosition = vec4(inPosition, 1.0);
-
-    //outColor = vec4(((inNormal * vec3(1, 1, -1) + 1) / 2), 1.0f);
+    outColor = vec4(1.0, 0.0, 0.0, 1.0);
+    outNormal = vec4(inNormal, 0.1); // metallic
+    outPosition = vec4(inPosition, 0.3); // roughness
 }
