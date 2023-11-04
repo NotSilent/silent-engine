@@ -32,7 +32,7 @@ void main()
     float metallic = sampledNormal.w;
     float roughness = sampledPosition.w;
 
-    vec3 light = normalize(vec3(0.0, 0.0, -1.0));
+    vec3 light = normalize(vec3(0.0, 1.0, -1.0));
 
     float NoV = dot(normal, push.view);
     float NoL = dot(normal, light);

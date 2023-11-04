@@ -239,20 +239,31 @@ VkPipeline PipelineManager::createDeferredPipeline() {
     std::optional<Shader> shader = shaderManager.getShader("Deferred");
     if(shader.has_value())
     {
-        std::array<VkVertexInputBindingDescription, 1> vertexBindingDescriptions = {
+        std::array vertexBindingDescriptions = {
                 VkVertexInputBindingDescription {
                         .binding = 0,
+                        .stride = sizeof(glm::vec3),
+                        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+                },
+                VkVertexInputBindingDescription {
+                        .binding = 1,
                         .stride = sizeof(glm::vec3),
                         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
                 }
         };
 
-        std::array<VkVertexInputAttributeDescription, 1> vertexInputAttributeDescription {
+        std::array vertexInputAttributeDescription {
                 VkVertexInputAttributeDescription {
                         .location = 0,
                         .binding = 0,
                         .format = VK_FORMAT_R32G32B32_SFLOAT,
                         .offset = 0,
+                },
+                VkVertexInputAttributeDescription {
+                    .location = 1,
+                    .binding = 1,
+                    .format = VK_FORMAT_R32G32B32_SFLOAT,
+                    .offset = 0,
                 }
         };
 
@@ -265,9 +276,11 @@ VkPipeline PipelineManager::createDeferredPipeline() {
         };
 
         // TODO: manage format
-        std::array<VkFormat, ATTACHMENT_COUNT> colorAttachmentFormats {DeferredRenderpassDefinitions::Formats::COLOR,
-                                                        DeferredRenderpassDefinitions::Formats::NORMAL,
-                                                        DeferredRenderpassDefinitions::Formats::POSITION};
+        std::array<VkFormat, ATTACHMENT_COUNT> colorAttachmentFormats {
+            DeferredRenderpassDefinitions::Formats::COLOR,
+            DeferredRenderpassDefinitions::Formats::NORMAL,
+            DeferredRenderpassDefinitions::Formats::POSITION
+        };
 
         return createPipeline(shader.value(),
                               vertexBindingDescriptions.size(),

@@ -52,6 +52,9 @@ target_link_libraries(base Vulkan::shaderc_combined)
 target_link_libraries(base SPIRV-Tools-opt)
 target_link_libraries(base SPIRV-Tools)
 
+target_compile_definitions(glm INTERFACE GLM_FORCE_LEFT_HANDED)
+target_compile_definitions(glm INTERFACE GLM_FORCE_DEPTH_ZERO_TO_ONE)
+
 target_link_libraries(base glm)
 target_link_libraries(base imgui)
 target_link_libraries(base vk-bootstrap)

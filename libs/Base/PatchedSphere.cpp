@@ -84,14 +84,22 @@ PatchedSphere::PatchedSphere(uint32_t subdivisions) {
             indices.push_back(bottomRightIndex);
         }
     }
-}
 
-std::vector<glm::vec3> PatchedSphere::getVertices() const {
-    return vertices;
+    // Normals only
+    // Same as positions for unit sphere
+    normals = positions;
 }
 
 std::vector<uint32_t> PatchedSphere::getIndices() const {
     return indices;
+}
+
+std::vector<glm::vec3> PatchedSphere::getPositions() const {
+    return positions;
+}
+
+std::vector<glm::vec3> PatchedSphere::getNormals() const {
+    return normals;
 }
 
 std::vector<Face> PatchedSphere::generateSubdividedFaces(const std::vector<Face> &faces) const {
@@ -141,25 +149,18 @@ std::vector<Face> PatchedSphere::generateSubdividedFaces(const std::vector<Face>
 }
 
 uint32_t PatchedSphere::getIndexOfVertex(const glm::vec3 &vertex) {
-    auto found = std::find_if(vertices.begin(), vertices.end(), [vertex](const glm::vec3& element) {
+    auto found = std::find_if(positions.begin(), positions.end(), [vertex](const glm::vec3& element) {
         return glm::all(glm::epsilonEqual(vertex, element, 0.0001f));
     });
 
-    if(found != vertices.end())
+    if(found != positions.end())
     {
-        glm::vec3 f = *found;
-
-        auto eq = glm::epsilonEqual(vertex, f, 0.0001f);
-        auto all = glm::all(eq);
-
-        uint32_t distance = std::distance(vertices.begin(), found);
-
-        return std::distance(vertices.begin(), found);
+        return std::distance(positions.begin(), found);
     }
 
-    uint32_t newIndex = vertices.size();
+    uint32_t newIndex = positions.size();
 
-    vertices.push_back(vertex);
+    positions.push_back(vertex);
 
     return newIndex;
 }

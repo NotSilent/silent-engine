@@ -49,6 +49,8 @@ void FrameResources::destroy() {
 
 void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue, uint32_t imageIndex,
                                  VkSemaphore imageAcquireSemaphore, VkFence presentFence, const DrawData &drawData) {
+    // TODO: draw code inside renderpasses
+
     VkSemaphore presentSemaphore = VkInit::createSemaphore(device);
 
     vkWaitForFences(device, 1, &synchronization.queueFence, true, std::numeric_limits<uint64_t>::max());
@@ -75,9 +77,17 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
 
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);
 
-            VkDeviceSize offset = 0;
-            VkBuffer vertexBuffer = drawCall._mesh->getVertexBuffer();
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
+            std::array buffers {
+                drawCall._mesh->getPositionsBuffer(),
+                drawCall._mesh->getAttributesBuffer(),
+            };
+
+            std::array<VkDeviceSize, 2> offsets {
+                0,
+                0,
+            };
+
+            vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
 
             vkCmdBindIndexBuffer(commandBuffer, drawCall._mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 

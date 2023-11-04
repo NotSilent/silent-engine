@@ -15,12 +15,20 @@ glm::mat4 Entity::getModel()
     return _model;
 }
 
-void Entity::translate(const glm::vec3 translation)
+void Entity::translate(const glm::vec3& translation)
 {
     _model = glm::translate(_model, translation);
 }
 
-void Entity::setScale(const glm::vec3 scale)
+void Entity::rotate(float angle, const glm::vec3& axis) {
+    _model = glm::rotate(_model, angle, axis);
+}
+
+void Entity::setScale(float scale) {
+    setScale(glm::vec3(scale));
+}
+
+void Entity::setScale(const glm::vec3& scale)
 {
     _model = glm::scale(_model, scale);
 }

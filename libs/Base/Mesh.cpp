@@ -1,18 +1,24 @@
 #include "Mesh.h"
 
-Mesh::Mesh(uint32_t indexCount, VkBuffer vertexBuffer, VkBuffer indexBuffer)
-        : _indexCount(indexCount), _vertexBuffer(vertexBuffer), _indexBuffer(indexBuffer) {
+Mesh::Mesh(uint32_t indexCount, VkBuffer indexBuffer, VkBuffer vertexBuffer, VkBuffer attributesBuffer)
+        : indexCount(indexCount)
+        , indexBuffer(indexBuffer)
+        , positionsBuffer(vertexBuffer)
+        , attributesBuffer(attributesBuffer) {
 }
 
 uint32_t Mesh::getIndexCount() const {
-    return _indexCount;
+    return indexCount;
 }
-
-VkBuffer Mesh::getVertexBuffer() const {
-    return _vertexBuffer;
-}
-
 
 VkBuffer Mesh::getIndexBuffer() const {
-    return _indexBuffer;
+    return indexBuffer;
+}
+
+VkBuffer Mesh::getPositionsBuffer() const {
+    return positionsBuffer;
+}
+
+VkBuffer Mesh::getAttributesBuffer() const {
+    return attributesBuffer;
 }

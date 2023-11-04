@@ -1,8 +1,9 @@
 #include "Camera.h"
 
 #include <numbers>
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtx/rotate_vector.hpp"
+#include "glm/glm.hpp"
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/matrix_clip_space.hpp"
 
 Camera::Camera(float aspectRatio)
         : _projection{createProjection(aspectRatio, std::numbers::pi / 2.0f, 0.1f, 10000.0f)},
@@ -26,7 +27,7 @@ glm::vec3 Camera::getPosition() const {
 }
 
 glm::mat4 Camera::getViewMatrix() const {
-    return _engineToVulkanCoordinateSpace * glm::inverse(_transform);
+    return glm::inverse(_transform);
 }
 
 glm::mat4 Camera::getProjectionMatrix() const {
@@ -34,25 +35,30 @@ glm::mat4 Camera::getProjectionMatrix() const {
 }
 
 glm::mat4 Camera::createProjection(float aspectRatio, float fov, float near, float far) {
-    return {
-            1.0f / (aspectRatio * std::tan(fov / 2.0f)),
-            0.0f,
-            0.0f,
-            0.0f,
+//    glm::mat4 customProjection = {
+//            1.0f / (aspectRatio * std::tan(fov / 2.0f)),
+//            0.0f,
+//            0.0f,
+//            0.0f,
+//
+//            0.0f,
+//            std::tan(fov / 2.0f),
+//            0.0f,
+//            0.0f,
+//
+//            0.0f,
+//            0.0f,
+//            far / (far - near),
+//            1.0f,
+//
+//            0.0f,
+//            0.0f,
+//            -far * near / (far - near),
+//            0.0f,
+//    };
 
-            0.0f,
-            std::tan(fov / 2.0f),
-            0.0f,
-            0.0f,
+    // Requires GLM_FORCE_LEFT_HANDED & GLM_FORCE_DEPTH_ZERO_TO_ONE
+    glm::mat4 perspective = glm::perspective(fov, aspectRatio, near, far);
 
-            0.0f,
-            0.0f,
-            far / (far - near),
-            1.0f,
-
-            0.0f,
-            0.0f,
-            -far * near / (far - near),
-            0.0f,
-    };
+    return _engineToVulkanCoordinateSpace * perspective;
 }

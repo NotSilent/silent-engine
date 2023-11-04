@@ -12,9 +12,13 @@ public:
 
     glm::mat4 getModel();
 
-    void translate(const glm::vec3 translation);
+    void translate(const glm::vec3& translation);
 
-    void setScale(const glm::vec3 scale);
+    void rotate(float angle, const glm::vec3& axis);
+
+    void setScale(float scale);
+
+    void setScale(const glm::vec3& scale);
 
     static void addComponent(std::shared_ptr<Entity> entity, std::shared_ptr<Component> component);
 

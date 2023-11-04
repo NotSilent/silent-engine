@@ -2,12 +2,12 @@
 
 layout (location = 0) out vec2 outPosition;
 
-const vec4 ndctr = vec4(-1.0, -1.0, 0.0, 1.0);
-const vec4 ndctl = vec4(1.0, -1.0, 0.0, 1.0);
-const vec4 ndcbr = vec4(-1.0, 1.0, 0.0, 1.0);
-const vec4 ndcbl = vec4(1.0, 1.0, 0.0, 1.0);
+const vec4 ndctl = vec4(-1.0, -1.0, 0.0, 1.0);
+const vec4 ndctr = vec4(1.0, -1.0, 0.0, 1.0);
+const vec4 ndcbl = vec4(-1.0, 1.0, 0.0, 1.0);
+const vec4 ndcbr = vec4(1.0, 1.0, 0.0, 1.0);
 
-const vec4 VERTICES[6] = vec4[6](ndctr, ndctl, ndcbr, ndcbr, ndctl, ndcbl);
+const vec4 VERTICES[6] = vec4[6](ndctl, ndcbl, ndctr, ndctr, ndcbl, ndcbr);
 
 void main()
 {
