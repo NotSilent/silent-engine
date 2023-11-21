@@ -41,6 +41,11 @@ set(BASE_SOURCES
         DeferredLightningRenderpass.h
         DeferredLightningMaterial.cpp
         DeferredLightningMaterial.h
+        ShadowMapRenderpass.cpp
+        ShadowMapRenderpass.h
+        DirectionalLight.cpp
+        DirectionalLight.h
+        ShadowMapMaterial.h
 )
 
 add_library(base STATIC ${BASE_SOURCES})

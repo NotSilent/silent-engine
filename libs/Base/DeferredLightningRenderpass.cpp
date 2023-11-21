@@ -1,16 +1,31 @@
 #include "DeferredLightningRenderpass.h"
 #include "CommandBuffer.h"
 
-DeferredLightningRenderpass::DeferredLightningRenderpass(PipelineManager& pipelineManager, VkRect2D renderArea, const DeferredRenderPassOutput& deferredRenderPassOutput)
-    : renderArea(renderArea)
-    , deferredRenderPassOutput(deferredRenderPassOutput)
-    , material(pipelineManager.createDeferredLightningMaterial(deferredRenderPassOutput.color.imageView, deferredRenderPassOutput.normal.imageView, deferredRenderPassOutput.position.imageView)) {
+DeferredLightningRenderpass::DeferredLightningRenderpass(PipelineManager &pipelineManager,
+                                                         VkRect2D renderArea,
+                                                         const DeferredRenderPassOutput &deferredRenderPassOutput,
+                                                         const ShadowMapRenderPassOutput &shadowMapRenderPassOutput)
+        : renderArea(renderArea)
+        , deferredRenderPassOutput(deferredRenderPassOutput)
+        , shadowMapRenderPassOutput(shadowMapRenderPassOutput)
+        , material(pipelineManager.createDeferredLightningMaterial(deferredRenderPassOutput.color.imageView,
+                                                                   deferredRenderPassOutput.normal.imageView,
+                                                                   deferredRenderPassOutput.position.imageView,
+                                                                   shadowMapRenderPassOutput.depth.imageView)) {
 }
 
-void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image& swapchainImage, glm::vec3 viewDirection) {
+void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image &swapchainImage, const glm::mat4& lightSpace, glm::vec3 viewDirection) {
     beginRenderPass(cmd, swapchainImage);
 
-    vkCmdPushConstants(cmd, material.layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(glm::vec3), &viewDirection);
+    struct LightningPushData {
+        glm::mat4 lightSpace = {};
+        glm::vec3 view = {};
+    } pushData;
+
+    pushData.lightSpace = lightSpace;
+    pushData.view = viewDirection;
+
+    vkCmdPushConstants(cmd, material.layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(LightningPushData), &pushData);
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material.pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material.layout, 0, 1, &material.set, 0, nullptr);
 
@@ -19,8 +34,8 @@ void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image& swapc
     endRenderPass(cmd, swapchainImage);
 }
 
-void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, const Image& swapchainImage) {
-    VkRenderingAttachmentInfo swapchainAttachment {
+void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, const Image &swapchainImage) {
+    VkRenderingAttachmentInfo swapchainAttachment{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = swapchainImage.getImageView(),
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
@@ -32,7 +47,7 @@ void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, const Ima
             .clearValue = swapchainClearValue,
     };
 
-    std::array attachments {swapchainAttachment};
+    std::array attachments{swapchainAttachment};
 
     CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -70,6 +85,15 @@ void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, const Ima
                                    deferredRenderPassOutput.position.image,
                                    VK_IMAGE_ASPECT_COLOR_BIT);
 
+    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                   VK_ACCESS_NONE,
+                                   VK_ACCESS_SHADER_READ_BIT,
+                                   shadowMapRenderPassOutput.depth.imageLayout,
+                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   shadowMapRenderPassOutput.depth.image,
+                                   VK_IMAGE_ASPECT_DEPTH_BIT);
+
     VkRenderingInfo renderingInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
             .renderArea = renderArea,
@@ -84,7 +108,7 @@ void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, const Ima
     vkCmdBeginRendering(cmd, &renderingInfo);
 }
 
-void DeferredLightningRenderpass::endRenderPass(VkCommandBuffer cmd, const Image& swapchainImage) {
+void DeferredLightningRenderpass::endRenderPass(VkCommandBuffer cmd, const Image &swapchainImage) {
     vkCmdEndRendering(cmd);
 
     CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,

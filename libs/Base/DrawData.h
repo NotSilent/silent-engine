@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "Mesh.h"
+#include "DirectionalLight.h"
 #include <vector>
 
 struct DrawCall {
@@ -25,7 +26,8 @@ public:
 
     glm::mat4 view;
     glm::mat4 projection;
-    glm::vec3 position;
+
+    DirectionalLight directionalLight;
 
 private:
     std::vector<DrawCall> _drawCalls;

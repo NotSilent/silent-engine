@@ -7,6 +7,7 @@
 #include "Queue.h"
 #include "DeferredLightningRenderpass.h"
 #include "PipelineManager.h"
+#include "ShadowMapRenderpass.h"
 
 class Image;
 class DrawData;
@@ -54,6 +55,8 @@ private:
     VkCommandBuffer cmd;
 
     FrameSynchronization synchronization;
+
+    ShadowMapRenderpass shadowMapRenderpass;
 
     DeferredRenderpass deferredRenderPass;
     DeferredLightningRenderpass deferredLightningRenderPass;

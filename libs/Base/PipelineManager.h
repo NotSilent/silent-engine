@@ -3,25 +3,31 @@
 #include "VkBootstrap.h"
 #include "ShaderManager.h"
 #include "DeferredLightningMaterial.h"
+#include "ShadowMapMaterial.h"
 #include <memory>
 
 class PipelineManager {
 public:
-    PipelineManager(VkDevice device, VkFormat swapchainFormat, const VkRect2D& renderArea);
+    PipelineManager(VkDevice device, VkFormat swapchainFormat, const VkRect2D &renderArea);
 
     void destroy();
 
-    PipelineManager(PipelineManager& other) = delete;
-    PipelineManager& operator=(PipelineManager& other) = delete;
+    PipelineManager(PipelineManager &other) = delete;
 
-    PipelineManager(PipelineManager&& other) = default;
-    PipelineManager& operator=(PipelineManager&& other) = default;
+    PipelineManager &operator=(PipelineManager &other) = delete;
+
+    PipelineManager(PipelineManager &&other) = default;
+
+    PipelineManager &operator=(PipelineManager &&other) = default;
 
     [[nodiscard]] VkPipelineLayout getDeferredPipelineLayout() const;
 
     [[nodiscard]] VkPipeline getDeferredPipeline() const;
 
-    [[nodiscard]] DeferredLightningMaterial createDeferredLightningMaterial(VkImageView color, VkImageView normal, VkImageView position);
+    [[nodiscard]] DeferredLightningMaterial
+    createDeferredLightningMaterial(VkImageView color, VkImageView normal, VkImageView position, VkImageView shadowMap);
+
+    [[nodiscard]] ShadowMapMaterial getShadowMapMaterial() const;
 
 private:
     VkDevice device;
@@ -34,6 +40,10 @@ private:
 
     VkDescriptorPool descriptorPool;
 
+    // TODO: Separate pipelines per renderpass?
+    // Doesn't make much sense for shadowmaps and final composition pipeline to be here
+    // since they are unchanged and only used by those renderpasses
+
     VkPipelineLayout deferredPipelineLayout;
     VkPipeline deferredPipeline;
 
@@ -42,29 +52,39 @@ private:
     VkPipeline deferredLightningPipeline;
     std::vector<VkDescriptorSet> deferredLightningSets;
 
+    ShadowMapMaterial shadowMapMaterial;
+
     [[nodiscard]] VkSampler createDefaultSampler(VkDevice device);
 
     [[nodiscard]] VkDescriptorPool createDescriptorPool();
 
     [[nodiscard]] VkDescriptorSetLayout createDescriptorSetLayout();
 
-    [[nodiscard]] VkPipelineLayout createPipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout* pSetLayouts,
-                                                        uint32_t pushConstantRangeCount, const VkPushConstantRange* pushConstantRange);
+    [[nodiscard]] VkPipelineLayout
+    createPipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout *pSetLayouts,
+                         uint32_t pushConstantRangeCount, const VkPushConstantRange *pushConstantRange);
 
     [[nodiscard]] VkPipeline createDeferredPipeline();
 
     [[nodiscard]] VkPipeline createDeferredLightningPipeline(VkFormat swapchainFormat);
 
-    [[nodiscard]] VkPipeline createPipeline(const Shader& shader,
-                                                           uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
-                                                           uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription* pVertexAttributeDescriptions,
-                                                           uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments,
-                                                           uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats,
-                                                           VkPipelineLayout pipelineLayout, VkCullModeFlags cullMode);
+    [[nodiscard]] VkPipeline createShadowMapPipeline(const VkRect2D& renderArea);
+
+    [[nodiscard]] VkPipeline createPipeline(const VkRect2D& renderArea, const Shader &shader,
+                                            uint32_t vertexBindingDescriptionCount,
+                                            const VkVertexInputBindingDescription *pVertexBindingDescriptions,
+                                            uint32_t vertexAttributeDescriptionCount,
+                                            const VkVertexInputAttributeDescription *pVertexAttributeDescriptions,
+                                            uint32_t attachmentCount,
+                                            const VkPipelineColorBlendAttachmentState *pAttachments,
+                                            uint32_t colorAttachmentCount, const VkFormat *pColorAttachmentFormats,
+                                            VkPipelineLayout pipelineLayout, VkCullModeFlags cullMode);
 
     [[nodiscard]] static VkPipelineVertexInputStateCreateInfo
-    createPipelineVertexInputStateCreateInfo(uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
-                                             uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription* pVertexAttributeDescriptions);
+    createPipelineVertexInputStateCreateInfo(uint32_t vertexBindingDescriptionCount,
+                                             const VkVertexInputBindingDescription *pVertexBindingDescriptions,
+                                             uint32_t vertexAttributeDescriptionCount,
+                                             const VkVertexInputAttributeDescription *pVertexAttributeDescriptions);
 
     [[nodiscard]] static VkPipelineShaderStageCreateInfo
     createPipelineShaderStageCreateInfo(VkShaderStageFlagBits shaderStage, VkShaderModule module);
@@ -79,7 +99,7 @@ private:
     createPipelineTessellationStateCreateInfo();
 
     [[nodiscard]] static VkPipelineViewportStateCreateInfo
-    createViewportStateCreateInfo(const VkViewport& viewport, const VkRect2D& renderArea);
+    createViewportStateCreateInfo(const VkViewport &viewport, const VkRect2D &renderArea);
 
     [[nodiscard]] static VkPipelineMultisampleStateCreateInfo
     createPipelineMultisampleStateCreateInfo();
@@ -91,14 +111,15 @@ private:
     createPipelineColorBlendAttachmentState();
 
     [[nodiscard]] static VkPipelineColorBlendStateCreateInfo
-    createPipelineColorBlendStateCreateInfo(uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments);
+    createPipelineColorBlendStateCreateInfo(uint32_t attachmentCount,
+                                            const VkPipelineColorBlendAttachmentState *pAttachments);
 
     [[nodiscard]] static VkPipelineDynamicStateCreateInfo
     createPipelineDynamicStateCreateInfo();
 
     // TODO: configure depth
     [[nodiscard]] static VkPipelineRenderingCreateInfoKHR
-    createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats);
+    createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount, const VkFormat *pColorAttachmentFormats);
 
     VkDescriptorSet createDeferredLightningSet();
 };

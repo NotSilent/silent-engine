@@ -6,7 +6,7 @@ DrawData::DrawData(const std::shared_ptr<Camera>& camera, VkPipelineLayout defer
     : deferredPipelineLayout(deferredPipelineLayout)
     , view(camera->getViewMatrix())
     , projection(camera->getProjectionMatrix())
-    , position(camera->getPosition()) {
+    , directionalLight(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f, 0.0f, 1.0f)){
 }
 
 void DrawData::addDrawCall(std::shared_ptr<Mesh> mesh, VkPipeline pipeline, const glm::mat4 &model) {

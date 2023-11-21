@@ -3,6 +3,9 @@
 #include <vulkan/vulkan_core.h>
 #include <functional>
 #include "Image.h"
+#include "RenderPassAttachmentOutput.h"
+
+class DrawData;
 
 namespace DeferredRenderpassDefinitions{
     namespace Formats {
@@ -11,12 +14,6 @@ namespace DeferredRenderpassDefinitions{
         static inline VkFormat POSITION = VK_FORMAT_R16G16B16A16_SFLOAT;
         static inline VkFormat DEPTH = VK_FORMAT_D32_SFLOAT;
     }
-};
-
-struct RenderPassAttachmentOutput {
-    VkImage image;
-    VkImageView imageView;
-    VkImageLayout imageLayout;
 };
 
 struct DeferredRenderPassOutput {
@@ -40,8 +37,7 @@ public:
 
     void destroy();
 
-    void render(VkCommandBuffer cmd,
-                const std::function<void(VkCommandBuffer cmd)>& renderPassRecording);
+    void render(VkCommandBuffer cmd, const DrawData& drawData);
 
     [[nodiscard]] DeferredRenderPassOutput getOutput() const;
 
@@ -49,8 +45,10 @@ private:
     VkDevice device;
     VmaAllocator allocator;
 
-    static inline VkClearValue clearValue{0.0f, 0.0f, 0.0f, 0.0f};
-    static inline VkClearValue depthClearValue {1.0f, 0};
+    static inline const VkClearValue CLEAR_VALUE{0.0f, 0.0f, 0.0f, 0.0f};
+    static inline const VkClearValue DEPTH_CLEAR_VALUE {
+        .depthStencil = {1.0f, 0}
+    };
 
     VkRect2D renderArea;
 

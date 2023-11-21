@@ -1,6 +1,9 @@
 #include "DeferredRenderpass.h"
 
 #include "CommandBuffer.h"
+#include "PushData.h"
+#include "DrawData.h"
+#include "RenderPassAttachmentOutput.h"
 
 DeferredRenderpass::DeferredRenderpass(VkDevice device,
                                        VmaAllocator allocator,
@@ -21,11 +24,35 @@ void DeferredRenderpass::destroy() {
     depthImage.destroy(device, allocator);
 }
 
-void DeferredRenderpass::render(VkCommandBuffer cmd,
-                                const std::function<void(VkCommandBuffer cmd)> &renderPassRecording) {
+void DeferredRenderpass::render(VkCommandBuffer cmd, const DrawData& drawData) {
     beginRenderPass(cmd);
 
-    renderPassRecording(cmd);
+    // TODO: Why tf is deferredPipelineLayout a part of DrawData
+
+    for (const DrawCall &drawCall: drawData.getDrawCalls()) {
+        PushData pushData(drawCall.model, drawData.view, drawData.projection);
+        vkCmdPushConstants(cmd, drawData.deferredPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                           sizeof(PushData),
+                           &pushData);
+
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);
+
+        std::array buffers {
+                drawCall._mesh->getPositionsBuffer(),
+                drawCall._mesh->getAttributesBuffer(),
+        };
+
+        std::array<VkDeviceSize, 2> offsets {
+                0,
+                0,
+        };
+
+        vkCmdBindVertexBuffers(cmd, 0, buffers.size(), buffers.data(), offsets.data());
+
+        vkCmdBindIndexBuffer(cmd, drawCall._mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(cmd, drawCall._mesh->getIndexCount(), 1, 0, 0, 0);
+    }
 
     endRenderPass(cmd);
 }
@@ -40,7 +67,7 @@ void DeferredRenderpass::beginRenderPass(VkCommandBuffer cmd) {
             .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = clearValue,
+            .clearValue = CLEAR_VALUE,
     };
 
     VkRenderingAttachmentInfo normalAttachment {
@@ -52,7 +79,7 @@ void DeferredRenderpass::beginRenderPass(VkCommandBuffer cmd) {
             .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = clearValue,
+            .clearValue = CLEAR_VALUE,
     };
 
     VkRenderingAttachmentInfo positionAttachment {
@@ -64,7 +91,7 @@ void DeferredRenderpass::beginRenderPass(VkCommandBuffer cmd) {
             .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = clearValue,
+            .clearValue = CLEAR_VALUE,
     };
 
     VkRenderingAttachmentInfo depthAttachment {
@@ -76,7 +103,7 @@ void DeferredRenderpass::beginRenderPass(VkCommandBuffer cmd) {
             .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = depthClearValue,
+            .clearValue = DEPTH_CLEAR_VALUE,
     };
 
     std::array attachments {colorAttachment, normalAttachment, positionAttachment};

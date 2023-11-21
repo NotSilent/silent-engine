@@ -26,8 +26,9 @@ FrameResources::FrameResources(VkDevice device,
                                const VkRect2D &renderArea)
         : device(device), swapchainImage(std::move(swapchainImage)),
           cmdPool(VkInit::createCommandPool(device, queueFamilyIndex)), synchronization(device),
+          shadowMapRenderpass(device, allocator, pipelineManager),
           deferredRenderPass(device, allocator, renderArea),
-          deferredLightningRenderPass(pipelineManager, renderArea, deferredRenderPass.getOutput()) {
+          deferredLightningRenderPass(pipelineManager, renderArea, deferredRenderPass.getOutput(), shadowMapRenderpass.getOutput()) {
     VkCommandBufferAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -44,6 +45,7 @@ void FrameResources::destroy() {
     vkResetCommandPool(device, cmdPool, {});
     vkDestroyCommandPool(device, cmdPool, nullptr);
 
+    shadowMapRenderpass.destroy();
     deferredRenderPass.destroy();
 }
 
@@ -67,37 +69,13 @@ void FrameResources::renderFrame(VkSwapchainKHR swapchain, VkQueue graphicsQueue
 
     vkBeginCommandBuffer(cmd, &beginInfo);
 
-    deferredRenderPass.render(cmd, [&drawData](VkCommandBuffer commandBuffer) {
-        for (const DrawCall &drawCall: drawData.getDrawCalls()) {
-            // TODO: Move inside render pass
-            PushData pushData(drawCall.model, drawData.view, drawData.projection);
-            vkCmdPushConstants(commandBuffer, drawData.deferredPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                               sizeof(PushData),
-                               &pushData);
+    deferredRenderPass.render(cmd, drawData);
 
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawCall.pipeline);
-
-            std::array buffers {
-                drawCall._mesh->getPositionsBuffer(),
-                drawCall._mesh->getAttributesBuffer(),
-            };
-
-            std::array<VkDeviceSize, 2> offsets {
-                0,
-                0,
-            };
-
-            vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
-
-            vkCmdBindIndexBuffer(commandBuffer, drawCall._mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdDrawIndexed(commandBuffer, drawCall._mesh->getIndexCount(), 1, 0, 0, 0);
-        }
-    });
+    shadowMapRenderpass.render(cmd, drawData);
 
     const glm::vec3 viewDirection = glm::inverse(-drawData.view)[2];
 
-    deferredLightningRenderPass.render(cmd, swapchainImage, viewDirection);
+    deferredLightningRenderPass.render(cmd, swapchainImage, drawData.directionalLight.getProjection() * drawData.directionalLight.getView(), viewDirection);
 
     vkEndCommandBuffer(cmd);
 

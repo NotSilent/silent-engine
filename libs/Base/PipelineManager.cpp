@@ -4,10 +4,8 @@
 #include <PushData.h>
 #include <array>
 
-PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, const VkRect2D& renderArea)
-        : device(device)
-        , renderArea(renderArea)
-        , shaderManager(device){
+PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, const VkRect2D &renderArea)
+        : device(device), renderArea(renderArea), shaderManager(device) {
 
     VkPushConstantRange deferredPushConstantRange{
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
@@ -15,10 +13,15 @@ PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, cons
             .size = sizeof(PushData),
     };
 
+    struct LightPushData {
+        glm::mat4 lightSpace;
+        glm::vec3 view;
+    };
+
     VkPushConstantRange deferredLightningPushConstantRange{
             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
             .offset = 0,
-            .size = sizeof(glm::vec3),
+            .size = sizeof(LightPushData),
     };
 
     defaultSampler = createDefaultSampler(device);
@@ -26,12 +29,25 @@ PipelineManager::PipelineManager(VkDevice device, VkFormat swapchainFormat, cons
     descriptorPool = createDescriptorPool();
     deferredLightningDescriptorSetLayout = createDescriptorSetLayout();
     deferredPipelineLayout = createPipelineLayout(0, nullptr, 1, &deferredPushConstantRange);
-    deferredLightningPipelineLayout = createPipelineLayout(1, &deferredLightningDescriptorSetLayout, 1, &deferredLightningPushConstantRange);
+    deferredLightningPipelineLayout = createPipelineLayout(1, &deferredLightningDescriptorSetLayout, 1,
+                                                           &deferredLightningPushConstantRange);
     deferredPipeline = createDeferredPipeline();
     deferredLightningPipeline = createDeferredLightningPipeline(swapchainFormat);
+
+    // TODO: shadowmap pushrange/uniform
+    shadowMapMaterial.layout = createPipelineLayout(0, nullptr, 1, &deferredPushConstantRange);
+    static const uint32_t SHADOW_MAP_RESOLUTION = 2048;
+    static const VkRect2D SHADOW_MAP_DIMENSIONS{
+            .offset = {0, 0},
+            .extent = {SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION}
+    };
+    shadowMapMaterial.pipeline = createShadowMapPipeline(SHADOW_MAP_DIMENSIONS);
 }
 
 void PipelineManager::destroy() {
+    vkDestroyPipeline(device, shadowMapMaterial.pipeline, nullptr);
+    vkDestroyPipelineLayout(device, shadowMapMaterial.layout, nullptr);
+
     vkDestroyPipeline(device, deferredPipeline, nullptr);
     vkDestroyPipeline(device, deferredLightningPipeline, nullptr);
     vkDestroyPipelineLayout(device, deferredPipelineLayout, nullptr);
@@ -45,7 +61,7 @@ void PipelineManager::destroy() {
 }
 
 VkSampler PipelineManager::createDefaultSampler(VkDevice device) {
-    VkSamplerCreateInfo createInfo {
+    VkSamplerCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -67,8 +83,7 @@ VkSampler PipelineManager::createDefaultSampler(VkDevice device) {
     };
 
     VkSampler sampler;
-    if(vkCreateSampler(device, &createInfo, nullptr, &sampler) != VK_SUCCESS)
-    {
+    if (vkCreateSampler(device, &createInfo, nullptr, &sampler) != VK_SUCCESS) {
         throw std::runtime_error("DeferredLightningRenderpass::createSampler");
     }
 
@@ -83,7 +98,9 @@ VkPipeline PipelineManager::getDeferredPipeline() const {
     return deferredPipeline;
 }
 
-DeferredLightningMaterial PipelineManager::createDeferredLightningMaterial(VkImageView color, VkImageView normal, VkImageView position) {
+DeferredLightningMaterial
+PipelineManager::createDeferredLightningMaterial(VkImageView color, VkImageView normal, VkImageView position,
+                                                 VkImageView shadowMap) {
     std::array imageInfos{
             VkDescriptorImageInfo{
                     .sampler = defaultSampler,
@@ -99,13 +116,18 @@ DeferredLightningMaterial PipelineManager::createDeferredLightningMaterial(VkIma
                     .sampler = defaultSampler,
                     .imageView = position,
                     .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            },
+            VkDescriptorImageInfo{
+                    .sampler = defaultSampler,
+                    .imageView = shadowMap,
+                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             }
     };
 
     VkDescriptorSet set = createDeferredLightningSet();
     deferredLightningSets.push_back(set);
 
-    VkWriteDescriptorSet descriptorWrite {
+    VkWriteDescriptorSet descriptorWrite{
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .pNext = nullptr,
             .dstSet = set,
@@ -121,35 +143,40 @@ DeferredLightningMaterial PipelineManager::createDeferredLightningMaterial(VkIma
     vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 
     return {
-        .layout = deferredLightningPipelineLayout,
-        .pipeline = deferredLightningPipeline,
-        .set = set,
+            .layout = deferredLightningPipelineLayout,
+            .pipeline = deferredLightningPipeline,
+            .set = set,
     };
+}
+
+ShadowMapMaterial PipelineManager::getShadowMapMaterial() const {
+    return shadowMapMaterial;
 }
 
 
 VkDescriptorPool PipelineManager::createDescriptorPool() {
     // TODO: Configurable and per type
-    static uint32_t DescriptorSetCount = 3;
+    // Currently should == swapchain images
+    static uint32_t DescriptorSetCount = 4;
 
-    std::array descriptorPoolSizes {
-        VkDescriptorPoolSize {
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = DescriptorSetCount,
-        }
+    std::array descriptorPoolSizes{
+            VkDescriptorPoolSize{
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .descriptorCount = DescriptorSetCount,
+            }
     };
 
-    VkDescriptorPoolCreateInfo createInfo {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = {},
-        .maxSets = DescriptorSetCount,
-        .poolSizeCount = descriptorPoolSizes.size(),
-        .pPoolSizes = descriptorPoolSizes.data(),
+    VkDescriptorPoolCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = {},
+            .maxSets = DescriptorSetCount,
+            .poolSizeCount = descriptorPoolSizes.size(),
+            .pPoolSizes = descriptorPoolSizes.data(),
     };
 
     VkDescriptorPool descriptorPool;
-    if(vkCreateDescriptorPool(device, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+    if (VkResult result = vkCreateDescriptorPool(device, &createInfo, nullptr, &descriptorPool); result != VK_SUCCESS) {
         throw std::runtime_error("PipelineManager::createDescriptorPool");
     }
 
@@ -158,31 +185,38 @@ VkDescriptorPool PipelineManager::createDescriptorPool() {
 
 VkDescriptorSetLayout PipelineManager::createDescriptorSetLayout() {
     // TODO: try immutable samplers for deferred lightning
-    std::array bindings {
-            VkDescriptorSetLayoutBinding {
+    std::array bindings{
+            VkDescriptorSetLayoutBinding{
                     .binding = 0,
                     .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .descriptorCount = 1,
                     .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
                     .pImmutableSamplers = nullptr,
             },
-            VkDescriptorSetLayoutBinding {
-                .binding = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .descriptorCount = 1,
-                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .pImmutableSamplers = nullptr,
+            VkDescriptorSetLayoutBinding{
+                    .binding = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .descriptorCount = 1,
+                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .pImmutableSamplers = nullptr,
             },
-            VkDescriptorSetLayoutBinding {
-                .binding = 2,
-                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .descriptorCount = 1,
-                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .pImmutableSamplers = nullptr,
+            VkDescriptorSetLayoutBinding{
+                    .binding = 2,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .descriptorCount = 1,
+                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .pImmutableSamplers = nullptr,
+            },
+            VkDescriptorSetLayoutBinding{
+                    .binding = 3,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .descriptorCount = 1,
+                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .pImmutableSamplers = nullptr,
             }
     };
 
-    VkDescriptorSetLayoutCreateInfo createInfo {
+    VkDescriptorSetLayoutCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -191,7 +225,7 @@ VkDescriptorSetLayout PipelineManager::createDescriptorSetLayout() {
     };
 
     VkDescriptorSetLayout descriptorSetLayout;
-    if(vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("PipelineManager::vkCreateDescriptorSetLayout");
     }
 
@@ -199,24 +233,25 @@ VkDescriptorSetLayout PipelineManager::createDescriptorSetLayout() {
 }
 
 VkDescriptorSet PipelineManager::createDeferredLightningSet() {
-    VkDescriptorSetAllocateInfo allocateInfo {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .descriptorPool = descriptorPool,
-        .descriptorSetCount = 1,
-        .pSetLayouts = &deferredLightningDescriptorSetLayout,
+    VkDescriptorSetAllocateInfo allocateInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .pNext = nullptr,
+            .descriptorPool = descriptorPool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &deferredLightningDescriptorSetLayout,
     };
 
     VkDescriptorSet descriptorSet;
-    if(vkAllocateDescriptorSets(device, &allocateInfo, &descriptorSet)) {
+    if (VkResult result = vkAllocateDescriptorSets(device, &allocateInfo, &descriptorSet); result != VK_SUCCESS) {
         throw std::runtime_error("PipelineManager::createDeferredLightningSet");
     }
 
     return descriptorSet;
 }
 
-VkPipelineLayout PipelineManager::createPipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout* pSetLayouts,
-                                                       uint32_t pushConstantRangeCount, const VkPushConstantRange* pushConstantRange) {
+VkPipelineLayout
+PipelineManager::createPipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout *pSetLayouts,
+                                      uint32_t pushConstantRangeCount, const VkPushConstantRange *pushConstantRange) {
     const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
@@ -237,52 +272,51 @@ VkPipelineLayout PipelineManager::createPipelineLayout(uint32_t setLayoutCount, 
 
 VkPipeline PipelineManager::createDeferredPipeline() {
     std::optional<Shader> shader = shaderManager.getShader("Deferred");
-    if(shader.has_value())
-    {
+    if (shader.has_value()) {
         std::array vertexBindingDescriptions = {
-                VkVertexInputBindingDescription {
+                VkVertexInputBindingDescription{
                         .binding = 0,
                         .stride = sizeof(glm::vec3),
                         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
                 },
-                VkVertexInputBindingDescription {
+                VkVertexInputBindingDescription{
                         .binding = 1,
                         .stride = sizeof(glm::vec3),
                         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
                 }
         };
 
-        std::array vertexInputAttributeDescription {
-                VkVertexInputAttributeDescription {
+        std::array vertexInputAttributeDescription{
+                VkVertexInputAttributeDescription{
                         .location = 0,
                         .binding = 0,
                         .format = VK_FORMAT_R32G32B32_SFLOAT,
                         .offset = 0,
                 },
-                VkVertexInputAttributeDescription {
-                    .location = 1,
-                    .binding = 1,
-                    .format = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset = 0,
+                VkVertexInputAttributeDescription{
+                        .location = 1,
+                        .binding = 1,
+                        .format = VK_FORMAT_R32G32B32_SFLOAT,
+                        .offset = 0,
                 }
         };
 
         static const size_t ATTACHMENT_COUNT = 3;
 
-        std::array<VkPipelineColorBlendAttachmentState, ATTACHMENT_COUNT> colorBlendAttachments {
+        std::array<VkPipelineColorBlendAttachmentState, ATTACHMENT_COUNT> colorBlendAttachments{
                 createPipelineColorBlendAttachmentState(),
                 createPipelineColorBlendAttachmentState(),
                 createPipelineColorBlendAttachmentState(),
         };
 
         // TODO: manage format
-        std::array<VkFormat, ATTACHMENT_COUNT> colorAttachmentFormats {
-            DeferredRenderpassDefinitions::Formats::COLOR,
-            DeferredRenderpassDefinitions::Formats::NORMAL,
-            DeferredRenderpassDefinitions::Formats::POSITION
+        std::array<VkFormat, ATTACHMENT_COUNT> colorAttachmentFormats{
+                DeferredRenderpassDefinitions::Formats::COLOR,
+                DeferredRenderpassDefinitions::Formats::NORMAL,
+                DeferredRenderpassDefinitions::Formats::POSITION,
         };
 
-        return createPipeline(shader.value(),
+        return createPipeline(renderArea, shader.value(),
                               vertexBindingDescriptions.size(),
                               vertexBindingDescriptions.data(),
                               vertexInputAttributeDescription.size(),
@@ -300,15 +334,14 @@ VkPipeline PipelineManager::createDeferredPipeline() {
 
 VkPipeline PipelineManager::createDeferredLightningPipeline(VkFormat swapchainFormat) {
     std::optional<Shader> shader = shaderManager.getShader("DeferredLightning");
-    if(shader.has_value())
-    {
-        std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachments {
+    if (shader.has_value()) {
+        std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachments{
                 createPipelineColorBlendAttachmentState(),
         };
 
-        std::array<VkFormat, 1> colorAttachmentFormats {swapchainFormat};
+        std::array<VkFormat, 1> colorAttachmentFormats{swapchainFormat};
 
-        return createPipeline(shader.value(),
+        return createPipeline(renderArea, shader.value(),
                               0,
                               nullptr,
                               0,
@@ -318,25 +351,77 @@ VkPipeline PipelineManager::createDeferredLightningPipeline(VkFormat swapchainFo
                               colorAttachmentFormats.size(),
                               colorAttachmentFormats.data(),
                               deferredLightningPipelineLayout,
-                              VK_CULL_MODE_NONE);
+                              VK_CULL_MODE_BACK_BIT);
     }
 
     return {};
 }
 
-VkPipeline PipelineManager::createPipeline(const Shader& shader,
-                                                          uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription* pVertexBindingDescriptions,
-                                                          uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription* pVertexAttributeDescriptions,
-                                                          uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments,
-                                                          uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats,
-                                                          VkPipelineLayout pipelineLayout, VkCullModeFlags cullMode) {
+VkPipeline PipelineManager::createShadowMapPipeline(const VkRect2D& renderArea) {
+    std::optional<Shader> shader = shaderManager.getShader("ShadowMap");
+    if (shader.has_value()) {
+        std::array vertexBindingDescriptions = {
+                VkVertexInputBindingDescription{
+                        .binding = 0,
+                        .stride = sizeof(glm::vec3),
+                        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+                }
+        };
+
+        std::array vertexInputAttributeDescription{
+                VkVertexInputAttributeDescription{
+                        .location = 0,
+                        .binding = 0,
+                        .format = VK_FORMAT_R32G32B32_SFLOAT,
+                        .offset = 0,
+                }
+        };
+
+        static const size_t ATTACHMENT_COUNT = 0;
+
+        std::array<VkPipelineColorBlendAttachmentState, ATTACHMENT_COUNT> colorBlendAttachments{
+                //createPipelineColorBlendAttachmentState(),
+        };
+
+        // TODO: manage format
+        std::array<VkFormat, ATTACHMENT_COUNT> colorAttachmentFormats{
+                // TODO: ShadowMapDefinitions
+                //DeferredRenderpassDefinitions::Formats::DEPTH,
+        };
+
+        return createPipeline(renderArea, shader.value(),
+                              vertexBindingDescriptions.size(),
+                              vertexBindingDescriptions.data(),
+                              vertexInputAttributeDescription.size(),
+                              vertexInputAttributeDescription.data(),
+                              colorBlendAttachments.size(),
+                              colorBlendAttachments.data(),
+                              colorAttachmentFormats.size(),
+                              colorAttachmentFormats.data(),
+                              shadowMapMaterial.layout,
+                              VK_CULL_MODE_BACK_BIT);
+    }
+
+    return {};
+}
+
+VkPipeline PipelineManager::createPipeline(const VkRect2D& renderArea, const Shader &shader,
+                                           uint32_t vertexBindingDescriptionCount,
+                                           const VkVertexInputBindingDescription *pVertexBindingDescriptions,
+                                           uint32_t vertexAttributeDescriptionCount,
+                                           const VkVertexInputAttributeDescription *pVertexAttributeDescriptions,
+                                           uint32_t attachmentCount,
+                                           const VkPipelineColorBlendAttachmentState *pAttachments,
+                                           uint32_t colorAttachmentCount, const VkFormat *pColorAttachmentFormats,
+                                           VkPipelineLayout pipelineLayout, VkCullModeFlags cullMode) {
     const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStageCreateInfos = {
             createPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, shader.vert),
             createPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, shader.frag),
     };
 
     const VkPipelineVertexInputStateCreateInfo vertexInputState = createPipelineVertexInputStateCreateInfo(
-            vertexBindingDescriptionCount, pVertexBindingDescriptions, vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
+            vertexBindingDescriptionCount, pVertexBindingDescriptions, vertexAttributeDescriptionCount,
+            pVertexAttributeDescriptions);
 
     const VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = createPipelineInputAssemblyStateCreateInfo();
     const VkPipelineTessellationStateCreateInfo tessellationState = createPipelineTessellationStateCreateInfo();
@@ -354,9 +439,11 @@ VkPipeline PipelineManager::createPipeline(const Shader& shader,
     const VkPipelineRasterizationStateCreateInfo rasterizationState = createRasterizationStateCreateInfo(cullMode);
     const VkPipelineMultisampleStateCreateInfo multisampleState = createPipelineMultisampleStateCreateInfo();
     const VkPipelineDepthStencilStateCreateInfo depthStencilState = createPipelineDepthStencilStateCreateInfo();
-    const VkPipelineColorBlendStateCreateInfo colorBlendState = createPipelineColorBlendStateCreateInfo(attachmentCount, pAttachments);
+    const VkPipelineColorBlendStateCreateInfo colorBlendState = createPipelineColorBlendStateCreateInfo(attachmentCount,
+                                                                                                        pAttachments);
     const VkPipelineDynamicStateCreateInfo dynamicState = createPipelineDynamicStateCreateInfo();
-    const VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = createPipelineRenderingCreateInfoKHR(colorAttachmentCount, pColorAttachmentFormats);
+    const VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = createPipelineRenderingCreateInfoKHR(
+            colorAttachmentCount, pColorAttachmentFormats);
 
     VkGraphicsPipelineCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -406,7 +493,7 @@ PipelineManager::createPipelineVertexInputStateCreateInfo(uint32_t vertexBinding
                                                           const VkVertexInputBindingDescription *pVertexBindingDescriptions,
                                                           uint32_t vertexAttributeDescriptionCount,
                                                           const VkVertexInputAttributeDescription *pVertexAttributeDescriptions) {
-    return VkPipelineVertexInputStateCreateInfo {
+    return VkPipelineVertexInputStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -419,7 +506,7 @@ PipelineManager::createPipelineVertexInputStateCreateInfo(uint32_t vertexBinding
 
 VkPipelineRasterizationStateCreateInfo
 PipelineManager::createRasterizationStateCreateInfo(VkCullModeFlags cullMode) {
-    return VkPipelineRasterizationStateCreateInfo {
+    return VkPipelineRasterizationStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -437,17 +524,17 @@ PipelineManager::createRasterizationStateCreateInfo(VkCullModeFlags cullMode) {
 }
 
 VkPipelineInputAssemblyStateCreateInfo PipelineManager::createPipelineInputAssemblyStateCreateInfo() {
-    return VkPipelineInputAssemblyStateCreateInfo {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = {},
-        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        .primitiveRestartEnable = false,
+    return VkPipelineInputAssemblyStateCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = {},
+            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .primitiveRestartEnable = false,
     };
 }
 
 VkPipelineTessellationStateCreateInfo PipelineManager::createPipelineTessellationStateCreateInfo() {
-    return VkPipelineTessellationStateCreateInfo {
+    return VkPipelineTessellationStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -455,8 +542,9 @@ VkPipelineTessellationStateCreateInfo PipelineManager::createPipelineTessellatio
     };
 }
 
-VkPipelineViewportStateCreateInfo PipelineManager::createViewportStateCreateInfo(const VkViewport& viewport, const VkRect2D& renderArea) {
-    return VkPipelineViewportStateCreateInfo {
+VkPipelineViewportStateCreateInfo
+PipelineManager::createViewportStateCreateInfo(const VkViewport &viewport, const VkRect2D &renderArea) {
+    return VkPipelineViewportStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -468,7 +556,7 @@ VkPipelineViewportStateCreateInfo PipelineManager::createViewportStateCreateInfo
 }
 
 VkPipelineMultisampleStateCreateInfo PipelineManager::createPipelineMultisampleStateCreateInfo() {
-    return VkPipelineMultisampleStateCreateInfo {
+    return VkPipelineMultisampleStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -482,7 +570,7 @@ VkPipelineMultisampleStateCreateInfo PipelineManager::createPipelineMultisampleS
 }
 
 VkPipelineDepthStencilStateCreateInfo PipelineManager::createPipelineDepthStencilStateCreateInfo() {
-    return VkPipelineDepthStencilStateCreateInfo {
+    return VkPipelineDepthStencilStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -499,7 +587,7 @@ VkPipelineDepthStencilStateCreateInfo PipelineManager::createPipelineDepthStenci
 }
 
 VkPipelineColorBlendAttachmentState PipelineManager::createPipelineColorBlendAttachmentState() {
-    return VkPipelineColorBlendAttachmentState {
+    return VkPipelineColorBlendAttachmentState{
             .blendEnable = VK_FALSE,
             .srcColorBlendFactor = {},
             .dstColorBlendFactor = {},
@@ -514,8 +602,9 @@ VkPipelineColorBlendAttachmentState PipelineManager::createPipelineColorBlendAtt
     };
 }
 
-VkPipelineColorBlendStateCreateInfo PipelineManager::createPipelineColorBlendStateCreateInfo(uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments) {
-    return VkPipelineColorBlendStateCreateInfo {
+VkPipelineColorBlendStateCreateInfo PipelineManager::createPipelineColorBlendStateCreateInfo(uint32_t attachmentCount,
+                                                                                             const VkPipelineColorBlendAttachmentState *pAttachments) {
+    return VkPipelineColorBlendStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -528,7 +617,7 @@ VkPipelineColorBlendStateCreateInfo PipelineManager::createPipelineColorBlendSta
 }
 
 VkPipelineDynamicStateCreateInfo PipelineManager::createPipelineDynamicStateCreateInfo() {
-    return VkPipelineDynamicStateCreateInfo {
+    return VkPipelineDynamicStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = {},
@@ -537,8 +626,9 @@ VkPipelineDynamicStateCreateInfo PipelineManager::createPipelineDynamicStateCrea
     };
 }
 
-VkPipelineRenderingCreateInfoKHR PipelineManager::createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount, const VkFormat* pColorAttachmentFormats) {
-    return VkPipelineRenderingCreateInfoKHR {
+VkPipelineRenderingCreateInfoKHR PipelineManager::createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount,
+                                                                                       const VkFormat *pColorAttachmentFormats) {
+    return VkPipelineRenderingCreateInfoKHR{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
             .pNext = nullptr,
             .viewMask = 0,
