@@ -1,19 +1,18 @@
-#include <array>
 #include "VkInit.h"
 
-VmaAllocator VkInit::createAllocator(const vkb::Instance &instance, const vkb::PhysicalDevice &physicalDevice,
-                                     const vkb::Device &device, uint32_t vulkanApiVersion) {
+VmaAllocator VkInit::createAllocator(vk::Instance instance, vk::PhysicalDevice physicalDevice,
+                                     vk::Device device, uint32_t vulkanApiVersion) {
 
     VmaAllocatorCreateInfo createInfo{
             .flags = {},
-            .physicalDevice = physicalDevice.physical_device,
-            .device = device.device,
+            .physicalDevice = physicalDevice,
+            .device = device,
             .preferredLargeHeapBlockSize = 0,
             .pAllocationCallbacks = nullptr,
             .pDeviceMemoryCallbacks = nullptr,
             .pHeapSizeLimit = nullptr,
             .pVulkanFunctions = nullptr,
-            .instance = instance.instance,
+            .instance = instance,
             .vulkanApiVersion = vulkanApiVersion,
     };
 
@@ -25,46 +24,33 @@ VmaAllocator VkInit::createAllocator(const vkb::Instance &instance, const vkb::P
     return allocator;
 }
 
-VkSemaphore VkInit::createSemaphore(VkDevice device) {
-    VkSemaphoreCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {}
-    };
+vk::Semaphore VkInit::createSemaphore(vk::Device device) {
+    vk::SemaphoreCreateInfo createInfo;
 
-    VkSemaphore semaphore;
-    if (vkCreateSemaphore(device, &createInfo, nullptr, &semaphore) != VK_SUCCESS) {
+    vk::Semaphore semaphore;
+    if (device.createSemaphore(&createInfo, nullptr, &semaphore) != vk::Result::eSuccess) {
         throw std::runtime_error("Couldn't create semaphore");
     }
 
     return semaphore;
 }
 
-VkFence VkInit::createFence(VkDevice device, VkFenceCreateFlags flags) {
-    VkFenceCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = flags,
-    };
+vk::Fence VkInit::createFence(vk::Device device, vk::FenceCreateFlags flags) {
+    vk::FenceCreateInfo createInfo{flags};
 
-    VkFence fence;
-    if (vkCreateFence(device, &createInfo, nullptr, &fence) != VK_SUCCESS) {
+    vk::Fence fence;
+    if (device.createFence(&createInfo, nullptr, &fence) != vk::Result::eSuccess) {
         throw std::runtime_error("Couldn't create fence");
     }
 
     return fence;
 }
 
-VkCommandPool VkInit::createCommandPool(VkDevice device, uint32_t queueFamilyIndex) {
-    VkCommandPoolCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
-            .queueFamilyIndex = queueFamilyIndex,
-    };
+vk::CommandPool VkInit::createCommandPool(vk::Device device, uint32_t queueFamilyIndex) {
+    vk::CommandPoolCreateInfo createInfo{vk::CommandPoolCreateFlagBits::eTransient, queueFamilyIndex};
 
-    VkCommandPool commandPool;
-    if (vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS) {
+    vk::CommandPool commandPool;
+    if (device.createCommandPool(&createInfo, nullptr, &commandPool) != vk::Result::eSuccess) {
         throw std::runtime_error("Couldn't create command pool");
     }
 

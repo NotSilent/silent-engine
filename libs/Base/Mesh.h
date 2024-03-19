@@ -1,26 +1,26 @@
 #pragma once
 
 #include <memory>
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include <vector>
 
 #include "Buffer.h"
 
 class Mesh {
 public:
-    Mesh(uint32_t indexCount, VkBuffer indexBuffer, VkBuffer vertexBuffer, VkBuffer attributesBuffer);
+    Mesh(uint32_t indexCount, vk::Buffer indexBuffer, vk::Buffer vertexBuffer, vk::Buffer attributesBuffer);
 
     [[nodiscard]] uint32_t getIndexCount() const;
 
-    [[nodiscard]] VkBuffer getIndexBuffer() const;
+    [[nodiscard]] vk::Buffer getIndexBuffer() const;
 
-    [[nodiscard]] VkBuffer getPositionsBuffer() const;
+    [[nodiscard]] vk::Buffer getPositionsBuffer() const;
 
-    [[nodiscard]] VkBuffer getAttributesBuffer() const;
+    [[nodiscard]] vk::Buffer getAttributesBuffer() const;
 
 private:
     uint32_t indexCount;
-    VkBuffer indexBuffer;
-    VkBuffer positionsBuffer;
-    VkBuffer attributesBuffer;
+    vk::Buffer indexBuffer;
+    vk::Buffer positionsBuffer;
+    vk::Buffer attributesBuffer;
 };

@@ -8,7 +8,7 @@
 
 class PipelineManager {
 public:
-    PipelineManager(VkDevice device, VkFormat swapchainFormat, const VkRect2D &renderArea);
+    PipelineManager(vk::Device device, vk::Format swapchainFormat, const vk::Rect2D &renderArea);
 
     void destroy();
 
@@ -20,116 +20,116 @@ public:
 
     PipelineManager &operator=(PipelineManager &&other) = default;
 
-    [[nodiscard]] VkPipelineLayout getDeferredPipelineLayout() const;
+    [[nodiscard]] vk::PipelineLayout getDeferredPipelineLayout() const;
 
-    [[nodiscard]] VkPipeline getDeferredPipeline() const;
+    [[nodiscard]] vk::Pipeline getDeferredPipeline() const;
 
     [[nodiscard]] DeferredLightningMaterial
-    createDeferredLightningMaterial(VkImageView color, VkImageView normal, VkImageView position, VkImageView shadowMap);
+    createDeferredLightningMaterial(vk::ImageView color, vk::ImageView normal, vk::ImageView position, vk::ImageView shadowMap);
 
     [[nodiscard]] ShadowMapMaterial getShadowMapMaterial() const;
 
 private:
-    VkDevice device;
+    vk::Device device;
 
-    VkRect2D renderArea;
+    vk::Rect2D renderArea;
 
     ShaderManager shaderManager;
 
-    VkSampler defaultSampler;
+    vk::Sampler defaultSampler;
 
-    VkDescriptorPool descriptorPool;
+    vk::DescriptorPool descriptorPool;
 
     // TODO: Separate pipelines per renderpass?
     // Doesn't make much sense for shadowmaps and final composition pipeline to be here
     // since they are unchanged and only used by those renderpasses
 
-    VkPipelineLayout deferredPipelineLayout;
-    VkPipeline deferredPipeline;
+    vk::PipelineLayout deferredPipelineLayout;
+    vk::Pipeline deferredPipeline;
 
-    VkDescriptorSetLayout deferredLightningDescriptorSetLayout;
-    VkPipelineLayout deferredLightningPipelineLayout;
-    VkPipeline deferredLightningPipeline;
-    std::vector<VkDescriptorSet> deferredLightningSets;
+    vk::DescriptorSetLayout deferredLightningDescriptorSetLayout;
+    vk::PipelineLayout deferredLightningPipelineLayout;
+    vk::Pipeline deferredLightningPipeline;
+    std::vector<vk::DescriptorSet> deferredLightningSets;
 
     ShadowMapMaterial shadowMapMaterial;
 
-    [[nodiscard]] VkSampler createDefaultSampler(VkDevice device);
+    [[nodiscard]] vk::Sampler createDefaultSampler(vk::Device device);
 
-    [[nodiscard]] VkDescriptorPool createDescriptorPool();
+    [[nodiscard]] vk::DescriptorPool createDescriptorPool();
 
-    [[nodiscard]] VkDescriptorSetLayout createDescriptorSetLayout();
+    [[nodiscard]] vk::DescriptorSetLayout createDescriptorSetLayout();
 
-    [[nodiscard]] VkPipelineLayout
-    createPipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout *pSetLayouts,
-                         uint32_t pushConstantRangeCount, const VkPushConstantRange *pushConstantRange);
+    [[nodiscard]] vk::PipelineLayout
+    createPipelineLayout(uint32_t setLayoutCount, const vk::DescriptorSetLayout *pSetLayouts,
+                         uint32_t pushConstantRangeCount, const vk::PushConstantRange *pushConstantRange);
 
-    [[nodiscard]] VkPipeline createDeferredPipeline();
+    [[nodiscard]] vk::Pipeline createDeferredPipeline();
 
-    [[nodiscard]] VkPipeline createDeferredLightningPipeline(VkFormat swapchainFormat);
+    [[nodiscard]] vk::Pipeline createDeferredLightningPipeline(vk::Format swapchainFormat);
 
-    [[nodiscard]] VkPipeline createShadowMapPipeline(const VkRect2D& renderArea);
+    [[nodiscard]] vk::Pipeline createShadowMapPipeline(const vk::Rect2D& renderArea);
 
-    [[nodiscard]] VkPipeline createPipeline(const VkRect2D& renderArea, const Shader &shader,
+    [[nodiscard]] vk::Pipeline createPipeline(const vk::Rect2D& renderArea, const Shader &shader,
                                             uint32_t vertexBindingDescriptionCount,
-                                            const VkVertexInputBindingDescription *pVertexBindingDescriptions,
+                                            const vk::VertexInputBindingDescription *pVertexBindingDescriptions,
                                             uint32_t vertexAttributeDescriptionCount,
-                                            const VkVertexInputAttributeDescription *pVertexAttributeDescriptions,
+                                            const vk::VertexInputAttributeDescription *pVertexAttributeDescriptions,
                                             uint32_t attachmentCount,
-                                            const VkPipelineColorBlendAttachmentState *pAttachments,
-                                            uint32_t colorAttachmentCount, const VkFormat *pColorAttachmentFormats,
-                                            VkPipelineLayout pipelineLayout, VkCullModeFlags cullMode);
+                                            const vk::PipelineColorBlendAttachmentState *pAttachments,
+                                            uint32_t colorAttachmentCount, const vk::Format *pColorAttachmentFormats,
+                                            vk::PipelineLayout pipelineLayout, vk::CullModeFlags cullMode);
 
-    [[nodiscard]] static VkPipelineVertexInputStateCreateInfo
+    [[nodiscard]] static vk::PipelineVertexInputStateCreateInfo
     createPipelineVertexInputStateCreateInfo(uint32_t vertexBindingDescriptionCount,
-                                             const VkVertexInputBindingDescription *pVertexBindingDescriptions,
+                                             const vk::VertexInputBindingDescription *pVertexBindingDescriptions,
                                              uint32_t vertexAttributeDescriptionCount,
-                                             const VkVertexInputAttributeDescription *pVertexAttributeDescriptions);
+                                             const vk::VertexInputAttributeDescription *pVertexAttributeDescriptions);
 
-    [[nodiscard]] static VkPipelineShaderStageCreateInfo
-    createPipelineShaderStageCreateInfo(VkShaderStageFlagBits shaderStage, VkShaderModule module);
+    [[nodiscard]] static vk::PipelineShaderStageCreateInfo
+    createPipelineShaderStageCreateInfo(vk::ShaderStageFlagBits shaderStage, vk::ShaderModule module);
 
-    [[nodiscard]] static VkPipelineRasterizationStateCreateInfo
-    createRasterizationStateCreateInfo(VkCullModeFlags cullMode);
+    [[nodiscard]] static vk::PipelineRasterizationStateCreateInfo
+    createRasterizationStateCreateInfo(vk::CullModeFlags cullMode);
 
-    [[nodiscard]] static VkPipelineInputAssemblyStateCreateInfo
+    [[nodiscard]] static vk::PipelineInputAssemblyStateCreateInfo
     createPipelineInputAssemblyStateCreateInfo();
 
-    [[nodiscard]] static VkPipelineTessellationStateCreateInfo
+    [[nodiscard]] static vk::PipelineTessellationStateCreateInfo
     createPipelineTessellationStateCreateInfo();
 
-    [[nodiscard]] static VkPipelineViewportStateCreateInfo
-    createViewportStateCreateInfo(const VkViewport &viewport, const VkRect2D &renderArea);
+    [[nodiscard]] static vk::PipelineViewportStateCreateInfo
+    createViewportStateCreateInfo(const vk::Viewport &viewport, const vk::Rect2D &renderArea);
 
-    [[nodiscard]] static VkPipelineMultisampleStateCreateInfo
+    [[nodiscard]] static vk::PipelineMultisampleStateCreateInfo
     createPipelineMultisampleStateCreateInfo();
 
-    [[nodiscard]] static VkPipelineDepthStencilStateCreateInfo
+    [[nodiscard]] static vk::PipelineDepthStencilStateCreateInfo
     createPipelineDepthStencilStateCreateInfo();
 
-    [[nodiscard]] static VkPipelineColorBlendAttachmentState
+    [[nodiscard]] static vk::PipelineColorBlendAttachmentState
     createPipelineColorBlendAttachmentState();
 
-    [[nodiscard]] static VkPipelineColorBlendStateCreateInfo
+    [[nodiscard]] static vk::PipelineColorBlendStateCreateInfo
     createPipelineColorBlendStateCreateInfo(uint32_t attachmentCount,
-                                            const VkPipelineColorBlendAttachmentState *pAttachments);
+                                            const vk::PipelineColorBlendAttachmentState *pAttachments);
 
-    [[nodiscard]] static VkPipelineDynamicStateCreateInfo
+    [[nodiscard]] static vk::PipelineDynamicStateCreateInfo
     createPipelineDynamicStateCreateInfo();
 
     // TODO: configure depth
-    [[nodiscard]] static VkPipelineRenderingCreateInfoKHR
-    createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount, const VkFormat *pColorAttachmentFormats);
+    [[nodiscard]] static vk::PipelineRenderingCreateInfoKHR
+    createPipelineRenderingCreateInfoKHR(uint32_t colorAttachmentCount, const vk::Format *pColorAttachmentFormats);
 
-    VkDescriptorSet createDeferredLightningSet();
+    vk::DescriptorSet createDeferredLightningSet();
 };
 
-// https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#descriptorsets-compatibility
+// https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vk::spec.html#descriptorsets-compatibility
 // Two pipeline layouts are defined to be “compatible for push constants”
 // if they were created with identical push constant ranges.
 // Two pipeline layouts are defined to be “compatible for set N”
 // if they were created with identically defined descriptor set layouts for sets zero through N,
-// if both of them either were or were not created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT,
+// if both of them either were or were not created with vk::_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT,
 // and if they were created with identical push constant ranges.
 
 // Abstract descriptors

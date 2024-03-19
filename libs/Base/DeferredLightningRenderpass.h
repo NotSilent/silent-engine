@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "DeferredRenderpass.h"
 #include "PipelineManager.h"
 #include "DeferredLightningMaterial.h"
@@ -11,7 +11,7 @@ class DeferredLightningRenderpass {
 public:
     // TODO: Pass PipelineManager as part of some kind of Engine/Renderer Context
     DeferredLightningRenderpass(PipelineManager& pipelineManager,
-                                VkRect2D renderArea,
+                                vk::Rect2D renderArea,
                                 const DeferredRenderPassOutput& deferredRenderPassOutput,
                                 const ShadowMapRenderPassOutput& shadowMapRenderPassOutput);
 
@@ -21,19 +21,19 @@ public:
     DeferredLightningRenderpass(DeferredLightningRenderpass&& other) = default;
     DeferredLightningRenderpass& operator=(DeferredLightningRenderpass&& other) = default;
 
-    void render(VkCommandBuffer cmd, const Image& swapchainImage, const glm::mat4& lightSpace, glm::vec3 viewDirection);
+    void render(vk::CommandBuffer cmd, const Image& swapchainImage, const glm::mat4& lightSpace, glm::vec3 viewDirection);
 
 private:
     // TODO: As parameter to render?
-    VkRect2D renderArea;
+    vk::Rect2D renderArea;
 
     DeferredRenderPassOutput deferredRenderPassOutput;
     ShadowMapRenderPassOutput shadowMapRenderPassOutput;
 
     DeferredLightningMaterial material;
 
-    inline static VkClearValue swapchainClearValue = {0.0f, 0.0f, 0.0f, 0.0f};
+    inline static vk::ClearValue swapchainClearValue = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 0.0f);
 
-    void beginRenderPass(VkCommandBuffer cmd, const Image& swapchainImage);
-    void endRenderPass(VkCommandBuffer cmd, const Image& swapchainImage);
+    void beginRenderPass(vk::CommandBuffer cmd, const Image& swapchainImage);
+    void endRenderPass(vk::CommandBuffer cmd, const Image& swapchainImage);
 };

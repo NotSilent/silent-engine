@@ -1,20 +1,19 @@
 #include "Image.h"
 
-Image::Image(const vkb::Device &device, VmaAllocator allocator, VkCommandPool commandPool, uint32_t width,
-             uint32_t height, VkFormat format, uint32_t size, const void *data)
+Image::Image(vk::Device &device, vk::Queue graphicsQueue, VmaAllocator allocator, vk::CommandPool commandPool,
+             uint32_t width,
+             uint32_t height, vk::Format format, uint32_t size, const void *data)
         : _image{}, _allocation{} {
-    VkExtent3D extent{width, height, 1};
+    vk::Extent3D extent{width, height, 1};
 
-    VkBufferCreateInfo bufferCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .size = size,
-            .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .queueFamilyIndexCount = 0,
-            .pQueueFamilyIndices = nullptr,
-    };
+    vk::BufferCreateInfo bufferCreateInfo(
+            {},
+            size,
+            vk::BufferUsageFlagBits::eTransferSrc,
+            vk::SharingMode::eExclusive,
+            0,
+            nullptr
+    );
 
     VmaAllocationCreateInfo allocationCreateInfo{
             .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
@@ -26,10 +25,12 @@ Image::Image(const vkb::Device &device, VmaAllocator allocator, VkCommandPool co
             .pUserData = nullptr,
     };
 
-    VkBuffer stagingBuffer;
+    vk::Buffer stagingBuffer;
     VmaAllocation stagingBufferAlloc;
     VmaAllocationInfo stagingBufferAllocInfo;
-    if (vmaCreateBuffer(allocator, &bufferCreateInfo, &allocationCreateInfo, &stagingBuffer, &stagingBufferAlloc,
+    if (vmaCreateBuffer(allocator, reinterpret_cast<const VkBufferCreateInfo *>(&bufferCreateInfo),
+                        &allocationCreateInfo,
+                        reinterpret_cast<VkBuffer *>(&stagingBuffer), &stagingBufferAlloc,
                         &stagingBufferAllocInfo) != VK_SUCCESS) {
         throw std::runtime_error("Error: vmaCreateImage");
     }
@@ -38,182 +39,189 @@ Image::Image(const vkb::Device &device, VmaAllocator allocator, VkCommandPool co
 
     // No need to flush stagingVertexBuffer memory because CPU_ONLY memory is always HOST_COHERENT.
 
-    VkImageCreateInfo imageCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .imageType = VK_IMAGE_TYPE_2D,
-            .format = format,
-            .extent = extent,
-            .mipLevels = 1,
-            .arrayLayers = 1,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
-            .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .queueFamilyIndexCount = 0,
-            .pQueueFamilyIndices = nullptr,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    };
+    vk::ImageCreateInfo imageCreateInfo(
+            {},
+            vk::ImageType::e2D,
+            format,
+            extent,
+            1,
+            1,
+            vk::SampleCountFlagBits::e1,
+            vk::ImageTiling::eOptimal,
+            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+            vk::SharingMode::eExclusive,
+            0,
+            nullptr,
+            vk::ImageLayout::eUndefined
+    );
 
     allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     allocationCreateInfo.flags = 0;
 
-    if (vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &_image, &_allocation, nullptr) !=
-        VK_SUCCESS) {
+    if (vmaCreateImage(allocator, reinterpret_cast<const VkImageCreateInfo *>(&imageCreateInfo), &allocationCreateInfo,
+                       reinterpret_cast<VkImage *>(&_image), &_allocation, nullptr) != VK_SUCCESS) {
         throw std::runtime_error("Error: vmaCreateImage");
     }
 
-    VkCommandBufferAllocateInfo commandBufferInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .pNext = nullptr,
-            .commandPool = commandPool,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = 1,
-    };
+    vk::CommandBufferAllocateInfo commandBufferInfo(
+            commandPool,
+            vk::CommandBufferLevel::ePrimary,
+            1
+    );
 
-    VkCommandBuffer transferCommandBuffer;
-    if (vkAllocateCommandBuffers(device.device, &commandBufferInfo, &transferCommandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkAllocateCommandBuffers");
+    vk::CommandBuffer transferCommandBuffer;
+    if (device.allocateCommandBuffers(&commandBufferInfo, &transferCommandBuffer) != vk::Result::eSuccess) {
+        throw std::runtime_error("Error: vk::AllocateCommandBuffers");
     }
 
-    VkCommandBufferBeginInfo transferCmdBeginInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-            .pNext = nullptr,
-            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-            .pInheritanceInfo = nullptr,
-    };
+    vk::CommandBufferBeginInfo transferCmdBeginInfo(
+            vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
+            nullptr
+    );
 
-    if (vkBeginCommandBuffer(transferCommandBuffer, &transferCmdBeginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkBeginCommandBuffer");
+    if (transferCommandBuffer.begin(&transferCmdBeginInfo) != vk::Result::eSuccess) {
+        throw std::runtime_error("Error: vk::BeginCommandBuffer");
     }
 
-    VkImageSubresourceRange range{
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1,
-    };
+    vk::ImageSubresourceRange range(
+            vk::ImageAspectFlagBits::eColor,
+            0,
+            1,
+            0,
+            1
+    );
 
-    VkImageMemoryBarrier imageBarrier{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-            .pNext = nullptr,
-            .srcAccessMask = VK_ACCESS_NONE_KHR,
-            .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = _image,
-            .subresourceRange = range,
-    };
+    vk::ImageMemoryBarrier imageBarrier(
+            vk::AccessFlagBits::eNone,
+            vk::AccessFlagBits::eTransferWrite,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::QueueFamilyIgnored,
+            vk::QueueFamilyIgnored,
+            _image,
+            range
+    );
 
-    vkCmdPipelineBarrier(transferCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                         {}, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+    transferCommandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTopOfPipe,
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &imageBarrier);
 
-    VkImageSubresourceLayers layer{
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .mipLevel = 0,
-            .baseArrayLayer = 0,
-            .layerCount = 1,
-    };
+    vk::ImageSubresourceLayers layer(
+            vk::ImageAspectFlagBits::eColor,
+            0,
+            0,
+            1
+    );
 
-    VkBufferImageCopy bufferImageCopy{
-            .bufferOffset = 0,
-            .bufferRowLength = 0,
-            .bufferImageHeight = 0,
-            .imageSubresource = layer,
-            .imageOffset = {0, 0},
-            .imageExtent = extent,
-    };
+    vk::BufferImageCopy bufferImageCopy(
+            0,
+            0,
+            0,
+            layer,
+            {0, 0},
+            extent
+    );
 
-    vkCmdCopyBufferToImage(transferCommandBuffer, stagingBuffer, _image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                           &bufferImageCopy);
+    transferCommandBuffer.copyBufferToImage(
+            stagingBuffer,
+            _image,
+            vk::ImageLayout::eTransferDstOptimal,
+            1,
+            &bufferImageCopy
+    );
 
-    imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+    imageBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-    imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    imageBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+    imageBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-    vkCmdPipelineBarrier(transferCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+    transferCommandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::PipelineStageFlagBits::eFragmentShader,
+            {},
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &imageBarrier
+    );
 
-    if (vkEndCommandBuffer(transferCommandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkEndCommandBuffer");
+    // todo: exception?
+    transferCommandBuffer.end();
+
+    vk::SubmitInfo submitTransferInfo(
+            0, nullptr,
+            nullptr,
+            1, &transferCommandBuffer,
+            0, nullptr
+    );
+
+    if (graphicsQueue.submit(1, &submitTransferInfo, nullptr) != vk::Result::eSuccess) {
+        throw std::runtime_error("Error: vk::QueueSubmit");
     }
 
-    VkSubmitInfo submitTransferInfo{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .pNext = nullptr,
-            .waitSemaphoreCount = 0,
-            .pWaitSemaphores = nullptr,
-            .pWaitDstStageMask = nullptr,
-            .commandBufferCount = 1,
-            .pCommandBuffers = &transferCommandBuffer,
-            .signalSemaphoreCount = 0,
-            .pSignalSemaphores = nullptr,
-    };
+    // todo: exception?
+    graphicsQueue.waitIdle();
 
-    if (vkQueueSubmit(device.get_queue(vkb::QueueType::graphics).value(), 1, &submitTransferInfo, VK_NULL_HANDLE) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("Error: vkQueueSubmit");
-    }
-    if (vkQueueWaitIdle(device.get_queue(vkb::QueueType::graphics).value()) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkQueueWaitIdle");
-    }
-
-    vkFreeCommandBuffers(device.device, commandPool, 1, &transferCommandBuffer);
+    device.freeCommandBuffers(commandPool, 1, &transferCommandBuffer);
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAlloc);
 
-    VkImageViewCreateInfo viewCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .image = _image,
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = format,
-            .components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B,
-                           VK_COMPONENT_SWIZZLE_A},
-            .subresourceRange = {
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .baseMipLevel = 0,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1,
+    vk::ImageViewCreateInfo viewCreateInfo(
+            {},
+            _image,
+            vk::ImageViewType::e2D,
+            format,
+            vk::ComponentMapping{
+                    vk::ComponentSwizzle::eR,
+                    vk::ComponentSwizzle::eG,
+                    vk::ComponentSwizzle::eB,
+                    vk::ComponentSwizzle::eA
             },
-    };
+            vk::ImageSubresourceRange(
+                    vk::ImageAspectFlagBits::eColor,
+                    0,
+                    1,
+                    0,
+                    1
+            )
+    );
 
-    if (vkCreateImageView(device.device, &viewCreateInfo, nullptr, &_imageView) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkCreateImageView");
+    if (device.createImageView(&viewCreateInfo, nullptr, &_imageView) != vk::Result::eSuccess) {
+        throw std::runtime_error("Error: vk::CreateImageView");
     }
 }
 
-Image::Image(VkImage image, VkImageView imageView) {
+Image::Image(vk::Image image, vk::ImageView imageView) {
     _image = image;
     _imageView = imageView;
 }
 
 
-Image::Image(VkDevice device, VmaAllocator allocator, const ImageCreateInfo &imageCreateInfo) {
-    VkImageCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .imageType = imageCreateInfo.imageType,
-            .format = imageCreateInfo.format,
-            .extent = imageCreateInfo.extent,
-            .mipLevels = 1,
-            .arrayLayers = 1,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
-            .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = imageCreateInfo.usage,
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .queueFamilyIndexCount = 0,
-            .pQueueFamilyIndices = nullptr,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    };
+Image::Image(vk::Device device, VmaAllocator allocator, const ImageCreateInfo &imageCreateInfo) {
+    vk::ImageCreateInfo createInfo(
+            {},
+            imageCreateInfo.imageType,
+            imageCreateInfo.format,
+            imageCreateInfo.extent,
+            1,
+            1,
+            vk::SampleCountFlagBits::e1,
+            vk::ImageTiling::eOptimal,
+            imageCreateInfo.usage,
+            vk::SharingMode::eExclusive,
+            0,
+            nullptr,
+            vk::ImageLayout::eUndefined
+    );
 
     VmaAllocationCreateInfo allocationCreateInfo{
             .flags = {},
@@ -225,43 +233,45 @@ Image::Image(VkDevice device, VmaAllocator allocator, const ImageCreateInfo &ima
             .pUserData = nullptr,
     };
 
-    if (vmaCreateImage(allocator, &createInfo, &allocationCreateInfo, &_image, &_allocation, nullptr) !=
-        VK_SUCCESS) {
+    if (vmaCreateImage(allocator, reinterpret_cast<const VkImageCreateInfo *>(&createInfo), &allocationCreateInfo,
+                       reinterpret_cast<VkImage *>(&_image), &_allocation, nullptr) != VK_SUCCESS) {
         throw std::runtime_error("Error: vmaCreateImage");
     }
 
-    VkImageViewCreateInfo viewCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .image = _image,
-            .viewType = imageCreateInfo.viewType,
-            .format = imageCreateInfo.format,
-            .components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B,
-                           VK_COMPONENT_SWIZZLE_A},
-            .subresourceRange = {
-                    .aspectMask = imageCreateInfo.aspectMask,
-                    .baseMipLevel = 0,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1,
+    vk::ImageViewCreateInfo viewCreateInfo(
+            {},
+            _image,
+            imageCreateInfo.viewType,
+            imageCreateInfo.format,
+            vk::ComponentMapping{
+                    vk::ComponentSwizzle::eR,
+                    vk::ComponentSwizzle::eG,
+                    vk::ComponentSwizzle::eB,
+                    vk::ComponentSwizzle::eA
             },
-    };
+            vk::ImageSubresourceRange(
+                    imageCreateInfo.aspectMask,
+                    0,
+                    1,
+                    0,
+                    1
+            )
+    );
 
-    if (vkCreateImageView(device, &viewCreateInfo, nullptr, &_imageView) != VK_SUCCESS) {
-        throw std::runtime_error("Error: vkCreateImageView");
+    if (device.createImageView(&viewCreateInfo, nullptr, &_imageView) != vk::Result::eSuccess) {
+        throw std::runtime_error("Error: vk::CreateImageView");
     }
 }
 
-void Image::destroy(VkDevice device, VmaAllocator allocator) {
-    vkDestroyImageView(device, _imageView, nullptr);
+void Image::destroy(vk::Device device, VmaAllocator allocator) {
+    device.destroy(_imageView);
     vmaDestroyImage(allocator, _image, _allocation);
 }
 
-VkImageView Image::getImageView() const {
+vk::ImageView Image::getImageView() const {
     return _imageView;
 }
 
-VkImage Image::getImage() const {
+vk::Image Image::getImage() const {
     return _image;
 }

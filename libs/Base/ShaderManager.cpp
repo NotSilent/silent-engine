@@ -5,7 +5,7 @@
 #include <iostream>
 #include <format>
 
-ShaderManager::ShaderManager(VkDevice device)
+ShaderManager::ShaderManager(vk::Device device)
     : device(device)
     , compiler(shaderc_compiler_initialize())
 {
@@ -14,8 +14,8 @@ ShaderManager::ShaderManager(VkDevice device)
 
 void ShaderManager::destroy() {
     for (auto& [_, shader] : shaders) {
-        vkDestroyShaderModule(device, shader.vert, nullptr);
-        vkDestroyShaderModule(device, shader.frag, nullptr);
+        device.destroy(shader.vert);
+        device.destroy(shader.frag);
     }
 
     shaderc_compiler_release(compiler);
@@ -69,7 +69,7 @@ std::optional<std::string> ShaderManager::loadShaderFile(const std::string &shad
     return fileData;
 }
 
-std::optional<VkShaderModule> ShaderManager::compileShader(const std::string &text, shaderc_shader_kind shaderKind,
+std::optional<vk::ShaderModule> ShaderManager::compileShader(const std::string &text, shaderc_shader_kind shaderKind,
                                                            const std::string &shaderName) const {
     shaderc_compilation_result_t result = shaderc_compile_into_spv(compiler, text.c_str(), text.size(), shaderKind, shaderName.c_str(), "main", nullptr);
 
@@ -82,16 +82,10 @@ std::optional<VkShaderModule> ShaderManager::compileShader(const std::string &te
         return {};
     }
 
-    const VkShaderModuleCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = {},
-            .codeSize = shaderc_result_get_length(result),
-            .pCode = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result)),
-    };
+    const vk::ShaderModuleCreateInfo createInfo({}, shaderc_result_get_length(result), reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result)));
 
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+    vk::ShaderModule shaderModule;
+    if (device.createShaderModule(&createInfo, nullptr, &shaderModule) != vk::Result::eSuccess) {
         // TODO: enum to string
         const std::string shaderKindName = shaderKind == shaderc_shader_kind::shaderc_vertex_shader ? "vertex" : "fragment";
         std::cout << std::format("Couldn't create {} shader module: {}\n", shaderName, shaderKindName );

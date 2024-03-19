@@ -15,15 +15,16 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
         : window(window), instance(createInstance()), surface(createSurface()), physicalDevice(selectPhysicalDevice()),
           device(createDevice()), swapchain(createSwapchain()),
           _renderArea(VkRect2D{{0, 0}, {window->getWidth(), window->getHeight()}}),
-          _pipelineManager(device.device, swapchain.image_format, _renderArea) {
-    _allocator = VkInit::createAllocator(instance, physicalDevice, device, VK_API_VERSION_1_3);
+          swapchainImageFormat(vk::Format(swapchain.image_format)),
+          _pipelineManager(device.device, swapchainImageFormat, _renderArea) {
+    _allocator = VkInit::createAllocator(instance.instance, physicalDevice.physical_device, device.device, VK_API_VERSION_1_3);
 
     uint32_t queueFamilyIndex = device.get_queue_index(vkb::QueueType::graphics).value();;
 
-    _commandPool = VkInit::createCommandPool(device, device.get_queue_index(vkb::QueueType::graphics).value());
+    _commandPool = VkInit::createCommandPool(device.device, device.get_queue_index(vkb::QueueType::graphics).value());
 
     _bufferManager = BufferManager(device, _allocator, _commandPool);
-    _imageManager = ImageManager(device, _allocator, _commandPool);
+    _imageManager = ImageManager(device.device, graphicsQueue.queue, _allocator, _commandPool);
 
     std::vector<VkImage> swapchainImages = swapchain.get_images().value();
     _swapchainImageViews = swapchain.get_image_views().value();
@@ -33,7 +34,7 @@ Renderer::Renderer(const std::shared_ptr<Window> &window)
                 device.device, _allocator, queueFamilyIndex, Image(swapchainImages[i], _swapchainImageViews[i]), _pipelineManager, _renderArea);
     }
 
-    presentFence = VkInit::createFence(device, {});
+    presentFence = VkInit::createFence(device.device, {});
 
     graphicsQueue.queue = device.get_queue(vkb::QueueType::graphics).value();
     graphicsQueue.familyIndex = device.get_queue_index(vkb::QueueType::graphics).value();
@@ -155,7 +156,7 @@ std::shared_ptr<Image> Renderer::getImage(const std::string &name) {
 }
 
 void Renderer::draw(const DrawData &drawData, const VkRect2D renderArea) {
-    VkSemaphore acquireSemaphore = VkInit::createSemaphore(device);
+    VkSemaphore acquireSemaphore = VkInit::createSemaphore(device.device);
 
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device.device, swapchain.swapchain, std::numeric_limits<uint64_t>::max(),

@@ -59,6 +59,7 @@ private:
     vkb::Device device;
     vkb::Swapchain swapchain;
 
+    vk::Format swapchainImageFormat;
 
     vkb::Instance createInstance();
     VkSurfaceKHR createSurface();

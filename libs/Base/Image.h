@@ -2,20 +2,22 @@
 
 #include <stdexcept>
 
+#include <vulkan/vulkan.hpp>
+
 #include "VkBootstrap.h"
 #include "vk_mem_alloc.h"
 
 #include "stb_image.h"
 
 struct ImageCreateInfo {
-    VkExtent3D extent;
+    vk::Extent3D extent;
 
-    VkImageType imageType;
-    VkFormat format;
-    VkImageUsageFlags usage;
+    vk::ImageType imageType;
+    vk::Format format;
+    vk::ImageUsageFlags usage;
 
-    VkImageViewType viewType;
-    VkImageAspectFlags aspectMask;
+    vk::ImageViewType viewType;
+    vk::ImageAspectFlags aspectMask;
 };
 
 // TODO: Move creation to image manager
@@ -23,20 +25,20 @@ struct ImageCreateInfo {
 
 class Image {
 private:
-    VkImage _image = nullptr;
-    VkImageView _imageView = nullptr;
+    vk::Image _image = nullptr;
+    vk::ImageView _imageView = nullptr;
 
     VmaAllocation _allocation = nullptr;
 
 public:
     Image() = default;
 
-    Image(VkImage image, VkImageView imageView);
+    Image(vk::Image image, vk::ImageView imageView);
 
-    Image(const vkb::Device &device, VmaAllocator allocator, VkCommandPool commandPool, uint32_t width, uint32_t height,
-          VkFormat format, uint32_t size, const void *data);
+    Image(vk::Device &device, vk::Queue graphicsQueue, VmaAllocator allocator, vk::CommandPool commandPool, uint32_t width, uint32_t height,
+          vk::Format format, uint32_t size, const void *data);
 
-    Image(VkDevice device, VmaAllocator allocator, const ImageCreateInfo &imageCreateInfo);
+    Image(vk::Device device, VmaAllocator allocator, const ImageCreateInfo &imageCreateInfo);
 
     Image(const Image &other) = delete;
 
@@ -46,9 +48,9 @@ public:
 
     Image &operator=(Image &&other) = default;
 
-    void destroy(VkDevice device, VmaAllocator allocator);
+    void destroy(vk::Device device, VmaAllocator allocator);
 
-    [[nodiscard]] VkImageView getImageView() const;
+    [[nodiscard]] vk::ImageView getImageView() const;
 
-    [[nodiscard]] VkImage getImage() const;
+    [[nodiscard]] vk::Image getImage() const;
 };

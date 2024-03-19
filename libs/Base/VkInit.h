@@ -1,18 +1,18 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 
 #include "VkBootstrap.h"
 #include "vk_mem_alloc.h"
 
 namespace VkInit {
     VmaAllocator
-    createAllocator(const vkb::Instance &instance, const vkb::PhysicalDevice &physicalDevice, const vkb::Device &device,
+    createAllocator(vk::Instance instance, vk::PhysicalDevice physicalDevice, vk::Device device,
                     uint32_t vulkanApiVersion);
 
-    VkSemaphore createSemaphore(VkDevice device);
+    vk::Semaphore createSemaphore(vk::Device device);
 
-    VkFence createFence(VkDevice device, VkFenceCreateFlags flags);
+    vk::Fence createFence(vk::Device device, vk::FenceCreateFlags flags);
 
-    VkCommandPool createCommandPool(VkDevice device, uint32_t queueFamilyIndex);
+    vk::CommandPool createCommandPool(vk::Device device, uint32_t queueFamilyIndex);
 }

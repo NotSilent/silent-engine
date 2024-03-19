@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 
 struct DeferredLightningMaterial {
-    VkPipelineLayout layout;
-    VkPipeline pipeline;
-    VkDescriptorSet set;
+    vk::PipelineLayout layout;
+    vk::Pipeline pipeline;
+    vk::DescriptorSet set;
 };

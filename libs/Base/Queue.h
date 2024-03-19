@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 
 struct Queue {
-    VkQueue queue;
-    uint32_t familyIndex;
+    vk::Queue queue;
+    uint32_t familyIndex = vk::QueueFamilyIgnored;
 };

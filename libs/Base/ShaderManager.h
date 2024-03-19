@@ -2,14 +2,14 @@
 
 #include <unordered_map>
 #include <string>
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include <optional>
 #include <shaderc/shaderc.h>
 #include "Shader.h"
 
 class ShaderManager {
 public:
-    explicit ShaderManager(VkDevice device);
+    explicit ShaderManager(vk::Device device);
     void destroy();
 
     ShaderManager(ShaderManager& other) = delete;
@@ -21,12 +21,12 @@ public:
     [[nodiscard]] std::optional<Shader> getShader(const std::string& shaderName);
 
 private:
-    VkDevice device;
+    vk::Device device;
     shaderc_compiler_t compiler;
 
     std::unordered_map<std::string, Shader> shaders;
 
     [[nodiscard]] std::optional<std::string> loadShaderFile(const std::string& shaderName) const;
 
-    [[nodiscard]] std::optional<VkShaderModule> compileShader(const std::string& text, shaderc_shader_kind shaderKind, const std::string& shaderName) const;
+    [[nodiscard]] std::optional<vk::ShaderModule> compileShader(const std::string& text, shaderc_shader_kind shaderKind, const std::string& shaderName) const;
 };

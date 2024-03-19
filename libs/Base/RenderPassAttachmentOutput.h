@@ -1,8 +1,9 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+
+#include <vulkan/vulkan.hpp>
 
 struct RenderPassAttachmentOutput {
-    VkImage image;
-    VkImageView imageView;
-    VkImageLayout imageLayout;
+    vk::Image image;
+    vk::ImageView imageView;
+    vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined;
 };

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan.hpp"
 
 struct ShadowMapMaterial {
-    VkPipelineLayout layout;
-    VkPipeline pipeline;
+    vk::PipelineLayout layout;
+    vk::Pipeline pipeline;
 };

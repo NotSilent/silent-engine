@@ -1,20 +1,18 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include <functional>
 #include "Image.h"
 #include "RenderPassAttachmentOutput.h"
 
 class DrawData;
 
-namespace DeferredRenderpassDefinitions{
-    namespace Formats {
-        static inline VkFormat COLOR = VK_FORMAT_R8G8B8A8_UNORM;
-        static inline VkFormat NORMAL = VK_FORMAT_R16G16B16A16_SFLOAT;
-        static inline VkFormat POSITION = VK_FORMAT_R16G16B16A16_SFLOAT;
-        static inline VkFormat DEPTH = VK_FORMAT_D32_SFLOAT;
-    }
-};
+namespace DeferredRenderpassDefinitions::Formats {
+    static inline vk::Format COLOR = vk::Format::eR8G8B8A8Unorm;
+    static inline vk::Format NORMAL = vk::Format::eR16G16B16A16Sfloat;
+    static inline vk::Format POSITION = vk::Format::eR16G16B16A16Sfloat;
+    static inline vk::Format DEPTH = vk::Format::eD32Sfloat;
+}
 
 struct DeferredRenderPassOutput {
     RenderPassAttachmentOutput color;
@@ -25,32 +23,32 @@ struct DeferredRenderPassOutput {
 
 class DeferredRenderpass {
 public:
-    DeferredRenderpass(VkDevice device,
+    DeferredRenderpass(vk::Device device,
                        VmaAllocator allocator,
-                       VkRect2D renderArea);
+                       vk::Rect2D renderArea);
 
-    DeferredRenderpass(DeferredRenderpass& other) = delete;
-    DeferredRenderpass& operator=(DeferredRenderpass& other) = delete;
+    DeferredRenderpass(DeferredRenderpass &other) = delete;
 
-    DeferredRenderpass(DeferredRenderpass&& other) = default;
-    DeferredRenderpass& operator=(DeferredRenderpass&& other) = default;
+    DeferredRenderpass &operator=(DeferredRenderpass &other) = delete;
+
+    DeferredRenderpass(DeferredRenderpass &&other) = default;
+
+    DeferredRenderpass &operator=(DeferredRenderpass &&other) = default;
 
     void destroy();
 
-    void render(VkCommandBuffer cmd, const DrawData& drawData);
+    void render(vk::CommandBuffer cmd, const DrawData &drawData);
 
     [[nodiscard]] DeferredRenderPassOutput getOutput() const;
 
 private:
-    VkDevice device;
+    vk::Device device;
     VmaAllocator allocator;
 
-    static inline const VkClearValue CLEAR_VALUE{0.0f, 0.0f, 0.0f, 0.0f};
-    static inline const VkClearValue DEPTH_CLEAR_VALUE {
-        .depthStencil = {1.0f, 0}
-    };
+    static inline const vk::ClearValue CLEAR_VALUE = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 0.0f);
+    static inline const vk::ClearValue DEPTH_CLEAR_VALUE = vk::ClearDepthStencilValue(1.0f, 0);
 
-    VkRect2D renderArea;
+    vk::Rect2D renderArea;
 
     Image colorImage;
     Image normalImage;
@@ -58,10 +56,11 @@ private:
 
     Image depthImage;
 
-    void beginRenderPass(VkCommandBuffer cmd);
-    void endRenderPass(VkCommandBuffer cmd);
+    void beginRenderPass(vk::CommandBuffer cmd);
 
-    [[nodiscard]] Image createColorImage(VkFormat format) const;
+    void endRenderPass(vk::CommandBuffer cmd);
+
+    [[nodiscard]] Image createColorImage(vk::Format format) const;
 
     [[nodiscard]] Image createDepthImage() const;
 };

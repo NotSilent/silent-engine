@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include <functional>
 #include "vk_mem_alloc.h"
 #include "Image.h"
@@ -16,7 +16,7 @@ struct ShadowMapRenderPassOutput {
 
 class ShadowMapRenderpass {
 public:
-    ShadowMapRenderpass(VkDevice device, VmaAllocator allocator, const PipelineManager& pipelineManager);
+    ShadowMapRenderpass(vk::Device device, VmaAllocator allocator, const PipelineManager& pipelineManager);
 
     ShadowMapRenderpass(ShadowMapRenderpass &other) = delete;
 
@@ -26,7 +26,7 @@ public:
 
     ShadowMapRenderpass &operator=(ShadowMapRenderpass &&other) = default;
 
-    void render(VkCommandBuffer cmd, const DrawData& drawData);
+    void render(vk::CommandBuffer cmd, const DrawData& drawData);
 
     void destroy();
 
@@ -34,24 +34,22 @@ public:
 
 private:
     inline static const uint32_t SHADOW_MAP_RESOLUTION = 2048;
-    inline static const VkClearValue DEPTH_CLEAR_VALUE = {
-            .depthStencil {1.0f, 0}
-    };
-    inline static const VkRect2D SHADOW_MAP_DIMENSIONS{
-            .offset = {0, 0},
-            .extent = {SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION}
+    inline static const vk::ClearValue DEPTH_CLEAR_VALUE = vk::ClearDepthStencilValue{{1.0f, 0}};
+    inline static const vk::Rect2D SHADOW_MAP_DIMENSIONS{
+        {0, 0},
+        {SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION}
     };
 
-    VkDevice device;
+    vk::Device device;
     VmaAllocator allocator;
 
     Image depthImage;
 
     ShadowMapMaterial material;
 
-    void beginRenderPass(VkCommandBuffer cmd);
+    void beginRenderPass(vk::CommandBuffer cmd);
 
-    void endRenderPass(VkCommandBuffer cmd);
+    void endRenderPass(vk::CommandBuffer cmd);
 
     [[nodiscard]] Image createDepthImage() const;
 };

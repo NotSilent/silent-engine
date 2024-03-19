@@ -1,7 +1,7 @@
 #include "ImageManager.h"
 
-ImageManager::ImageManager(const vkb::Device &device, const VmaAllocator allocator, const VkCommandPool commandPool)
-        : _device(device), _allocator(allocator), _commandPool(commandPool) {
+ImageManager::ImageManager(const vk::Device &device, vk::Queue graphicsQueue, VmaAllocator allocator, vk::CommandPool commandPool)
+        : _device(device), graphicsQueue(graphicsQueue), _allocator(allocator), _commandPool(commandPool) {
 }
 
 std::shared_ptr<Image> ImageManager::getImage(const std::string &name) {
@@ -11,7 +11,7 @@ std::shared_ptr<Image> ImageManager::getImage(const std::string &name) {
 
 void ImageManager::destroy() {
     for (auto &image: _images) {
-        image.second->destroy(_device.device, _allocator);
+        image.second->destroy(_device, _allocator);
     }
 }
 
@@ -22,6 +22,6 @@ void ImageManager::addImage(const std::string &name, uint32_t width, uint32_t he
         return;
     }
 
-    VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
-    _images[name] = std::make_shared<Image>(_device, _allocator, _commandPool, width, height, format, size, data);
+    vk::Format format = vk::Format::eR8G8B8A8Srgb;
+    _images[name] = std::make_shared<Image>(_device, graphicsQueue, _allocator, _commandPool, width, height, format, size, data);
 }

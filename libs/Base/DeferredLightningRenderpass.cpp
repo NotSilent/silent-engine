@@ -2,7 +2,7 @@
 #include "CommandBuffer.h"
 
 DeferredLightningRenderpass::DeferredLightningRenderpass(PipelineManager &pipelineManager,
-                                                         VkRect2D renderArea,
+                                                         vk::Rect2D renderArea,
                                                          const DeferredRenderPassOutput &deferredRenderPassOutput,
                                                          const ShadowMapRenderPassOutput &shadowMapRenderPassOutput)
         : renderArea(renderArea)
@@ -14,7 +14,7 @@ DeferredLightningRenderpass::DeferredLightningRenderpass(PipelineManager &pipeli
                                                                    shadowMapRenderPassOutput.depth.imageView)) {
 }
 
-void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image &swapchainImage, const glm::mat4& lightSpace, glm::vec3 viewDirection) {
+void DeferredLightningRenderpass::render(vk::CommandBuffer cmd, const Image &swapchainImage, const glm::mat4& lightSpace, glm::vec3 viewDirection) {
     beginRenderPass(cmd, swapchainImage);
 
     struct LightningPushData {
@@ -25,98 +25,97 @@ void DeferredLightningRenderpass::render(VkCommandBuffer cmd, const Image &swapc
     pushData.lightSpace = lightSpace;
     pushData.view = viewDirection;
 
-    vkCmdPushConstants(cmd, material.layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(LightningPushData), &pushData);
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material.pipeline);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material.layout, 0, 1, &material.set, 0, nullptr);
+    cmd.pushConstants(material.layout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(LightningPushData), &pushData);
+    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, material.pipeline);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, material.layout, 0, 1, &material.set, 0, nullptr);
 
-    vkCmdDraw(cmd, 6, 1, 0, 0);
+    cmd.draw(6, 1, 0, 0);
 
     endRenderPass(cmd, swapchainImage);
 }
 
-void DeferredLightningRenderpass::beginRenderPass(VkCommandBuffer cmd, const Image &swapchainImage) {
-    VkRenderingAttachmentInfo swapchainAttachment{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView = swapchainImage.getImageView(),
-            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .resolveMode = VK_RESOLVE_MODE_NONE,
-            .resolveImageView = nullptr,
-            .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = swapchainClearValue,
-    };
+void DeferredLightningRenderpass::beginRenderPass(vk::CommandBuffer cmd, const Image &swapchainImage) {
+    vk::RenderingAttachmentInfo swapchainAttachment(
+            swapchainImage.getImageView(),
+            vk::ImageLayout::eAttachmentOptimal,
+            vk::ResolveModeFlagBits::eNone,
+            nullptr,
+            vk::ImageLayout::eUndefined,
+            vk::AttachmentLoadOp::eClear,
+            vk::AttachmentStoreOp::eStore,
+            swapchainClearValue
+    );
 
     std::array attachments{swapchainAttachment};
 
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                   VK_ACCESS_NONE,
-                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                   VK_IMAGE_LAYOUT_UNDEFINED,
-                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    CommandBuffer::pipelineBarrier(cmd, vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                   vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                   vk::AccessFlagBits::eNone,
+                                   vk::AccessFlagBits::eColorAttachmentWrite,
+                                   vk::ImageLayout::eUndefined,
+                                   vk::ImageLayout::eColorAttachmentOptimal,
                                    swapchainImage.getImage(),
-                                   VK_IMAGE_ASPECT_COLOR_BIT);
+                                   vk::ImageAspectFlagBits::eColor);
 
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                   VK_ACCESS_NONE,
-                                   VK_ACCESS_SHADER_READ_BIT,
+    CommandBuffer::pipelineBarrier(cmd, vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eFragmentShader,
+                                   vk::AccessFlagBits::eNone,
+                                   vk::AccessFlagBits::eShaderRead,
                                    deferredRenderPassOutput.color.imageLayout,
-                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal,
                                    deferredRenderPassOutput.color.image,
-                                   VK_IMAGE_ASPECT_COLOR_BIT);
+                                   vk::ImageAspectFlagBits::eColor);
 
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                   VK_ACCESS_NONE,
-                                   VK_ACCESS_SHADER_READ_BIT,
+    CommandBuffer::pipelineBarrier(cmd, vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eFragmentShader,
+                                   vk::AccessFlagBits::eNone,
+                                   vk::AccessFlagBits::eShaderRead,
                                    deferredRenderPassOutput.normal.imageLayout,
-                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal,
                                    deferredRenderPassOutput.normal.image,
-                                   VK_IMAGE_ASPECT_COLOR_BIT);
+                                   vk::ImageAspectFlagBits::eColor);
 
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                   VK_ACCESS_NONE,
-                                   VK_ACCESS_SHADER_READ_BIT,
+    CommandBuffer::pipelineBarrier(cmd, vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eFragmentShader,
+                                   vk::AccessFlagBits::eNone,
+                                   vk::AccessFlagBits::eShaderRead,
                                    deferredRenderPassOutput.position.imageLayout,
-                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal,
                                    deferredRenderPassOutput.position.image,
-                                   VK_IMAGE_ASPECT_COLOR_BIT);
+                                   vk::ImageAspectFlagBits::eColor);
 
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                   VK_ACCESS_NONE,
-                                   VK_ACCESS_SHADER_READ_BIT,
+    CommandBuffer::pipelineBarrier(cmd, vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eFragmentShader,
+                                   vk::AccessFlagBits::eNone,
+                                   vk::AccessFlagBits::eShaderRead,
                                    shadowMapRenderPassOutput.depth.imageLayout,
-                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal,
                                    shadowMapRenderPassOutput.depth.image,
-                                   VK_IMAGE_ASPECT_DEPTH_BIT);
+                                   vk::ImageAspectFlagBits::eDepth);
 
-    VkRenderingInfo renderingInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-            .renderArea = renderArea,
-            .layerCount = 1,
-            .viewMask = 0,
-            .colorAttachmentCount = attachments.size(),
-            .pColorAttachments = attachments.data(),
-            .pDepthAttachment = nullptr,
-            .pStencilAttachment = nullptr,
-    };
+    vk::RenderingInfo renderingInfo(
+            {},
+            renderArea,
+            1,
+            0,
+            attachments.size(),
+            attachments.data(),
+            nullptr,
+            nullptr
+    );
 
-    vkCmdBeginRendering(cmd, &renderingInfo);
+    cmd.beginRendering(&renderingInfo);
 }
 
-void DeferredLightningRenderpass::endRenderPass(VkCommandBuffer cmd, const Image &swapchainImage) {
-    vkCmdEndRendering(cmd);
+void DeferredLightningRenderpass::endRenderPass(vk::CommandBuffer cmd, const Image &swapchainImage) {
+    cmd.endRendering();
 
-    CommandBuffer::pipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                   VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                   VK_ACCESS_NONE,
-                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    CommandBuffer::pipelineBarrier(cmd, vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                   vk::PipelineStageFlagBits::eBottomOfPipe,
+                                   vk::AccessFlagBits::eColorAttachmentWrite,
+                                   vk::AccessFlagBits::eNone,
+                                   vk::ImageLayout::eColorAttachmentOptimal,
+                                   vk::ImageLayout::ePresentSrcKHR,
                                    swapchainImage.getImage(),
-                                   VK_IMAGE_ASPECT_COLOR_BIT);
+                                   vk::ImageAspectFlagBits::eColor);
 }

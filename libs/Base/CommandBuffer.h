@@ -1,14 +1,14 @@
 #pragma once
 
-#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan.hpp"
 
 class CommandBuffer {
 private:
 
 public:
     // TODO: All statics to members
-    static void pipelineBarrier(VkCommandBuffer cmd, VkPipelineStageFlags srcStageMask,
-                                VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask,
-                                VkAccessFlags dstAccessMask, VkImageLayout oldLayout, VkImageLayout newLayout, VkImage image,
-                                VkImageAspectFlags aspectFlags);
+    static void pipelineBarrier(vk::CommandBuffer cmd, vk::PipelineStageFlags srcStageMask,
+                                vk::PipelineStageFlags dstStageMask, vk::AccessFlags srcAccessMask,
+                                vk::AccessFlags dstAccessMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::Image image,
+                                vk::ImageAspectFlags aspectFlags);
 };
