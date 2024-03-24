@@ -50,6 +50,8 @@ set(BASE_SOURCES
 
 add_library(base STATIC ${BASE_SOURCES})
 
+# clean up publics
+
 # Something is wrong with glslang with latest FindVulkan, possibly fixed with CMake 3.29
 find_package(glslang CONFIG)
 
@@ -61,6 +63,7 @@ target_link_libraries(base Vulkan::Vulkan)
 target_link_libraries(base glslang)
 
 target_link_libraries(base Vulkan::shaderc_combined)
+target_link_libraries(base SPIRV)
 target_link_libraries(base SPIRV-Tools-opt)
 target_link_libraries(base SPIRV-Tools)
 target_link_libraries(base glfw)

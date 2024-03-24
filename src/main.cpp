@@ -8,7 +8,6 @@
 #include "InputSystem.h"
 #include "TimeSystem.h"
 #include "PatchedSphere.h"
-#include <iostream>
 #include <vector>
 
 const std::string ENGINE_NAME = "Silent Engine";
